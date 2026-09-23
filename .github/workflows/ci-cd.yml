@@ -1,0 +1,45 @@
+name: .NET 8 CI
+
+on:
+  push:
+    branches: [ 'main', 'master' ]
+  pull_request:
+    branches: [ 'main', 'master' ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Cache NuGet
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: ${{ runner.os }}-nuget-
+
+      - name: Restore
+        run: dotnet restore "RESK.WIL.slnx"
+
+      - name: Build
+        run: dotnet build "RESK.WIL.slnx" --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test "RESK.WIL.slnx" --configuration Release --no-build --verbosity normal
+
+      - name: Publish (artifact)
+        run: |
+          dotnet publish "RESK.WIL.slnx" -c Release -o ${{ runner.temp }}/publish
+
+      - name: Upload published artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: publish
+          path: ${{ runner.temp }}/publish
