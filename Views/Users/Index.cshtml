@@ -1,0 +1,1282 @@
+﻿@model IEnumerable<RESK.WIL.Models.User>
+@using RESK.WIL.Models
+
+@{
+    Layout = null;
+
+    int totalUsers = ViewBag.TotalUsers ?? 0;
+    int pendingUsers = ViewBag.PendingUsers ?? 0;
+    int activeUsers = ViewBag.ActiveUsers ?? 0;
+    int suspendedUsers = ViewBag.SuspendedUsers ?? 0;
+
+    string currentSearch = ViewBag.Search ?? "";
+    string currentRole = ViewBag.SelectedRole ?? "";
+    string currentStatus = ViewBag.SelectedStatus ?? "";
+
+    IEnumerable<string> roles =
+        ViewBag.Roles as IEnumerable<string> ?? Enumerable.Empty<string>();
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Users | R.E.S.K</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body {
+            min-height: 100%;
+            font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI",
+                Roboto, Arial, sans-serif;
+            background: #f5f7fa;
+            color: #17233b;
+        }
+
+        body {
+            min-height: 100vh;
+        }
+
+        button,
+        input,
+        select,
+        a {
+            font: inherit;
+        }
+
+        button,
+        a {
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        a {
+            text-decoration: none;
+        }
+
+        /* =========================================================
+           PAGE
+           ========================================================= */
+
+        .app {
+            min-height: 100vh;
+            display: flex;
+        }
+
+        /* =========================================================
+           SIDEBAR
+           ========================================================= */
+
+        .sidebar {
+            width: 260px;
+            min-height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            z-index: 100;
+            background: #0d172b;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            padding: 37px 20px 38px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding-left: 13px;
+            margin-bottom: 42px;
+        }
+
+        .brand-logo {
+            width: 56px;
+            height: 56px;
+            border: 2px solid #12b9cb;
+            border-radius: 17px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #12b9cb;
+            font-size: 27px;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .brand-name {
+            color: #ffffff;
+            font-size: 24px;
+            line-height: 1;
+            font-weight: 800;
+            letter-spacing: 1px;
+        }
+
+        .brand-subtitle {
+            margin-top: 9px;
+            color: #d4dbea;
+            font-size: 10px;
+            letter-spacing: .3px;
+        }
+
+        .sidebar-label {
+            color: #75839c;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            padding: 0 12px;
+            margin-bottom: 8px;
+        }
+
+        .navigation {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .nav-link {
+            min-height: 43px;
+            border-radius: 9px;
+            padding: 0 32px;
+            display: flex;
+            align-items: center;
+            color: #b5bfd0;
+            font-size: 14px;
+            transition:
+                background .18s ease,
+                color .18s ease,
+                transform .18s ease;
+        }
+
+        .nav-link:hover {
+            background: rgba(255, 255, 255, .055);
+            color: #ffffff;
+            transform: translateX(2px);
+        }
+
+        .nav-link.active {
+            background: #142847;
+            color: #ffffff;
+            font-weight: 700;
+        }
+
+        .admin-profile {
+            margin-top: auto;
+            background: #142847;
+            min-height: 64px;
+            border-radius: 12px;
+            padding: 11px 10px;
+            display: flex;
+            align-items: center;
+            gap: 11px;
+        }
+
+        .admin-avatar {
+            width: 31px;
+            height: 31px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #12b9cb;
+            font-size: 13px;
+            font-weight: 800;
+        }
+
+        .admin-name {
+            color: white;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .admin-role {
+            margin-top: 5px;
+            color: #aeb9cc;
+            font-size: 11px;
+        }
+
+        /* =========================================================
+           MAIN
+           ========================================================= */
+
+        .main {
+            width: calc(100% - 260px);
+            margin-left: 260px;
+            min-height: 100vh;
+            padding: 28px 52px 62px;
+        }
+
+        .content {
+            width: 100%;
+            max-width: 1160px;
+            margin: 0 auto;
+        }
+
+        /* =========================================================
+           HEADER
+           ========================================================= */
+
+        .page-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 25px;
+            margin-bottom: 22px;
+        }
+
+        .page-title {
+            font-size: 32px;
+            line-height: 1.1;
+            color: #17233b;
+            font-weight: 750;
+            letter-spacing: -.5px;
+        }
+
+        .page-description {
+            color: #64748f;
+            font-size: 14px;
+            margin-top: 11px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 25px;
+            align-items: center;
+            padding-top: 5px;
+        }
+
+        .btn {
+            min-height: 45px;
+            border-radius: 9px;
+            border: 1px solid #d7dfeb;
+            padding: 0 25px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 700;
+            transition:
+                transform .16s ease,
+                box-shadow .16s ease,
+                background .16s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .btn-primary {
+            min-width: 111px;
+            background: #12b9cb;
+            border-color: #12b9cb;
+            color: #ffffff;
+            box-shadow: 0 2px 4px rgba(18, 185, 203, .12);
+        }
+
+        .btn-primary:hover {
+            background: #0faabd;
+            box-shadow: 0 5px 13px rgba(18, 185, 203, .18);
+        }
+
+        .btn-secondary {
+            min-width: 113px;
+            background: #ffffff;
+            color: #17233b;
+        }
+
+        .btn-secondary:hover {
+            background: #f9fbfd;
+        }
+
+        /* =========================================================
+           STAT CARDS
+           ========================================================= */
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 22px;
+        }
+
+        .stat-card {
+            background: #ffffff;
+            border: 1px solid #d9e1ec;
+            border-radius: 14px;
+            min-height: 103px;
+            padding: 18px 20px;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, .01);
+        }
+
+        .stat-label {
+            color: #60708b;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .stat-value {
+            color: #17233b;
+            font-size: 34px;
+            font-weight: 750;
+            line-height: 1;
+            margin-top: 12px;
+        }
+
+        /* =========================================================
+           FILTERS
+           ========================================================= */
+
+        .filter-card {
+            background: #ffffff;
+            border: 1px solid #d9e1ec;
+            border-radius: 14px;
+            padding: 17px 23px 8px;
+            margin-bottom: 21px;
+        }
+
+        .filter-title {
+            color: #17233b;
+            font-size: 15px;
+            font-weight: 750;
+            margin-bottom: 16px;
+        }
+
+        .filter-grid {
+            display: grid;
+            grid-template-columns: 1.55fr 1.03fr 1.03fr 1.08fr 136px;
+            gap: 15px;
+            align-items: end;
+        }
+
+        .field-label {
+            display: block;
+            color: #5d6d87;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 7px;
+        }
+
+        .form-control {
+            width: 100%;
+            height: 39px;
+            border: 1px solid #d7dfeb;
+            border-radius: 8px;
+            background: #ffffff;
+            color: #17233b;
+            outline: none;
+            padding: 0 14px;
+            font-size: 12px;
+            transition:
+                border-color .16s ease,
+                box-shadow .16s ease;
+        }
+
+        .form-control::placeholder {
+            color: #9ba8bb;
+        }
+
+        .form-control:focus {
+            border-color: #12b9cb;
+            box-shadow: 0 0 0 3px rgba(18, 185, 203, .09);
+        }
+
+        select.form-control {
+            cursor: pointer;
+        }
+
+        .filter-button {
+            width: 100%;
+            height: 39px;
+            min-height: 39px;
+            padding: 0 16px;
+        }
+
+        /* =========================================================
+           USERS TABLE CARD
+           ========================================================= */
+
+        .users-card {
+            background: #ffffff;
+            border: 1px solid #d9e1ec;
+            border-radius: 14px;
+            padding: 18px 15px 14px;
+        }
+
+        .users-card-header {
+            padding: 0 8px 14px;
+        }
+
+        .users-card-title {
+            color: #17233b;
+            font-size: 17px;
+            font-weight: 750;
+        }
+
+        .users-count {
+            color: #64748f;
+            font-size: 12px;
+            margin-top: 6px;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        .users-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+
+        .users-table thead th {
+            height: 40px;
+            background: #f1f4f8;
+            color: #60708b;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            text-align: left;
+            padding: 0 18px;
+        }
+
+        .users-table thead th:first-child {
+            border-radius: 8px 0 0 8px;
+        }
+
+        .users-table thead th:last-child {
+            border-radius: 0 8px 8px 0;
+        }
+
+        .users-table tbody tr {
+            border-bottom: 1px solid #e9edf3;
+        }
+
+        .users-table tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        .users-table tbody td {
+            height: 64px;
+            padding: 8px 18px;
+            color: #17233b;
+            font-size: 12px;
+            vertical-align: middle;
+        }
+
+        .user-column {
+            width: 28%;
+        }
+
+        .role-column {
+            width: 16%;
+        }
+
+        .organisation-column {
+            width: 21%;
+        }
+
+        .status-column {
+            width: 13%;
+        }
+
+        .joined-column {
+            width: 14%;
+        }
+
+        .actions-column {
+            width: 8%;
+            text-align: right !important;
+        }
+
+        .user-cell {
+            display: flex;
+            align-items: center;
+            gap: 13px;
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            flex: 0 0 36px;
+            border-radius: 50%;
+            background: #12b9cb;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .user-avatar.pending {
+            background: #28466f;
+        }
+
+        .user-avatar.disabled {
+            background: #cf5661;
+        }
+
+        .user-name {
+            color: #17233b;
+            font-size: 12px;
+            font-weight: 750;
+            line-height: 1.3;
+        }
+
+        .user-email {
+            color: #657590;
+            font-size: 10.5px;
+            margin-top: 4px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 190px;
+        }
+
+        .muted {
+            color: #657590;
+        }
+
+        /* =========================================================
+           STATUS
+           ========================================================= */
+
+        .status-badge {
+            min-width: 77px;
+            min-height: 24px;
+            padding: 4px 12px;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .status-active {
+            color: #219a69;
+            background: #e7f6ee;
+        }
+
+        .status-pending {
+            color: #936200;
+            background: #fff4dd;
+        }
+
+        .status-disabled,
+        .status-inactive {
+            color: #d24c57;
+            background: #fde9eb;
+        }
+
+        /* =========================================================
+           ACTIONS
+           ========================================================= */
+
+        .actions {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 18px;
+        }
+
+        .view-link {
+            color: #05adc0;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .view-link:hover {
+            color: #078b9a;
+            text-decoration: underline;
+        }
+
+        .more-button {
+            border: 0;
+            background: transparent;
+            color: #6b7c96;
+            cursor: pointer;
+            font-size: 20px;
+            letter-spacing: 1px;
+            line-height: 1;
+            padding: 4px;
+        }
+
+        /* =========================================================
+           EMPTY STATE
+           ========================================================= */
+
+        .empty-state {
+            padding: 60px 20px;
+            text-align: center;
+        }
+
+        .empty-icon {
+            width: 55px;
+            height: 55px;
+            margin: 0 auto 15px;
+            border-radius: 50%;
+            background: #eaf8fa;
+            color: #12b9cb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 800;
+        }
+
+        .empty-title {
+            font-size: 16px;
+            font-weight: 750;
+            color: #17233b;
+        }
+
+        .empty-text {
+            margin-top: 7px;
+            color: #64748f;
+            font-size: 12px;
+        }
+
+        /* =========================================================
+           FOOTER NOTE
+           ========================================================= */
+
+        .card-note {
+            color: #657590;
+            font-size: 11px;
+            padding: 8px 8px 0;
+        }
+
+        /* =========================================================
+           RESPONSIVE
+           ========================================================= */
+
+        @@media (max-width: 1150px) {
+            .main {
+                padding-left: 30px;
+                padding-right: 30px;
+            }
+
+            .filter-grid {
+                grid-template-columns: 1.5fr 1fr 1fr;
+            }
+
+            .filter-button {
+                max-width: 180px;
+            }
+        }
+
+        @@media (max-width: 900px) {
+            .sidebar {
+                width: 210px;
+            }
+
+            .main {
+                width: calc(100% - 210px);
+                margin-left: 210px;
+                padding: 25px 20px 50px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .page-header {
+                flex-direction: column;
+            }
+
+            .header-actions {
+                padding-top: 0;
+            }
+
+            .filter-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @@media (max-width: 700px) {
+            .sidebar {
+                position: static;
+                width: 100%;
+                min-height: auto;
+                padding: 20px;
+            }
+
+            .app {
+                display: block;
+            }
+
+            .navigation {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .admin-profile {
+                margin-top: 25px;
+            }
+
+            .main {
+                width: 100%;
+                margin-left: 0;
+                padding: 24px 15px 45px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .filter-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header-actions {
+                width: 100%;
+            }
+
+            .header-actions .btn {
+                flex: 1;
+            }
+        }
+
+        @@media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .page-title {
+                font-size: 28px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="app">
+
+    <!-- =========================================================
+         SIDEBAR
+         ========================================================= -->
+    <aside class="sidebar">
+
+        <div class="brand">
+            <div class="brand-logo">R</div>
+
+            <div>
+                <div class="brand-name">R.E.S.K</div>
+                <div class="brand-subtitle">SOFTWARE STUDIO</div>
+            </div>
+        </div>
+
+        <div class="sidebar-label">Management</div>
+
+        <nav class="navigation">
+
+            <a class="nav-link"
+               asp-controller="Home"
+               asp-action="Index">
+                Dashboard
+            </a>
+
+            <a class="nav-link"
+               asp-controller="Proposal"
+               asp-action="Index">
+                Proposals
+            </a>
+
+            <a class="nav-link active"
+               asp-controller="Users"
+               asp-action="Index">
+                Users
+            </a>
+
+            <a class="nav-link"
+               href="#">
+                Categories
+            </a>
+
+            <a class="nav-link"
+               href="#">
+                Reports
+            </a>
+
+            <a class="nav-link"
+               href="#">
+                Roles &amp; permissions
+            </a>
+
+            <a class="nav-link"
+               href="#">
+                Audit log
+            </a>
+
+            <a class="nav-link"
+               href="#">
+                System settings
+            </a>
+
+        </nav>
+
+        <div class="admin-profile">
+            <div class="admin-avatar">AD</div>
+
+            <div>
+                <div class="admin-name">Admin User</div>
+                <div class="admin-role">Station Management</div>
+            </div>
+        </div>
+
+    </aside>
+
+    <!-- =========================================================
+         MAIN
+         ========================================================= -->
+    <main class="main">
+
+        <div class="content">
+
+            <!-- HEADER -->
+            <header class="page-header">
+
+                <div>
+                    <h1 class="page-title">Users</h1>
+
+                    <p class="page-description">
+                        Manage user accounts, approvals, roles and account access.
+                    </p>
+                </div>
+
+                <div class="header-actions">
+
+                    <a class="btn btn-primary"
+                       asp-controller="Users"
+                       asp-action="Create">
+                        Add user
+                    </a>
+
+                    <a class="btn btn-secondary"
+                       asp-controller="Users"
+                       asp-action="Export">
+                        Export users
+                    </a>
+
+                </div>
+
+            </header>
+
+            <!-- =====================================================
+                 STATISTICS
+                 ===================================================== -->
+            <section class="stats-grid">
+
+                <article class="stat-card">
+                    <div class="stat-label">Total users</div>
+                    <div class="stat-value">@totalUsers</div>
+                </article>
+
+                <article class="stat-card">
+                    <div class="stat-label">Pending approval</div>
+                    <div class="stat-value">@pendingUsers</div>
+                </article>
+
+                <article class="stat-card">
+                    <div class="stat-label">Active</div>
+                    <div class="stat-value">@activeUsers</div>
+                </article>
+
+                <article class="stat-card">
+                    <div class="stat-label">Suspended</div>
+                    <div class="stat-value">@suspendedUsers</div>
+                </article>
+
+            </section>
+
+            <!-- =====================================================
+                 FILTERS
+                 ===================================================== -->
+            <section class="filter-card">
+
+                <div class="filter-title">
+                    Filter users
+                </div>
+
+                <form method="get"
+                      asp-controller="Users"
+                      asp-action="Index">
+
+                    <div class="filter-grid">
+
+                        <div>
+                            <label class="field-label"
+                                   for="search">
+                                Search
+                            </label>
+
+                            <input class="form-control"
+                                   id="search"
+                                   name="search"
+                                   type="text"
+                                   value="@currentSearch"
+                                   placeholder="Name, email or organisation..." />
+                        </div>
+
+                        <div>
+                            <label class="field-label"
+                                   for="role">
+                                Role
+                            </label>
+
+                            <select class="form-control"
+                                    id="role"
+                                    name="role">
+
+                                <option value="">
+                                    All roles
+                                </option>
+
+                                @foreach (string roleName in roles)
+                                {
+                                    if (currentRole == roleName)
+                                    {
+                                        <option value="@roleName" selected>
+                                            @roleName
+                                        </option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@roleName">
+                                            @roleName
+                                        </option>
+                                    }
+                                }
+
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="field-label"
+                                   for="status">
+                                Status
+                            </label>
+
+                            <select class="form-control"
+                                    id="status"
+                                    name="status">
+
+                                <option value="">
+                                    All statuses
+                                </option>
+
+                                @if (currentStatus == "Active")
+                                {
+                                    <option value="Active" selected>Active</option>
+                                }
+                                else
+                                {
+                                    <option value="Active">Active</option>
+                                }
+
+                                @if (currentStatus == "Pending")
+                                {
+                                    <option value="Pending" selected>Pending</option>
+                                }
+                                else
+                                {
+                                    <option value="Pending">Pending</option>
+                                }
+
+                                @if (currentStatus == "Inactive")
+                                {
+                                    <option value="Inactive" selected>Inactive</option>
+                                }
+                                else
+                                {
+                                    <option value="Inactive">Inactive</option>
+                                }
+
+                                @if (currentStatus == "Disabled")
+                                {
+                                    <option value="Disabled" selected>Suspended</option>
+                                }
+                                else
+                                {
+                                    <option value="Disabled">Suspended</option>
+                                }
+
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="field-label"
+                                   for="registrationDate">
+                                Registration date
+                            </label>
+
+                            <select class="form-control"
+                                    id="registrationDate"
+                                    disabled>
+                                <option>Any date</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <button class="btn btn-primary filter-button"
+                                    type="submit">
+                                Apply filters
+                            </button>
+                        </div>
+
+                    </div>
+
+                </form>
+
+            </section>
+
+            <!-- =====================================================
+                 USERS
+                 ===================================================== -->
+            <section class="users-card">
+
+                <div class="users-card-header">
+
+                    <h2 class="users-card-title">
+                        User accounts
+                    </h2>
+
+                    <div class="users-count">
+                        Showing @Model.Count() of @totalUsers users
+                    </div>
+
+                </div>
+
+                @if (Model.Any())
+                {
+                    <div class="table-wrapper">
+
+                        <table class="users-table">
+
+                            <thead>
+                                <tr>
+                                    <th class="user-column">User</th>
+                                    <th class="role-column">Role</th>
+                                    <th class="organisation-column">Organisation</th>
+                                    <th class="status-column">Status</th>
+                                    <th class="joined-column">Joined</th>
+                                    <th class="actions-column">Actions</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+
+                            @foreach (User user in Model)
+                            {
+                                string fullName =
+                                    $"{user.Name} {user.LastName}".Trim();
+
+                                if (string.IsNullOrWhiteSpace(fullName))
+                                {
+                                    fullName = "Unnamed user";
+                                }
+
+                                string initials = "";
+
+                                if (!string.IsNullOrWhiteSpace(user.Name))
+                                {
+                                    initials += user.Name[0];
+                                }
+
+                                if (!string.IsNullOrWhiteSpace(user.LastName))
+                                {
+                                    initials += user.LastName[0];
+                                }
+
+                                if (string.IsNullOrWhiteSpace(initials))
+                                {
+                                    initials = "U";
+                                }
+
+                                string assignedRole =
+                                    user.UserRoles
+                                        .Select(ur => ur.Role?.Title)
+                                        .FirstOrDefault(title =>
+                                            !string.IsNullOrWhiteSpace(title))
+                                    ?? "Unassigned";
+
+                                string organisation =
+                                    string.IsNullOrWhiteSpace(user.Organisation)
+                                        ? "—"
+                                        : user.Organisation;
+
+                                string statusText =
+                                    user.AccountStatus == UserAccountStatus.Disabled
+                                        ? "Suspended"
+                                        : user.AccountStatus.ToString();
+
+                                string statusClass =
+                                    user.AccountStatus switch
+                                    {
+                                        UserAccountStatus.Active =>
+                                            "status-active",
+
+                                        UserAccountStatus.Pending =>
+                                            "status-pending",
+
+                                        UserAccountStatus.Disabled =>
+                                            "status-disabled",
+
+                                        UserAccountStatus.Inactive =>
+                                            "status-inactive",
+
+                                        _ => "status-pending"
+                                    };
+
+                                string avatarClass =
+                                    user.AccountStatus switch
+                                    {
+                                        UserAccountStatus.Pending =>
+                                            "pending",
+
+                                        UserAccountStatus.Disabled =>
+                                            "disabled",
+
+                                        _ => ""
+                                    };
+
+                                <tr>
+
+                                    <!-- USER -->
+                                    <td>
+                                        <div class="user-cell">
+
+                                            <div class="user-avatar @avatarClass">
+                                                @initials
+                                            </div>
+
+                                            <div>
+                                                <div class="user-name">
+                                                    @fullName
+                                                </div>
+
+                                                <div class="user-email">
+                                                    @user.Email
+                                                </div>
+                                            </div>
+
+                                        </div>
+                                    </td>
+
+                                    <!-- ROLE -->
+                                    <td>
+                                        @assignedRole
+                                    </td>
+
+                                    <!-- ORGANISATION -->
+                                    <td>
+                                        <span class="muted">
+                                            @organisation
+                                        </span>
+                                    </td>
+
+                                    <!-- STATUS -->
+                                    <td>
+                                        <span class="status-badge @statusClass">
+                                            @statusText
+                                        </span>
+                                    </td>
+
+                                    <!-- JOINED -->
+                                    <td>
+                                        <span class="muted">
+                                            @user.CreatedAtUtc.ToString("dd MMM yyyy")
+                                        </span>
+                                    </td>
+
+                                    <!-- ACTIONS -->
+                                    <td>
+
+                                        <div class="actions">
+
+                                            @if (user.AccountStatus ==
+                                                UserAccountStatus.Pending)
+                                            {
+                                                <a class="view-link"
+                                                   asp-controller="Users"
+                                                   asp-action="Review"
+                                                   asp-route-id="@user.Id">
+                                                    Review
+                                                </a>
+                                            }
+                                            else
+                                            {
+                                                <a class="view-link"
+                                                   asp-controller="Users"
+                                                   asp-action="Details"
+                                                   asp-route-id="@user.Id">
+                                                    View
+                                                </a>
+                                            }
+
+                                            <button class="more-button"
+                                                    type="button"
+                                                    aria-label="More actions">
+                                                ...
+                                            </button>
+
+                                        </div>
+
+                                    </td>
+
+                                </tr>
+                            }
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-state">
+
+                        <div class="empty-icon">
+                            U
+                        </div>
+
+                        <div class="empty-title">
+                            No users found
+                        </div>
+
+                        <div class="empty-text">
+                            No user accounts match the selected filters.
+                        </div>
+
+                    </div>
+                }
+
+                <div class="card-note">
+                    Admins can approve registrations, assign roles,
+                    suspend accounts and review position-change requests.
+                </div>
+
+            </section>
+
+        </div>
+
+    </main>
+
+</div>
+
+</body>
+</html>

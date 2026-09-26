@@ -9,11 +9,6 @@ namespace RESK.WIL.Controllers
         private readonly SignInManager<IdentityUser> _signInManager;
         private readonly UserManager<IdentityUser> _userManager;
 
-
-        // =========================================================
-        // CONSTRUCTOR
-        // =========================================================
-
         public AccountController(
             SignInManager<IdentityUser> signInManager,
             UserManager<IdentityUser> userManager)
@@ -22,20 +17,81 @@ namespace RESK.WIL.Controllers
             _userManager = userManager;
         }
 
-
         // =========================================================
-        // LOGIN - GET
+        // ROLE-BASED REDIRECT
         // =========================================================
 
-        [HttpGet]
-        public IActionResult Login()
+        private async Task<IActionResult> RedirectUserByRole(
+            IdentityUser user)
         {
-            if (User.Identity != null &&
-                User.Identity.IsAuthenticated)
+            // ADMIN
+            if (await _userManager.IsInRoleAsync(user, "Admin") ||
+                await _userManager.IsInRoleAsync(user, "Administrator"))
             {
                 return RedirectToAction(
                     "Index",
-                    "Proposal");
+                    "Splash",
+                    new
+                    {
+                        destination = "admin"
+                    });
+            }
+
+            // PRODUCER
+            if (await _userManager.IsInRoleAsync(user, "Producer"))
+            {
+                return RedirectToAction(
+                    "Index",
+                    "Splash",
+                    new
+                    {
+                        destination = "producer"
+                    });
+            }
+
+            // REVIEWER
+            if (await _userManager.IsInRoleAsync(user, "Reviewer"))
+            {
+                return RedirectToAction(
+                    "Index",
+                    "Splash",
+                    new
+                    {
+                        destination = "reviewer"
+                    });
+            }
+
+            // INVALID / UNKNOWN ROLE
+            await _signInManager.SignOutAsync();
+
+            TempData["LoginError"] =
+                "Your account does not have a valid system role.";
+
+            return RedirectToAction(
+                "Index",
+                "Splash",
+                new
+                {
+                    destination = "login"
+                });
+        }
+
+
+        // =========================================================
+        // LOGIN GET
+        // =========================================================
+
+        [HttpGet]
+        public async Task<IActionResult> Login()
+        {
+            /*
+             * When the normal application splash redirects
+             * to Login, clear any old authentication session.
+             */
+
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                await _signInManager.SignOutAsync();
             }
 
             return View();
@@ -43,7 +99,7 @@ namespace RESK.WIL.Controllers
 
 
         // =========================================================
-        // LOGIN - POST
+        // LOGIN POST
         // =========================================================
 
         [HttpPost]
@@ -53,10 +109,8 @@ namespace RESK.WIL.Controllers
             string password,
             bool rememberMe)
         {
-            // Preserve entered email and Remember Me state
             ViewBag.Email = email;
             ViewBag.RememberMe = rememberMe;
-
 
             // -----------------------------------------------------
             // EMAIL VALIDATION
@@ -82,7 +136,6 @@ namespace RESK.WIL.Controllers
                         "Please enter a valid email address.");
                 }
             }
-
 
             // -----------------------------------------------------
             // PASSWORD VALIDATION
@@ -95,26 +148,18 @@ namespace RESK.WIL.Controllers
                     "Please enter your password.");
             }
 
-
-            // -----------------------------------------------------
-            // STOP IF VALIDATION FAILED
-            // -----------------------------------------------------
-
             if (!ModelState.IsValid)
             {
                 return View();
             }
 
-
             // -----------------------------------------------------
-            // FIND USER
+            // FIND IDENTITY USER
             // -----------------------------------------------------
 
             var user =
                 await _userManager.FindByEmailAsync(email);
 
-
-            // Do not reveal whether the email exists.
             if (user == null)
             {
                 ModelState.AddModelError(
@@ -124,9 +169,8 @@ namespace RESK.WIL.Controllers
                 return View();
             }
 
-
             // -----------------------------------------------------
-            // ATTEMPT LOGIN
+            // SIGN USER IN
             // -----------------------------------------------------
 
             var result =
@@ -136,21 +180,36 @@ namespace RESK.WIL.Controllers
                     rememberMe,
                     lockoutOnFailure: true);
 
-
             // -----------------------------------------------------
             // SUCCESS
             // -----------------------------------------------------
 
             if (result.Succeeded)
             {
-                return RedirectToAction(
-                    "Index",
-                    "Proposal");
+                /*
+                 * Admin:
+                 *
+                 * Login
+                 *   ↓
+                 * Splash
+                 *   ↓
+                 * Admin Dashboard
+                 *
+                 *
+                 * Producer:
+                 *
+                 * Login
+                 *   ↓
+                 * Splash
+                 *   ↓
+                 * Producer Dashboard
+                 */
+
+                return await RedirectUserByRole(user);
             }
 
-
             // -----------------------------------------------------
-            // LOCKED ACCOUNT
+            // LOCKED OUT
             // -----------------------------------------------------
 
             if (result.IsLockedOut)
@@ -162,9 +221,8 @@ namespace RESK.WIL.Controllers
                 return View();
             }
 
-
             // -----------------------------------------------------
-            // SIGN IN NOT ALLOWED
+            // NOT ALLOWED
             // -----------------------------------------------------
 
             if (result.IsNotAllowed)
@@ -176,9 +234,8 @@ namespace RESK.WIL.Controllers
                 return View();
             }
 
-
             // -----------------------------------------------------
-            // TWO FACTOR AUTHENTICATION
+            // TWO FACTOR
             // -----------------------------------------------------
 
             if (result.RequiresTwoFactor)
@@ -190,9 +247,8 @@ namespace RESK.WIL.Controllers
                 return View();
             }
 
-
             // -----------------------------------------------------
-            // INVALID CREDENTIALS
+            // INCORRECT LOGIN
             // -----------------------------------------------------
 
             ModelState.AddModelError(
@@ -204,26 +260,18 @@ namespace RESK.WIL.Controllers
 
 
         // =========================================================
-        // REGISTER - GET
+        // REGISTER GET
         // =========================================================
 
         [HttpGet]
         public IActionResult Register()
         {
-            if (User.Identity != null &&
-                User.Identity.IsAuthenticated)
-            {
-                return RedirectToAction(
-                    "Index",
-                    "Proposal");
-            }
-
             return View();
         }
 
 
         // =========================================================
-        // REGISTER - POST
+        // REGISTER POST
         // =========================================================
 
         [HttpPost]
@@ -233,9 +281,7 @@ namespace RESK.WIL.Controllers
             string password,
             string confirmPassword)
         {
-            // Preserve entered email
             ViewBag.Email = email;
-
 
             // -----------------------------------------------------
             // EMAIL VALIDATION
@@ -262,9 +308,8 @@ namespace RESK.WIL.Controllers
                 }
             }
 
-
             // -----------------------------------------------------
-            // PASSWORD REQUIRED
+            // PASSWORD VALIDATION
             // -----------------------------------------------------
 
             if (string.IsNullOrWhiteSpace(password))
@@ -275,21 +320,12 @@ namespace RESK.WIL.Controllers
             }
             else
             {
-                // -------------------------------------------------
-                // MINIMUM LENGTH
-                // -------------------------------------------------
-
                 if (password.Length < 8)
                 {
                     ModelState.AddModelError(
                         "password",
                         "Password must contain at least 8 characters.");
                 }
-
-
-                // -------------------------------------------------
-                // UPPERCASE
-                // -------------------------------------------------
 
                 if (!password.Any(char.IsUpper))
                 {
@@ -298,22 +334,12 @@ namespace RESK.WIL.Controllers
                         "Password must contain at least one uppercase letter.");
                 }
 
-
-                // -------------------------------------------------
-                // LOWERCASE
-                // -------------------------------------------------
-
                 if (!password.Any(char.IsLower))
                 {
                     ModelState.AddModelError(
                         "password",
                         "Password must contain at least one lowercase letter.");
                 }
-
-
-                // -------------------------------------------------
-                // NUMBER
-                // -------------------------------------------------
 
                 if (!password.Any(char.IsDigit))
                 {
@@ -322,12 +348,8 @@ namespace RESK.WIL.Controllers
                         "Password must contain at least one number.");
                 }
 
-
-                // -------------------------------------------------
-                // SPECIAL CHARACTER
-                // -------------------------------------------------
-
-                if (!password.Any(character =>
+                if (!password.Any(
+                    character =>
                         !char.IsLetterOrDigit(character)))
                 {
                     ModelState.AddModelError(
@@ -336,9 +358,8 @@ namespace RESK.WIL.Controllers
                 }
             }
 
-
             // -----------------------------------------------------
-            // CONFIRM PASSWORD REQUIRED
+            // CONFIRM PASSWORD
             // -----------------------------------------------------
 
             if (string.IsNullOrWhiteSpace(confirmPassword))
@@ -347,14 +368,8 @@ namespace RESK.WIL.Controllers
                     "confirmPassword",
                     "Please confirm your password.");
             }
-
-
-            // -----------------------------------------------------
-            // PASSWORDS MUST MATCH
-            // -----------------------------------------------------
-
-            if (!string.IsNullOrWhiteSpace(password) &&
-                !string.IsNullOrWhiteSpace(confirmPassword) &&
+            else if (
+                !string.IsNullOrWhiteSpace(password) &&
                 password != confirmPassword)
             {
                 ModelState.AddModelError(
@@ -362,24 +377,17 @@ namespace RESK.WIL.Controllers
                     "Passwords do not match.");
             }
 
-
-            // -----------------------------------------------------
-            // STOP IF BASIC VALIDATION FAILED
-            // -----------------------------------------------------
-
             if (!ModelState.IsValid)
             {
                 return View();
             }
 
-
             // -----------------------------------------------------
-            // CHECK EXISTING ACCOUNT
+            // CHECK FOR EXISTING ACCOUNT
             // -----------------------------------------------------
 
             var existingUser =
                 await _userManager.FindByEmailAsync(email);
-
 
             if (existingUser != null)
             {
@@ -390,9 +398,8 @@ namespace RESK.WIL.Controllers
                 return View();
             }
 
-
             // -----------------------------------------------------
-            // CREATE IDENTITY USER
+            // CREATE IDENTITY ACCOUNT
             // -----------------------------------------------------
 
             var user =
@@ -402,106 +409,99 @@ namespace RESK.WIL.Controllers
                     Email = email
                 };
 
-
-            var result =
+            var createResult =
                 await _userManager.CreateAsync(
                     user,
                     password);
 
-
-            // -----------------------------------------------------
-            // ACCOUNT CREATED
-            // -----------------------------------------------------
-
-            if (result.Succeeded)
+            if (!createResult.Succeeded)
             {
-                // Every public registration becomes a Producer.
-                var roleResult =
-                    await _userManager.AddToRoleAsync(
-                        user,
-                        "Producer");
-
-
-                // -------------------------------------------------
-                // ROLE ASSIGNMENT FAILED
-                // -------------------------------------------------
-
-                if (!roleResult.Succeeded)
+                foreach (var error in createResult.Errors)
                 {
-                    // Roll back the user account so that we don't
-                    // leave an account without the required role.
-                    await _userManager.DeleteAsync(user);
-
-
-                    foreach (var error in roleResult.Errors)
-                    {
-                        ModelState.AddModelError(
-                            string.Empty,
-                            error.Description);
-                    }
-
-
                     ModelState.AddModelError(
                         string.Empty,
-                        "The account could not be assigned the Producer role.");
-
-
-                    return View();
+                        error.Description);
                 }
 
-
-                // -------------------------------------------------
-                // SUCCESS
-                // -------------------------------------------------
-
-                TempData["SuccessMessage"] =
-                    "Account created successfully. You can now sign in.";
-
-
-                return RedirectToAction(
-                    "Login",
-                    "Account");
+                return View();
             }
 
+            // =====================================================
+            // EVERY PUBLIC SIGN-UP IS A PRODUCER
+            // =====================================================
 
-            // -----------------------------------------------------
-            // IDENTITY VALIDATION ERRORS
-            // -----------------------------------------------------
+            var roleResult =
+                await _userManager.AddToRoleAsync(
+                    user,
+                    "Producer");
 
-            foreach (var error in result.Errors)
+            if (!roleResult.Succeeded)
             {
+                /*
+                 * If Producer role assignment fails,
+                 * delete the incomplete Identity account.
+                 */
+
+                await _userManager.DeleteAsync(user);
+
+                foreach (var error in roleResult.Errors)
+                {
+                    ModelState.AddModelError(
+                        string.Empty,
+                        error.Description);
+                }
+
                 ModelState.AddModelError(
                     string.Empty,
-                    error.Description);
+                    "The account could not be assigned the Producer role.");
+
+                return View();
             }
 
+            // =====================================================
+            // AUTOMATICALLY LOGIN NEW PRODUCER
+            // =====================================================
 
-            return View();
+            /*
+             * IMPORTANT:
+             *
+             * We do NOT redirect back to Login here.
+             *
+             * The newly registered Producer is immediately
+             * authenticated.
+             */
+
+            await _signInManager.SignInAsync(
+                user,
+                isPersistent: false);
+
+            // =====================================================
+            // SIGN UP -> SPLASH -> PRODUCER DASHBOARD
+            // =====================================================
+
+            return RedirectToAction(
+                "Index",
+                "Splash",
+                new
+                {
+                    destination = "producer"
+                });
         }
 
 
         // =========================================================
-        // FORGOT PASSWORD - GET
+        // FORGOT PASSWORD GET
         // =========================================================
 
         [HttpGet]
         public IActionResult ForgotPassword()
         {
-            if (User.Identity != null &&
-                User.Identity.IsAuthenticated)
-            {
-                return RedirectToAction(
-                    "Index",
-                    "Proposal");
-            }
-
-
             return View();
         }
 
 
         // =========================================================
-        // FORGOT PASSWORD - POST
+        // FORGOT PASSWORD POST
         // =========================================================
 
         [HttpPost]
@@ -510,11 +510,6 @@ namespace RESK.WIL.Controllers
             string email)
         {
             ViewBag.Email = email;
-
-
-            // -----------------------------------------------------
-            // EMAIL REQUIRED
-            // -----------------------------------------------------
 
             if (string.IsNullOrWhiteSpace(email))
             {
@@ -525,17 +520,10 @@ namespace RESK.WIL.Controllers
                 return View();
             }
 
-
             email = email.Trim();
-
-
-            // -----------------------------------------------------
-            // EMAIL FORMAT
-            // -----------------------------------------------------
 
             var emailValidator =
                 new EmailAddressAttribute();
-
 
             if (!emailValidator.IsValid(email))
             {
@@ -546,60 +534,18 @@ namespace RESK.WIL.Controllers
                 return View();
             }
 
-
-            // -----------------------------------------------------
-            // FIND ACCOUNT
-            // -----------------------------------------------------
-
             var user =
                 await _userManager.FindByEmailAsync(email);
 
-
-            /*
-             * IMPORTANT:
-             *
-             * We intentionally return the same message whether
-             * or not the account exists.
-             *
-             * This prevents attackers from using this page to
-             * discover registered email addresses.
-             */
-
-
             if (user != null)
             {
-                /*
-                 * Generate a secure ASP.NET Identity password
-                 * reset token.
-                 *
-                 * Later, when email delivery is configured,
-                 * this token will be placed inside the reset
-                 * password link sent to the user.
-                 */
-
-                var token =
+                _ =
                     await _userManager
                         .GeneratePasswordResetTokenAsync(user);
-
-
-                /*
-                 * DO NOT display the token in the browser.
-                 * DO NOT put it into TempData.
-                 * DO NOT log it in production.
-                 *
-                 * The next step will be connecting this token
-                 * to the ResetPassword page/email workflow.
-                 */
             }
-
-
-            // -----------------------------------------------------
-            // GENERIC SUCCESS MESSAGE
-            // -----------------------------------------------------
 
             TempData["ForgotPasswordMessage"] =
                 "If an account exists for that email address, password reset instructions will be sent to it.";
-
 
             return RedirectToAction(
                 nameof(ForgotPasswordConfirmation));
@@ -627,10 +573,21 @@ namespace RESK.WIL.Controllers
         {
             await _signInManager.SignOutAsync();
 
+            /*
+             * Logout
+             *   ↓
+             * Splash
+             *   ↓
+             * Login
+             */
 
             return RedirectToAction(
-                "Login",
-                "Account");
+                "Index",
+                "Splash",
+                new
+                {
+                    destination = "login"
+                });
         }
 
 

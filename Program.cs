@@ -26,8 +26,7 @@ builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 builder.Services
     .AddDefaultIdentity<IdentityUser>(options =>
     {
-        // Email confirmation is disabled for development/testing
-        // so newly created accounts can sign in immediately.
+        // Email confirmation disabled for development/testing
         options.SignIn.RequireConfirmedAccount = false;
 
         // Password security
@@ -43,7 +42,7 @@ builder.Services
         options.Lockout.DefaultLockoutTimeSpan =
             TimeSpan.FromMinutes(15);
 
-        // Email
+        // Require unique email addresses
         options.User.RequireUniqueEmail = true;
     })
     .AddRoles<IdentityRole>()
@@ -136,17 +135,17 @@ app.Use(async (context, next) =>
 // ROUTES
 // =====================================================
 
-// Application starts on the splash screen
+// Application always starts on the Splash screen.
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Splash}/{action=Index}/{id?}");
 
-// Keep Identity Razor Pages available
+// Keep Identity Razor Pages available.
 app.MapRazorPages();
 
 
 // =====================================================
-// CREATE SYSTEM ROLES
+// CREATE SYSTEM ROLES + DEVELOPMENT ADMIN
 // =====================================================
 
 using (var scope = app.Services.CreateScope())
@@ -154,6 +153,15 @@ using (var scope = app.Services.CreateScope())
     var roleManager =
         scope.ServiceProvider
             .GetRequiredService<RoleManager<IdentityRole>>();
+
+    var userManager =
+        scope.ServiceProvider
+            .GetRequiredService<UserManager<IdentityUser>>();
+
+
+    // -------------------------------------------------
+    // CREATE SYSTEM ROLES
+    // -------------------------------------------------
 
     string[] roles =
     {
@@ -164,24 +172,154 @@ using (var scope = app.Services.CreateScope())
 
     foreach (var role in roles)
     {
-        // Only create the role if it does not already exist
         if (!await roleManager.RoleExistsAsync(role))
         {
-            var result =
+            var roleResult =
                 await roleManager.CreateAsync(
                     new IdentityRole(role));
 
-            if (!result.Succeeded)
+            if (!roleResult.Succeeded)
             {
                 var errors =
                     string.Join(
                         ", ",
-                        result.Errors.Select(
+                        roleResult.Errors.Select(
                             error => error.Description));
 
                 throw new Exception(
                     $"Failed to create role '{role}': {errors}");
             }
+        }
+    }
+
+
+    // -------------------------------------------------
+    // DEVELOPMENT ADMIN ACCOUNT
+    // -------------------------------------------------
+
+    /*
+     * This Admin account is created separately from
+     * normal public registration.
+     *
+     * Public registration creates Producer accounts.
+     * This account receives ONLY the Admin role.
+     *
+     * IMPORTANT:
+     * Move these credentials to User Secrets or another
+     * secure configuration source before production.
+     */
+
+    const string adminEmail =
+        "admin@resk.co.za";
+
+    const string adminPassword =
+        "R3SK!Admin#94_Vault$K7p";
+
+
+    // -------------------------------------------------
+    // FIND EXISTING ADMIN
+    // -------------------------------------------------
+
+    var adminUser =
+        await userManager.FindByEmailAsync(
+            adminEmail);
+
+
+    // -------------------------------------------------
+    // CREATE ADMIN IF IT DOES NOT EXIST
+    // -------------------------------------------------
+
+    if (adminUser == null)
+    {
+        adminUser =
+            new IdentityUser
+            {
+                UserName = adminEmail,
+                Email = adminEmail,
+                EmailConfirmed = true
+            };
+
+
+        var createAdminResult =
+            await userManager.CreateAsync(
+                adminUser,
+                adminPassword);
+
+
+        if (!createAdminResult.Succeeded)
+        {
+            var errors =
+                string.Join(
+                    ", ",
+                    createAdminResult.Errors.Select(
+                        error => error.Description));
+
+            throw new Exception(
+                $"Failed to create Admin account: {errors}");
+        }
+    }
+
+
+    // -------------------------------------------------
+    // ENSURE ADMIN ROLE
+    // -------------------------------------------------
+
+    if (!await userManager.IsInRoleAsync(
+            adminUser,
+            "Admin"))
+    {
+        var addAdminRoleResult =
+            await userManager.AddToRoleAsync(
+                adminUser,
+                "Admin");
+
+
+        if (!addAdminRoleResult.Succeeded)
+        {
+            var errors =
+                string.Join(
+                    ", ",
+                    addAdminRoleResult.Errors.Select(
+                        error => error.Description));
+
+            throw new Exception(
+                $"Failed to assign Admin role: {errors}");
+        }
+    }
+
+
+    // -------------------------------------------------
+    // REMOVE PRODUCER ROLE FROM ADMIN
+    // -------------------------------------------------
+
+    /*
+     * If this email was previously registered as a
+     * Producer, remove that role.
+     *
+     * This keeps the Admin account separate from
+     * Producer accounts.
+     */
+
+    if (await userManager.IsInRoleAsync(
+            adminUser,
+            "Producer"))
+    {
+        var removeProducerResult =
+            await userManager.RemoveFromRoleAsync(
+                adminUser,
+                "Producer");
+
+
+        if (!removeProducerResult.Succeeded)
+        {
+            var errors =
+                string.Join(
+                    ", ",
+                    removeProducerResult.Errors.Select(
+                        error => error.Description));
+
+            throw new Exception(
+                $"Failed to remove Producer role from Admin: {errors}");
         }
     }
 }
