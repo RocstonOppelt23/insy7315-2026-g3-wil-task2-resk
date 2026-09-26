@@ -1,198 +1,461 @@
 ﻿@{
     Layout = null;
+    ViewData["Title"] = "R.E.S.K Software Studio";
 }
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
+
     <meta name="viewport"
           content="width=device-width, initial-scale=1.0" />
 
     <title>R.E.S.K Software Studio</title>
 
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
 
-        html,
-        body {
-            width: 100%;
-            height: 100%;
-        }
+            /* =========================================================
+                       RESET
+                    ========================================================= */
 
-        body {
-            overflow: hidden;
-            font-family: "Segoe UI", Arial, sans-serif;
-            background: #0D172B;
-        }
-
-        /* ==============================
-           SPLASH SCREEN
-        ============================== */
-
-        .splash-screen {
-            width: 100vw;
-            height: 100vh;
-
-            display: flex;
-            flex-direction: column;
-
-            justify-content: center;
-            align-items: center;
-
-            background: #0D172B;
-        }
-
-        /* ==============================
-           R.E.S.K LOGO
-        ============================== */
-
-        .resk-logo {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-
-            animation: logoEnter 0.8s ease-out;
-        }
-
-        /* Cyan R square */
-
-        .logo-box {
-            width: 64px;
-            height: 64px;
-
-            display: flex;
-            align-items: center;
-            justify-content: center;
-
-            border: 2px solid #12B9CB;
-            border-radius: 16px;
-
-            color: #12B9CB;
-
-            font-size: 29px;
-            font-weight: 500;
-
-            background: rgba(18, 185, 203, 0.04);
-        }
-
-        /* Right side of logo */
-
-        .logo-text {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-
-        .logo-name {
-            color: #FFFFFF;
-
-            font-size: 25px;
-            font-weight: 800;
-
-            letter-spacing: 1px;
-
-            line-height: 1;
-        }
-
-        .logo-subtitle {
-            margin-top: 9px;
-
-            color: #FFFFFF;
-
-            font-size: 10px;
-            font-weight: 600;
-
-            letter-spacing: 0.1px;
-        }
-
-        /* ==============================
-           LOADER
-        ============================== */
-
-        .loader {
-            width: 42px;
-            height: 42px;
-
-            margin-top: 55px;
-
-            border: 4px solid rgba(255, 255, 255, 0.15);
-
-            border-top-color: #12B9CB;
-
-            border-radius: 50%;
-
-            animation: spin 0.8s linear infinite;
-        }
-
-        .loading-text {
-            margin-top: 16px;
-
-            color: rgba(255, 255, 255, 0.65);
-
-            font-size: 11px;
-            font-weight: 600;
-
-            letter-spacing: 3px;
-        }
-
-        /* ==============================
-           ANIMATIONS
-        ============================== */
-
-        @@keyframes spin {
-
-            0% {
-                transform: rotate(0deg);
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
             }
 
-            100% {
-                transform: rotate(360deg);
-            }
-        }
-
-        @@keyframes logoEnter {
-
-            0% {
-                opacity: 0;
-                transform: translateY(15px) scale(0.95);
+            html,
+            body {
+                width: 100%;
+                height: 100%;
             }
 
-            100% {
+            html {
+                background: #0d172b;
+            }
+
+            body {
+                overflow: hidden;
+                font-family: "Segoe UI", Arial, sans-serif;
+                background: #0d172b;
+            }
+
+
+            /* =========================================================
+                       SPLASH SCREEN
+                    ========================================================= */
+
+            .splash-screen {
+                position: fixed;
+                inset: 0;
+                width: 100%;
+                height: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                overflow: hidden;
+                background: #0d172b;
+                /*
+                            Initial visible state.
+                        */
+
                 opacity: 1;
-                transform: translateY(0) scale(1);
+                transform: scale(1);
+                /*
+                            Smooth fade out before Login loads.
+                        */
+
+                transition: opacity 0.75s cubic-bezier(0.4, 0, 0.2, 1), transform 0.75s cubic-bezier(0.22, 1, 0.36, 1);
             }
-        }
 
-        /* ==============================
-           MOBILE
-        ============================== */
 
-        @@media (max-width: 600px) {
+                /*
+                        JavaScript adds this class before
+                        navigating to /Account/Login.
+                    */
+
+                .splash-screen.fade-out {
+                    opacity: 0;
+                    transform: scale(1.015);
+                    pointer-events: none;
+                }
+
+
+            /* =========================================================
+                       BACKGROUND CIRCLES
+                    ========================================================= */
+
+            .background-circle {
+                position: absolute;
+                border-radius: 50%;
+                pointer-events: none;
+                will-change: transform;
+            }
+
+
+            /* TOP LEFT */
+
+            .circle-one {
+                width: 220px;
+                height: 220px;
+                top: 7%;
+                left: 5%;
+                background: rgba(18, 185, 203, 0.025);
+                border: 1px solid rgba(18, 185, 203, 0.04);
+                animation: floatOne 9s ease-in-out infinite;
+            }
+
+
+            /* TOP RIGHT */
+
+            .circle-two {
+                width: 170px;
+                height: 170px;
+                top: 16%;
+                right: 10%;
+                background: transparent;
+                border: 1px solid rgba(18, 185, 203, 0.08);
+                animation: floatTwo 11s ease-in-out infinite;
+            }
+
+
+            /* BOTTOM LEFT */
+
+            .circle-three {
+                width: 115px;
+                height: 115px;
+                left: 13%;
+                bottom: 14%;
+                background: transparent;
+                border: 1px solid rgba(18, 185, 203, 0.065);
+                animation: floatThree 10s ease-in-out infinite;
+            }
+
+
+            /* BOTTOM RIGHT */
+
+            .circle-four {
+                width: 240px;
+                height: 240px;
+                right: 4%;
+                bottom: 5%;
+                background: rgba(18, 185, 203, 0.02);
+                border: 1px solid rgba(18, 185, 203, 0.035);
+                animation: floatFour 12s ease-in-out infinite;
+            }
+
+
+            /* =========================================================
+                       CIRCLE MOVEMENT
+                    ========================================================= */
+
+            @@keyframes floatOne {
+
+                0%,
+                100% {
+                    transform: translate3d(0, 0, 0) scale(1);
+                }
+
+                50% {
+                    transform: translate3d(22px, 18px, 0) scale(1.04);
+                }
+            }
+
+
+            @@keyframes floatTwo {
+
+                0%,
+                100% {
+                    transform: translate3d(0, 0, 0);
+                }
+
+                50% {
+                    transform: translate3d(-18px, 22px, 0);
+                }
+            }
+
+
+            @@keyframes floatThree {
+
+                0%,
+                100% {
+                    transform: translate3d(0, 0, 0);
+                }
+
+                50% {
+                    transform: translate3d(20px, -17px, 0);
+                }
+            }
+
+
+            @@keyframes floatFour {
+
+                0%,
+                100% {
+                    transform: translate3d(0, 0, 0) scale(1);
+                }
+
+                50% {
+                    transform: translate3d(-20px, -20px, 0) scale(1.035);
+                }
+            }
+
+
+            /* =========================================================
+                       CENTER CONTENT
+                    ========================================================= */
+
+            .splash-content {
+                position: relative;
+                z-index: 10;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                opacity: 0;
+                animation: splashEnter 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+            }
+
+
+            @@keyframes splashEnter {
+
+                from {
+                    opacity: 0;
+                    transform: translateY(12px) scale(0.985);
+                }
+
+                to {
+                    opacity: 1;
+                    transform: translateY(-10px) scale(1);
+                }
+            }
+
+
+            /* =========================================================
+                       R.E.S.K LOGO
+                    ========================================================= */
+
+            .resk-logo {
+                display: flex;
+                align-items: center;
+                gap: 17px;
+            }
+
 
             .logo-box {
-                width: 58px;
-                height: 58px;
-
-                font-size: 27px;
+                width: 72px;
+                height: 72px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border: 2px solid #12b9cb;
+                border-radius: 17px;
+                background: rgba(18, 185, 203, 0.025);
+                color: #12b9cb;
+                font-size: 31px;
+                font-weight: 500;
+                animation: logoPulse 2.5s ease-in-out infinite;
             }
+
+
+            @@keyframes logoPulse {
+
+                0%,
+                100% {
+                    box-shadow: 0 0 0 rgba(18, 185, 203, 0);
+                }
+
+                50% {
+                    box-shadow: 0 0 28px rgba(18, 185, 203, 0.13);
+                }
+            }
+
+
+            .logo-copy {
+                display: flex;
+                flex-direction: column;
+            }
+
 
             .logo-name {
-                font-size: 23px;
+                color: #ffffff;
+                font-size: 28px;
+                font-weight: 800;
+                letter-spacing: 1.5px;
+                line-height: 1;
             }
+
 
             .logo-subtitle {
-                font-size: 9px;
+                margin-top: 9px;
+                color: rgba(255, 255, 255, 0.85);
+                font-size: 10px;
+                font-weight: 700;
+                letter-spacing: 0.3px;
             }
 
-            .loader {
-                margin-top: 45px;
+
+            /* =========================================================
+                       LOADING SECTION
+                    ========================================================= */
+
+            .loader-section {
+                margin-top: 48px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
             }
-        }
+
+
+            /* =========================================================
+                       CIRCULAR LOADER
+                    ========================================================= */
+
+            .spinner {
+                width: 38px;
+                height: 38px;
+                border: 3px solid rgba(255, 255, 255, 0.10);
+                border-top-color: #12b9cb;
+                border-right-color: rgba(18, 185, 203, 0.55);
+                border-radius: 50%;
+                box-shadow: 0 0 14px rgba(18, 185, 203, 0.05);
+                animation: spinnerRotate 0.8s linear infinite;
+            }
+
+
+            @@keyframes spinnerRotate {
+
+                from {
+                    transform: rotate(0deg);
+                }
+
+                to {
+                    transform: rotate(360deg);
+                }
+            }
+
+
+            /* =========================================================
+                       LOADING TEXT
+                    ========================================================= */
+
+            .loading-text {
+                margin-top: 17px;
+                color: rgba(255, 255, 255, 0.50);
+                font-size: 10px;
+                font-weight: 700;
+                letter-spacing: 3px;
+                line-height: 1;
+            }
+
+
+            .loading-dots {
+                display: inline-block;
+                width: 22px;
+                text-align: left;
+            }
+
+
+            /* =========================================================
+                       FOOTER
+                    ========================================================= */
+
+            .splash-footer {
+                position: absolute;
+                z-index: 10;
+                left: 50%;
+                bottom: 35px;
+                transform: translateX(-50%);
+                color: rgba(255, 255, 255, 0.25);
+                font-size: 10px;
+                white-space: nowrap;
+            }
+
+
+            /* =========================================================
+                       MOBILE
+                    ========================================================= */
+
+            @@media (max-width: 700px) {
+
+                .logo-box {
+                    width: 64px;
+                    height: 64px;
+                    border-radius: 15px;
+                    font-size: 28px;
+                }
+
+
+                .logo-name {
+                    font-size: 24px;
+                }
+
+
+                .logo-subtitle {
+                    font-size: 9px;
+                }
+
+
+                .loader-section {
+                    margin-top: 42px;
+                }
+
+
+                .circle-one {
+                    width: 150px;
+                    height: 150px;
+                    top: 8%;
+                    left: 5%;
+                }
+
+
+                .circle-two {
+                    width: 120px;
+                    height: 120px;
+                    top: 16%;
+                    right: 5%;
+                }
+
+
+                .circle-three {
+                    width: 85px;
+                    height: 85px;
+                    left: 8%;
+                    bottom: 12%;
+                }
+
+
+                .circle-four {
+                    width: 160px;
+                    height: 160px;
+                    right: 4%;
+                    bottom: 5%;
+                }
+
+
+                .splash-footer {
+                    bottom: 25px;
+                    font-size: 9px;
+                }
+            }
+
+
+            /* =========================================================
+                       REDUCED MOTION
+                    ========================================================= */
+
+            @@media (prefers-reduced-motion: reduce) {
+
+                .background-circle,
+                .logo-box {
+                    animation: none !important;
+                }
+
+
+                .splash-content {
+                    animation-duration: 0.01ms !important;
+                }
+            }
 
     </style>
 </head>
@@ -200,59 +463,274 @@
 
 <body>
 
-    <main class="splash-screen">
 
-        <!-- =========================
-             MANUALLY CODED R.E.S.K LOGO
-        ========================== -->
+    <main id="splashScreen"
+          class="splash-screen">
 
-        <div class="resk-logo">
 
-            <div class="logo-box">
-                R
-            </div>
+        <!-- =====================================================
+         MOVING BACKGROUND CIRCLES
+    ====================================================== -->
 
-            <div class="logo-text">
+        <div class="background-circle circle-one"></div>
 
-                <div class="logo-name">
-                    R.E.S.K
+        <div class="background-circle circle-two"></div>
+
+        <div class="background-circle circle-three"></div>
+
+        <div class="background-circle circle-four"></div>
+
+
+
+        <!-- =====================================================
+         CENTER CONTENT
+    ====================================================== -->
+
+        <section class="splash-content">
+
+
+            <!-- LOGO -->
+
+            <div class="resk-logo">
+
+
+                <div class="logo-box">
+
+                    R
+
                 </div>
 
-                <div class="logo-subtitle">
-                    SOFTWARE STUDIO
+
+                <div class="logo-copy">
+
+
+                    <div class="logo-name">
+
+                        R.E.S.K
+
+                    </div>
+
+
+                    <div class="logo-subtitle">
+
+                        SOFTWARE STUDIO
+
+                    </div>
+
+
                 </div>
 
+
             </div>
+
+
+
+            <!-- =================================================
+             CIRCULAR LOADING
+        ================================================== -->
+
+            <div class="loader-section">
+
+
+                <div class="spinner"></div>
+
+
+                <div class="loading-text">
+
+                    LOADING<span id="loadingDots"
+                                 class="loading-dots"></span>
+
+                </div>
+
+
+            </div>
+
+
+        </section>
+
+
+
+        <!-- =====================================================
+         FOOTER
+    ====================================================== -->
+
+        <div class="splash-footer">
+
+            Cape Town TV Workflow Management System
 
         </div>
 
-
-        <!-- =========================
-             LOADING SPINNER
-        ========================== -->
-
-        <div class="loader"></div>
-
-        <div class="loading-text">
-            LOADING
-        </div>
 
     </main>
 
 
-    <!-- =============================
-         5 SECOND REDIRECT
-    ============================== -->
 
     <script>
 
-        setTimeout(function () {
+            // ==========================================================
+            // ELEMENTS
+            // ==========================================================
 
-            window.location.replace('/Account/Login');
+            const splashScreen =
+                document.getElementById(
+                    "splashScreen"
+                );
 
-        }, 5000);
+
+            const loadingDots =
+                document.getElementById(
+                    "loadingDots"
+                );
+
+
+            let navigating = false;
+
+            let dotCount = 0;
+
+
+
+            // ==========================================================
+            // LOADING DOTS
+            // ==========================================================
+
+            const dotsInterval =
+                setInterval(
+                    function () {
+
+                        dotCount =
+                            (dotCount + 1) % 4;
+
+
+                        loadingDots.textContent =
+                            ".".repeat(dotCount);
+
+                    },
+                    350
+                );
+
+
+
+            // ==========================================================
+            // FADE SPLASH INTO LOGIN
+            // ==========================================================
+
+            function goToLogin() {
+
+                /*
+                    Prevent duplicate navigation.
+                */
+
+                if (navigating) {
+                    return;
+                }
+
+
+                navigating = true;
+
+
+                clearInterval(
+                    dotsInterval
+                );
+
+
+                /*
+                    Start the splash fade.
+
+                    The entire navy splash screen,
+                    logo, spinner, text and circles
+                    fade together.
+                */
+
+                splashScreen.classList.add(
+                    "fade-out"
+                );
+
+
+                /*
+                    IMPORTANT:
+
+                    Wait until the fade-out has
+                    completed BEFORE loading Login.
+
+                    The Login page then performs its
+                    own pageEnter fade animation.
+
+                    Splash
+                        ↓
+                    fade out
+                        ↓
+                    Login loads
+                        ↓
+                    Login fades in
+                */
+
+                setTimeout(
+                    function () {
+
+                        window.location.replace(
+                            "/Account/Login"
+                        );
+
+                    },
+                    750
+                );
+
+            }
+
+
+
+            // ==========================================================
+            // SPLASH TIMER
+            // ==========================================================
+
+            /*
+                Show splash normally for 4.25 seconds.
+
+                Then:
+
+                4.25s
+                +
+                0.75s fade
+
+                = approximately 5 seconds total.
+            */
+
+            setTimeout(
+                goToLogin,
+                4250
+            );
+
+
+
+            // ==========================================================
+            // BACK BUTTON / CACHE SAFETY
+            // ==========================================================
+
+            window.addEventListener(
+                "pageshow",
+                function (event) {
+
+                    if (event.persisted) {
+
+                        /*
+                            If the browser restores this
+                            page from cache, reset it.
+                        */
+
+                        splashScreen.classList.remove(
+                            "fade-out"
+                        );
+
+
+                        navigating = false;
+
+                    }
+
+                }
+            );
 
     </script>
+
 
 </body>
 </html>
