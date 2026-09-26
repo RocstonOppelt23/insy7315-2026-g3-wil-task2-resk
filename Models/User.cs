@@ -1,8 +1,8 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Collections.Generic;
 
-namespace WIL.Models
+namespace RESK.WIL.Models
 {
     //----------User----------//
     public class User : IValidatableObject
@@ -43,7 +43,10 @@ namespace WIL.Models
         public int ActiveSessions { get; set; }
 
         //----------Account----------//
-        public string AccountStatus { get; set; } = string.Empty;
+        public UserAccountStatus AccountStatus { get; set; }
+    = UserAccountStatus.Pending;
+        public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
+        public DateTime UpdatedAtUtc { get; set; } = DateTime.UtcNow;
         public string PositionChangeRequest { get; set; } = string.Empty;
         // assigned role represents the user role dont forget to add it in the page
 
@@ -105,6 +108,14 @@ namespace WIL.Models
 
 
     //----------Enums----------//
+    public enum UserAccountStatus
+    {
+        Pending = 1,
+        Active = 2,
+        Inactive = 3,
+        Disabled = 4
+    }
+
     public enum AccessScope
     {
         Own = 1,
