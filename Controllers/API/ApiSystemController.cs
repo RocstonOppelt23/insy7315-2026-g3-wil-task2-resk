@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RESK.WIL.Data;
@@ -17,8 +17,17 @@ namespace RESK.WIL.Controllers
         {
             _db = db;
         }
+        public class ApplicationDbContext : DbContext
+        {
+            public ApplicationDbContext(
+                DbContextOptions<ApplicationDbContext> options) : base(options)
+            {
+            }
 
-        // GET /api/system/features
+            public DbSet<SystemFeatureSettings> SystemFeatureSettings
+                => Set<SystemFeatureSettings>();
+        }
+        // GET /api/system
         [HttpGet]
         public async Task<ActionResult<SystemResponse>> Get(
             CancellationToken cancellationToken)
@@ -33,8 +42,8 @@ namespace RESK.WIL.Controllers
             return Ok(ToResponse(settings));
         }
 
-        // PUT /api/system/features
-        [HttpPut]
+        // PUT /api/system/update
+        [HttpPut("update")]
         [Authorize(Policy = "ManageSystemSettings")]
         public async Task<ActionResult<SystemResponse>> Update(
             [FromBody] UpdateSystemRequest request,
