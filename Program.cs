@@ -4,19 +4,88 @@ using RESK.WIL.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+// =====================================================
+// DATABASE
+// =====================================================
+
+var connectionString =
+    builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException(
+        "Connection string 'DefaultConnection' not found.");
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
+
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
+
+// =====================================================
+// ASP.NET CORE IDENTITY
+// =====================================================
+
+builder.Services
+    .AddDefaultIdentity<IdentityUser>(options =>
+    {
+        // Email confirmation disabled for development/testing
+        options.SignIn.RequireConfirmedAccount = false;
+
+        // Password security
+        options.Password.RequiredLength = 8;
+        options.Password.RequireDigit = true;
+        options.Password.RequireUppercase = true;
+        options.Password.RequireLowercase = true;
+        options.Password.RequireNonAlphanumeric = true;
+
+        // Lockout protection
+        options.Lockout.MaxFailedAccessAttempts = 5;
+
+        options.Lockout.DefaultLockoutTimeSpan =
+            TimeSpan.FromMinutes(15);
+
+        // Require unique email addresses
+        options.User.RequireUniqueEmail = true;
+    })
+    .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
+
+
+// =====================================================
+// COOKIE SECURITY
+// =====================================================
+
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.Cookie.HttpOnly = true;
+
+    options.Cookie.SecurePolicy =
+        CookieSecurePolicy.Always;
+
+    options.ExpireTimeSpan =
+        TimeSpan.FromMinutes(30);
+
+    options.SlidingExpiration = true;
+
+    // Custom login page
+    options.LoginPath = "/Account/Login";
+
+    // Custom access denied page
+    options.AccessDeniedPath = "/Account/AccessDenied";
+});
+
+
+// =====================================================
+// MVC
+// =====================================================
+
 builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+
+// =====================================================
+// ERROR HANDLING
+// =====================================================
+
 if (app.Environment.IsDevelopment())
 {
     app.UseMigrationsEndPoint();
@@ -24,20 +93,240 @@ if (app.Environment.IsDevelopment())
 else
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+
     app.UseHsts();
 }
 
+
+// =====================================================
+// MIDDLEWARE
+// =====================================================
+
 app.UseHttpsRedirection();
+
 app.UseStaticFiles();
 
 app.UseRouting();
 
+app.UseAuthentication();
+
 app.UseAuthorization();
 
+
+// =====================================================
+// SECURITY HEADERS
+// =====================================================
+
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.Append(
+        "Content-Security-Policy",
+        "default-src 'self'; " +
+        "script-src 'self' 'unsafe-inline'; " +
+        "style-src 'self' 'unsafe-inline'; " +
+        "img-src 'self' data:; " +
+        "object-src 'none';");
+
+    await next();
+});
+
+
+// =====================================================
+// ROUTES
+// =====================================================
+
+// Application always starts on the Splash screen.
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+    pattern: "{controller=Splash}/{action=Index}/{id?}");
+
+// Keep Identity Razor Pages available.
 app.MapRazorPages();
+
+
+// =====================================================
+// CREATE SYSTEM ROLES + DEVELOPMENT ADMIN
+// =====================================================
+
+using (var scope = app.Services.CreateScope())
+{
+    var roleManager =
+        scope.ServiceProvider
+            .GetRequiredService<RoleManager<IdentityRole>>();
+
+    var userManager =
+        scope.ServiceProvider
+            .GetRequiredService<UserManager<IdentityUser>>();
+
+
+    // -------------------------------------------------
+    // CREATE SYSTEM ROLES
+    // -------------------------------------------------
+
+    string[] roles =
+    {
+        "Producer",
+        "Reviewer",
+        "Admin"
+    };
+
+    foreach (var role in roles)
+    {
+        if (!await roleManager.RoleExistsAsync(role))
+        {
+            var roleResult =
+                await roleManager.CreateAsync(
+                    new IdentityRole(role));
+
+            if (!roleResult.Succeeded)
+            {
+                var errors =
+                    string.Join(
+                        ", ",
+                        roleResult.Errors.Select(
+                            error => error.Description));
+
+                throw new Exception(
+                    $"Failed to create role '{role}': {errors}");
+            }
+        }
+    }
+
+
+    // -------------------------------------------------
+    // DEVELOPMENT ADMIN ACCOUNT
+    // -------------------------------------------------
+
+    /*
+     * This Admin account is created separately from
+     * normal public registration.
+     *
+     * Public registration creates Producer accounts.
+     * This account receives ONLY the Admin role.
+     *
+     * IMPORTANT:
+     * Move these credentials to User Secrets or another
+     * secure configuration source before production.
+     */
+
+    const string adminEmail =
+        "admin@resk.co.za";
+
+    const string adminPassword =
+        "R3SK!Admin#94_Vault$K7p";
+
+
+    // -------------------------------------------------
+    // FIND EXISTING ADMIN
+    // -------------------------------------------------
+
+    var adminUser =
+        await userManager.FindByEmailAsync(
+            adminEmail);
+
+
+    // -------------------------------------------------
+    // CREATE ADMIN IF IT DOES NOT EXIST
+    // -------------------------------------------------
+
+    if (adminUser == null)
+    {
+        adminUser =
+            new IdentityUser
+            {
+                UserName = adminEmail,
+                Email = adminEmail,
+                EmailConfirmed = true
+            };
+
+
+        var createAdminResult =
+            await userManager.CreateAsync(
+                adminUser,
+                adminPassword);
+
+
+        if (!createAdminResult.Succeeded)
+        {
+            var errors =
+                string.Join(
+                    ", ",
+                    createAdminResult.Errors.Select(
+                        error => error.Description));
+
+            throw new Exception(
+                $"Failed to create Admin account: {errors}");
+        }
+    }
+
+
+    // -------------------------------------------------
+    // ENSURE ADMIN ROLE
+    // -------------------------------------------------
+
+    if (!await userManager.IsInRoleAsync(
+            adminUser,
+            "Admin"))
+    {
+        var addAdminRoleResult =
+            await userManager.AddToRoleAsync(
+                adminUser,
+                "Admin");
+
+
+        if (!addAdminRoleResult.Succeeded)
+        {
+            var errors =
+                string.Join(
+                    ", ",
+                    addAdminRoleResult.Errors.Select(
+                        error => error.Description));
+
+            throw new Exception(
+                $"Failed to assign Admin role: {errors}");
+        }
+    }
+
+
+    // -------------------------------------------------
+    // REMOVE PRODUCER ROLE FROM ADMIN
+    // -------------------------------------------------
+
+    /*
+     * If this email was previously registered as a
+     * Producer, remove that role.
+     *
+     * This keeps the Admin account separate from
+     * Producer accounts.
+     */
+
+    if (await userManager.IsInRoleAsync(
+            adminUser,
+            "Producer"))
+    {
+        var removeProducerResult =
+            await userManager.RemoveFromRoleAsync(
+                adminUser,
+                "Producer");
+
+
+        if (!removeProducerResult.Succeeded)
+        {
+            var errors =
+                string.Join(
+                    ", ",
+                    removeProducerResult.Errors.Select(
+                        error => error.Description));
+
+            throw new Exception(
+                $"Failed to remove Producer role from Admin: {errors}");
+        }
+    }
+}
+
+
+// =====================================================
+// RUN APPLICATION
+// =====================================================
 
 app.Run();
