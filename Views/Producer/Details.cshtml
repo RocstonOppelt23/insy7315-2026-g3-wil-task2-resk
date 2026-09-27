@@ -1,0 +1,40 @@
+﻿@model RESK.WIL.Models.Proposal
+
+<div class="card shadow border-0">
+
+    <div class="card-header bg-primary text-white">
+
+        <h3>
+            Proposal Details
+        </h3>
+
+    </div>
+
+    <div class="card-body">
+
+        <h4>@Model.Title</h4>
+
+        <hr />
+
+        <p>
+            <strong>Description:</strong>
+        </p>
+
+        <p>@Model.Description</p>
+
+        <p>
+            <strong>Category:</strong>
+            @Model.Category
+        </p>
+
+        <p>
+            <strong>Status:</strong>
+
+            <span class="badge bg-success">
+                @Model.Status
+            </span>
+        </p>
+
+    </div>
+
+</div>

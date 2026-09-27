@@ -4,6 +4,7 @@ using RESK.WIL.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
+
 // =====================================================
 // DATABASE
 // =====================================================
@@ -29,20 +30,36 @@ builder.Services
         // Email confirmation disabled for development/testing
         options.SignIn.RequireConfirmedAccount = false;
 
-        // Password security
+
+        // -------------------------------------------------
+        // PASSWORD SECURITY
+        // -------------------------------------------------
+
         options.Password.RequiredLength = 8;
+
         options.Password.RequireDigit = true;
+
         options.Password.RequireUppercase = true;
+
         options.Password.RequireLowercase = true;
+
         options.Password.RequireNonAlphanumeric = true;
 
-        // Lockout protection
+
+        // -------------------------------------------------
+        // LOCKOUT PROTECTION
+        // -------------------------------------------------
+
         options.Lockout.MaxFailedAccessAttempts = 5;
 
         options.Lockout.DefaultLockoutTimeSpan =
             TimeSpan.FromMinutes(15);
 
-        // Require unique email addresses
+
+        // -------------------------------------------------
+        // UNIQUE EMAIL
+        // -------------------------------------------------
+
         options.User.RequireUniqueEmail = true;
     })
     .AddRoles<IdentityRole>()
@@ -55,21 +72,39 @@ builder.Services
 
 builder.Services.ConfigureApplicationCookie(options =>
 {
+    // Prevent JavaScript from accessing authentication
+    // cookies.
+
     options.Cookie.HttpOnly = true;
+
+
+    // Only transmit authentication cookies over HTTPS.
 
     options.Cookie.SecurePolicy =
         CookieSecurePolicy.Always;
 
+
+    // Authentication session expires after 30 minutes.
+
     options.ExpireTimeSpan =
         TimeSpan.FromMinutes(30);
 
+
+    // Activity refreshes the authentication timeout.
+
     options.SlidingExpiration = true;
 
-    // Custom login page
-    options.LoginPath = "/Account/Login";
 
-    // Custom access denied page
-    options.AccessDeniedPath = "/Account/AccessDenied";
+    // Custom login page.
+
+    options.LoginPath =
+        "/Account/Login";
+
+
+    // Custom access denied page.
+
+    options.AccessDeniedPath =
+        "/Account/AccessDenied";
 });
 
 
@@ -78,6 +113,11 @@ builder.Services.ConfigureApplicationCookie(options =>
 // =====================================================
 
 builder.Services.AddControllersWithViews();
+
+
+// =====================================================
+// BUILD APPLICATION
+// =====================================================
 
 var app = builder.Build();
 
@@ -99,16 +139,36 @@ else
 
 
 // =====================================================
-// MIDDLEWARE
+// HTTPS
 // =====================================================
 
 app.UseHttpsRedirection();
 
+
+// =====================================================
+// STATIC FILES
+// =====================================================
+
 app.UseStaticFiles();
+
+
+// =====================================================
+// ROUTING
+// =====================================================
 
 app.UseRouting();
 
+
+// =====================================================
+// AUTHENTICATION
+// =====================================================
+
 app.UseAuthentication();
+
+
+// =====================================================
+// AUTHORIZATION
+// =====================================================
 
 app.UseAuthorization();
 
@@ -135,12 +195,20 @@ app.Use(async (context, next) =>
 // ROUTES
 // =====================================================
 
-// Application always starts on the Splash screen.
+// Application starts on the Splash screen.
+
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Splash}/{action=Index}/{id?}");
+    pattern:
+        "{controller=Splash}/{action=Index}/{id?}");
 
-// Keep Identity Razor Pages available.
+
+// =====================================================
+// IDENTITY RAZOR PAGES
+// =====================================================
+
+// Keep ASP.NET Core Identity Razor Pages available.
+
 app.MapRazorPages();
 
 
@@ -159,9 +227,9 @@ using (var scope = app.Services.CreateScope())
             .GetRequiredService<UserManager<IdentityUser>>();
 
 
-    // -------------------------------------------------
+    // =================================================
     // CREATE SYSTEM ROLES
-    // -------------------------------------------------
+    // =================================================
 
     string[] roles =
     {
@@ -169,6 +237,7 @@ using (var scope = app.Services.CreateScope())
         "Reviewer",
         "Admin"
     };
+
 
     foreach (var role in roles)
     {
@@ -178,13 +247,16 @@ using (var scope = app.Services.CreateScope())
                 await roleManager.CreateAsync(
                     new IdentityRole(role));
 
+
             if (!roleResult.Succeeded)
             {
                 var errors =
                     string.Join(
                         ", ",
                         roleResult.Errors.Select(
-                            error => error.Description));
+                            error =>
+                                error.Description));
+
 
                 throw new Exception(
                     $"Failed to create role '{role}': {errors}");
@@ -193,15 +265,16 @@ using (var scope = app.Services.CreateScope())
     }
 
 
-    // -------------------------------------------------
+    // =================================================
     // DEVELOPMENT ADMIN ACCOUNT
-    // -------------------------------------------------
+    // =================================================
 
     /*
      * This Admin account is created separately from
      * normal public registration.
      *
      * Public registration creates Producer accounts.
+     *
      * This account receives ONLY the Admin role.
      *
      * IMPORTANT:
@@ -216,18 +289,18 @@ using (var scope = app.Services.CreateScope())
         "R3SK!Admin#94_Vault$K7p";
 
 
-    // -------------------------------------------------
+    // =================================================
     // FIND EXISTING ADMIN
-    // -------------------------------------------------
+    // =================================================
 
     var adminUser =
         await userManager.FindByEmailAsync(
             adminEmail);
 
 
-    // -------------------------------------------------
+    // =================================================
     // CREATE ADMIN IF IT DOES NOT EXIST
-    // -------------------------------------------------
+    // =================================================
 
     if (adminUser == null)
     {
@@ -235,7 +308,9 @@ using (var scope = app.Services.CreateScope())
             new IdentityUser
             {
                 UserName = adminEmail,
+
                 Email = adminEmail,
+
                 EmailConfirmed = true
             };
 
@@ -252,7 +327,9 @@ using (var scope = app.Services.CreateScope())
                 string.Join(
                     ", ",
                     createAdminResult.Errors.Select(
-                        error => error.Description));
+                        error =>
+                            error.Description));
+
 
             throw new Exception(
                 $"Failed to create Admin account: {errors}");
@@ -260,9 +337,9 @@ using (var scope = app.Services.CreateScope())
     }
 
 
-    // -------------------------------------------------
+    // =================================================
     // ENSURE ADMIN ROLE
-    // -------------------------------------------------
+    // =================================================
 
     if (!await userManager.IsInRoleAsync(
             adminUser,
@@ -280,7 +357,9 @@ using (var scope = app.Services.CreateScope())
                 string.Join(
                     ", ",
                     addAdminRoleResult.Errors.Select(
-                        error => error.Description));
+                        error =>
+                            error.Description));
+
 
             throw new Exception(
                 $"Failed to assign Admin role: {errors}");
@@ -288,9 +367,9 @@ using (var scope = app.Services.CreateScope())
     }
 
 
-    // -------------------------------------------------
+    // =================================================
     // REMOVE PRODUCER ROLE FROM ADMIN
-    // -------------------------------------------------
+    // =================================================
 
     /*
      * If this email was previously registered as a
@@ -316,7 +395,9 @@ using (var scope = app.Services.CreateScope())
                 string.Join(
                     ", ",
                     removeProducerResult.Errors.Select(
-                        error => error.Description));
+                        error =>
+                            error.Description));
+
 
             throw new Exception(
                 $"Failed to remove Producer role from Admin: {errors}");
