@@ -1,28 +1,100 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Text.Json;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using RESK.WIL.Models;
 
 namespace RESK.WIL.Controllers
 {
     [Authorize(Roles = "Producer")]
     public class ProposalController : Controller
     {
-        [HttpGet]
-        public IActionResult Index()
-        {
-            return RedirectToAction(nameof(ProducerDetails));
-        }
+        private const string ProducerDetailsKey =
+            "Proposal.ProducerDetails";
+
+
+        // =========================================================
+        // STEP 1 - PRODUCER DETAILS
+        // =========================================================
 
         [HttpGet]
         public IActionResult ProducerDetails()
         {
-            return View();
+            string? savedJson =
+                HttpContext.Session.GetString(
+                    ProducerDetailsKey
+                );
+
+            if (!string.IsNullOrWhiteSpace(savedJson))
+            {
+                try
+                {
+                    ProposalProducerDetailsViewModel? savedModel =
+                        JsonSerializer.Deserialize
+                        <ProposalProducerDetailsViewModel>(
+                            savedJson
+                        );
+
+                    if (savedModel != null)
+                    {
+                        return View(savedModel);
+                    }
+                }
+                catch (JsonException)
+                {
+                    HttpContext.Session.Remove(
+                        ProducerDetailsKey
+                    );
+                }
+            }
+
+            return View(
+                new ProposalProducerDetailsViewModel()
+            );
         }
+
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult ProducerDetails(
+            ProposalProducerDetailsViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            HttpContext.Session.SetString(
+                ProducerDetailsKey,
+                JsonSerializer.Serialize(model)
+            );
+
+            return RedirectToAction(
+                nameof(ProgrammeDetails)
+            );
+        }
+
+
+        // =========================================================
+        // STEP 2 - PROGRAMME DETAILS
+        // =========================================================
 
         [HttpGet]
         public IActionResult ProgrammeDetails()
         {
+            if (!HasProducerDetails())
+            {
+                return RedirectToAction(
+                    nameof(ProducerDetails)
+                );
+            }
+
             return View();
         }
+
+
+        // =========================================================
+        // STEP 3 - PRODUCTION DETAILS
+        // =========================================================
 
         [HttpGet]
         public IActionResult ProductionDetails()
@@ -30,11 +102,21 @@ namespace RESK.WIL.Controllers
             return View();
         }
 
+
+        // =========================================================
+        // STEP 4 - ATTACHMENTS
+        // =========================================================
+
         [HttpGet]
         public IActionResult Attachments()
         {
             return View();
         }
+
+
+        // =========================================================
+        // STEP 5 - REVIEW
+        // =========================================================
 
         [HttpGet]
         public IActionResult Review()
@@ -42,24 +124,29 @@ namespace RESK.WIL.Controllers
             return View();
         }
 
+
+        // =========================================================
+        // SUBMITTED
+        // =========================================================
+
         [HttpGet]
-        public IActionResult MyProposals()
+        public IActionResult Submitted()
         {
             return View();
         }
 
-        [HttpGet]
-        public IActionResult Status(int id)
-        {
-            ViewBag.ProposalId = id;
-            return View();
-        }
 
-        [HttpGet]
-        public IActionResult RequestedChanges(int id)
+        // =========================================================
+        // HELPERS
+        // =========================================================
+
+        private bool HasProducerDetails()
         {
-            ViewBag.ProposalId = id;
-            return View();
+            return !string.IsNullOrWhiteSpace(
+                HttpContext.Session.GetString(
+                    ProducerDetailsKey
+                )
+            );
         }
     }
 }

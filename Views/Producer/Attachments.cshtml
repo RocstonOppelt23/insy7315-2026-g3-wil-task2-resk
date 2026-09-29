@@ -35,626 +35,539 @@
 
     <style>
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        html,
-        body {
-            min-height: 100%;
-        }
-
-        body {
-            font-family: Inter, "Segoe UI", Arial, sans-serif;
-            background: #f4f7fb;
-            color: #14233e;
-        }
-
-        button,
-        input,
-        textarea,
-        select,
-        a {
-            font-family: inherit;
-        }
-
-
-        /* =====================================================
-           SIDEBAR
-        ===================================================== */
-
-        .sidebar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            bottom: 0;
-
-            width: 277px;
-
-            display: flex;
-            flex-direction: column;
-
-            padding: 39px 21px;
-
-            background: #071d3b;
-            color: white;
-        }
-
-        .brand {
-            display: flex;
-            align-items: center;
-
-            gap: 16px;
-
-            margin: 0 14px 50px;
-        }
-
-        .brand-icon {
-            width: 60px;
-            height: 60px;
-
-            display: flex;
-            align-items: center;
-            justify-content: center;
-
-            flex-shrink: 0;
-
-            border: 2px solid #12b8ce;
-            border-radius: 18px;
-
-            color: #12b8ce;
-
-            font-size: 25px;
-            font-weight: 900;
-        }
-
-        .brand-name {
-            color: white;
-
-            font-size: 24px;
-            font-weight: 900;
-
-            letter-spacing: 4px;
-        }
-
-        .brand-subtitle {
-            margin-top: 7px;
-
-            color: #c7d1e1;
-
-            font-size: 9px;
-            font-weight: 600;
-        }
-
-
-        /* =====================================================
-           STEPS
-        ===================================================== */
-
-        .steps-heading {
-            margin: 0 14px 12px;
-
-            color: #6f83a2;
-
-            font-size: 10px;
-            font-weight: 800;
-        }
-
-        .steps {
-            display: flex;
-            flex-direction: column;
-
-            gap: 7px;
-        }
-
-        .step {
-            min-height: 51px;
-
-            display: flex;
-            align-items: center;
-
-            gap: 13px;
-
-            padding: 0 14px;
-
-            border-radius: 10px;
-
-            color: #8093b1;
-        }
-
-        .step.active {
-            background: #15345e;
-            color: white;
-        }
-
-        .step.complete {
-            color: #8ca4c2;
-        }
-
-        .step-number {
-            width: 29px;
-            height: 29px;
-
-            display: flex;
-            align-items: center;
-            justify-content: center;
-
-            flex-shrink: 0;
-
-            border: 1px solid #506685;
-            border-radius: 50%;
-
-            color: #9bacc3;
-
-            font-size: 10px;
-            font-weight: 800;
-        }
-
-        .step.complete .step-number,
-        .step.active .step-number {
-            border-color: #12b8ce;
-            background: #12b8ce;
-            color: white;
-        }
-
-        .step-name {
-            font-size: 11px;
-            font-weight: 700;
-        }
-
-
-        /* =====================================================
-           PROFILE
-        ===================================================== */
-
-        .producer-profile {
-            margin-top: auto;
-
-            display: flex;
-            align-items: center;
-
-            gap: 11px;
-
-            padding: 13px;
-
-            border-radius: 11px;
-
-            background: #14345e;
-        }
-
-        .producer-avatar {
-            width: 37px;
-            height: 37px;
-
-            display: flex;
-            align-items: center;
-            justify-content: center;
-
-            flex-shrink: 0;
-
-            border-radius: 50%;
-
-            background: #12b8ce;
-            color: white;
-
-            font-size: 11px;
-            font-weight: 900;
-        }
-
-        .producer-profile-info {
-            min-width: 0;
-        }
-
-        .producer-name {
-            max-width: 170px;
-
-            overflow: hidden;
-
-            color: white;
-
-            font-size: 11px;
-            font-weight: 800;
-
-            white-space: nowrap;
-            text-overflow: ellipsis;
-        }
-
-        .producer-role {
-            margin-top: 5px;
-
-            color: #b6c4d7;
-
-            font-size: 9px;
-        }
-
-
-        /* =====================================================
-           MAIN CONTENT
-        ===================================================== */
-
-        .main {
-            min-height: 100vh;
-
-            margin-left: 277px;
-
-            padding-bottom: 55px;
-        }
-
-        .page {
-            width: calc(100% - 126px);
-            max-width: 1000px;
-
-            margin: 0 auto;
-
-            padding-top: 25px;
-        }
-
-        .page-title {
-            color: #071d3b;
-
-            font-size: 23px;
-            font-weight: 900;
-        }
-
-        .page-description {
-            margin-top: 8px;
-
-            color: #71839e;
-
-            font-size: 12px;
-        }
-
-
-        /* =====================================================
-           PROGRESS
-        ===================================================== */
-
-        .progress-section {
-            margin-top: 25px;
-            margin-bottom: 20px;
-        }
-
-        .progress-info {
-            display: flex;
-            justify-content: space-between;
-
-            margin-bottom: 8px;
-
-            color: #71839e;
-
-            font-size: 10px;
-            font-weight: 700;
-        }
-
-        .progress-track {
-            width: 100%;
-            height: 6px;
-
-            overflow: hidden;
-
-            border-radius: 20px;
-
-            background: #dce4ef;
-        }
-
-        .progress-bar {
-            width: 80%;
-            height: 100%;
-
-            border-radius: 20px;
-
-            background: #12b8ce;
-        }
-
-
-        /* =====================================================
-           CARD
-        ===================================================== */
-
-        .form-card {
-            padding: 29px 32px;
-
-            border: 1px solid #d6dfeb;
-            border-radius: 14px;
-
-            background: white;
-        }
-
-        .card-title {
-            color: #071d3b;
-
-            font-size: 19px;
-            font-weight: 900;
-        }
-
-        .card-description {
-            margin-top: 8px;
-            margin-bottom: 28px;
-
-            color: #71839e;
-
-            font-size: 11px;
-        }
-
-
-        /* =====================================================
-           FORM
-        ===================================================== */
-
-        .form-group {
-            margin-bottom: 25px;
-        }
-
-        .form-label {
-            display: block;
-
-            margin-bottom: 8px;
-
-            color: #14233e;
-
-            font-size: 11px;
-            font-weight: 800;
-        }
-
-        .required {
-            color: #d64d58;
-        }
-
-        .form-control {
-            width: 100%;
-            height: 47px;
-
-            padding: 0 14px;
-
-            border: 1px solid #cfdae8;
-            border-radius: 9px;
-
-            outline: none;
-
-            background: white;
-            color: #14233e;
-
-            font-size: 12px;
-        }
-
-        .form-control:focus {
-            border-color: #12b8ce;
-
-            box-shadow:
-                0 0 0 3px rgba(18, 184, 206, .10);
-        }
-
-
-        /* =====================================================
-           UPLOAD BOX
-        ===================================================== */
-
-        .upload-box {
-            position: relative;
-
-            min-height: 135px;
-
-            display: flex;
-            align-items: center;
-            justify-content: center;
-
-            padding: 20px;
-
-            border: 2px dashed #ccd8e7;
-            border-radius: 11px;
-
-            background: #fbfcfe;
-
-            text-align: center;
-
-            transition: .2s ease;
-        }
-
-        .upload-box:hover {
-            border-color: #12b8ce;
-
-            background: #f5fcfd;
-        }
-
-        .upload-box input[type="file"] {
-            position: absolute;
-
-            inset: 0;
-
-            width: 100%;
-            height: 100%;
-
-            opacity: 0;
-
-            cursor: pointer;
-        }
-
-        .upload-icon {
-            color: #12b8ce;
-
-            font-size: 27px;
-            font-weight: 900;
-        }
-
-        .upload-title {
-            margin-top: 8px;
-
-            color: #14233e;
-
-            font-size: 12px;
-            font-weight: 800;
-        }
-
-        .upload-help {
-            margin-top: 6px;
-
-            color: #8292a8;
-
-            font-size: 10px;
-        }
-
-        .selected-file {
-            margin-top: 8px;
-
-            color: #147f8e;
-
-            font-size: 10px;
-            font-weight: 800;
-        }
-
-
-        /* =====================================================
-           EXISTING FILE
-        ===================================================== */
-
-        .existing-file {
-            margin-top: 9px;
-
-            padding: 11px 13px;
-
-            border: 1px solid #bfe7ec;
-            border-radius: 8px;
-
-            background: #eefbfc;
-            color: #147f8e;
-
-            font-size: 10px;
-            font-weight: 700;
-        }
-
-
-        /* =====================================================
-           VALIDATION
-        ===================================================== */
-
-        .validation-message {
-            display: block;
-
-            margin-top: 7px;
-
-            color: #c9444d;
-
-            font-size: 10px;
-            font-weight: 600;
-        }
-
-        .validation-summary {
-            margin-bottom: 20px;
-
-            padding: 13px 15px;
-
-            border: 1px solid #f0c2c5;
-            border-radius: 9px;
-
-            background: #fff7f7;
-            color: #b84048;
-
-            font-size: 11px;
-        }
-
-        .validation-summary:empty {
-            display: none;
-        }
-
-
-        /* =====================================================
-           BUTTONS
-        ===================================================== */
-
-        .actions {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-
-            margin-top: 24px;
-        }
-
-        .back-button,
-        .continue-button {
-            min-height: 43px;
-
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-
-            padding: 0 21px;
-
-            border-radius: 8px;
-
-            font-size: 11px;
-            font-weight: 800;
-
-            text-decoration: none;
-        }
-
-        .back-button {
-            min-width: 118px;
-
-            border: 1px solid #d3ddea;
-
-            background: white;
-            color: #526783;
-        }
-
-        .continue-button {
-            min-width: 145px;
-
-            border: none;
-
-            background: #12b8ce;
-            color: white;
-
-            cursor: pointer;
-        }
-
-        .continue-button:hover {
-            background: #0faabd;
-        }
-
-
-        /* =====================================================
-           RESPONSIVE
-        ===================================================== */
-
-        @@media(max-width: 900px) {
-
-            .sidebar {
-                position: relative;
-
-                width: 100%;
-                min-height: auto;
+            * {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
             }
 
+            html,
+            body {
+                min-height: 100%;
+            }
+
+            body {
+                font-family: Inter, "Segoe UI", Arial, sans-serif;
+                background: #f4f7fb;
+                color: #14233e;
+            }
+
+            button,
+            input,
+            textarea,
+            select,
+            a {
+                font-family: inherit;
+            }
+
+
+            /* =====================================================
+                       SIDEBAR
+                    ===================================================== */
+
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                bottom: 0;
+                width: 277px;
+                display: flex;
+                flex-direction: column;
+                padding: 39px 21px;
+                background: #071d3b;
+                color: white;
+            }
+
+            .brand {
+                display: flex;
+                align-items: center;
+                gap: 16px;
+                margin: 0 14px 50px;
+            }
+
+            .brand-icon {
+                width: 60px;
+                height: 60px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+                border: 2px solid #12b8ce;
+                border-radius: 18px;
+                color: #12b8ce;
+                font-size: 25px;
+                font-weight: 900;
+            }
+
+            .brand-name {
+                color: white;
+                font-size: 24px;
+                font-weight: 900;
+                letter-spacing: 4px;
+            }
+
+            .brand-subtitle {
+                margin-top: 7px;
+                color: #c7d1e1;
+                font-size: 9px;
+                font-weight: 600;
+            }
+
+
+            /* =====================================================
+                       STEPS
+                    ===================================================== */
+
+            .steps-heading {
+                margin: 0 14px 12px;
+                color: #6f83a2;
+                font-size: 10px;
+                font-weight: 800;
+            }
+
+            .steps {
+                display: flex;
+                flex-direction: column;
+                gap: 7px;
+            }
+
+            .step {
+                min-height: 51px;
+                display: flex;
+                align-items: center;
+                gap: 13px;
+                padding: 0 14px;
+                border-radius: 10px;
+                color: #8093b1;
+            }
+
+                .step.active {
+                    background: #15345e;
+                    color: white;
+                }
+
+                .step.complete {
+                    color: #8ca4c2;
+                }
+
+            .step-number {
+                width: 29px;
+                height: 29px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+                border: 1px solid #506685;
+                border-radius: 50%;
+                color: #9bacc3;
+                font-size: 10px;
+                font-weight: 800;
+            }
+
+            .step.complete .step-number,
+            .step.active .step-number {
+                border-color: #12b8ce;
+                background: #12b8ce;
+                color: white;
+            }
+
+            .step-name {
+                font-size: 11px;
+                font-weight: 700;
+            }
+
+
+            /* =====================================================
+                       PROFILE
+                    ===================================================== */
+
+            .producer-profile {
+                margin-top: auto;
+                display: flex;
+                align-items: center;
+                gap: 11px;
+                padding: 13px;
+                border-radius: 11px;
+                background: #14345e;
+            }
+
+            .producer-avatar {
+                width: 37px;
+                height: 37px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+                border-radius: 50%;
+                background: #12b8ce;
+                color: white;
+                font-size: 11px;
+                font-weight: 900;
+            }
+
+            .producer-profile-info {
+                min-width: 0;
+            }
+
+            .producer-name {
+                max-width: 170px;
+                overflow: hidden;
+                color: white;
+                font-size: 11px;
+                font-weight: 800;
+                white-space: nowrap;
+                text-overflow: ellipsis;
+            }
+
+            .producer-role {
+                margin-top: 5px;
+                color: #b6c4d7;
+                font-size: 9px;
+            }
+
+
+            /* =====================================================
+                       MAIN CONTENT
+                    ===================================================== */
+
             .main {
-                margin-left: 0;
+                min-height: 100vh;
+                margin-left: 277px;
+                padding-bottom: 55px;
             }
 
             .page {
-                width: calc(100% - 40px);
+                width: calc(100% - 126px);
+                max-width: 1000px;
+                margin: 0 auto;
+                padding-top: 25px;
             }
 
-            .producer-profile {
-                margin-top: 30px;
+            .page-title {
+                color: #071d3b;
+                font-size: 23px;
+                font-weight: 900;
             }
 
-        }
+            .page-description {
+                margin-top: 8px;
+                color: #71839e;
+                font-size: 12px;
+            }
 
-        @@media(max-width: 600px) {
+
+            /* =====================================================
+                       PROGRESS
+                    ===================================================== */
+
+            .progress-section {
+                margin-top: 25px;
+                margin-bottom: 20px;
+            }
+
+            .progress-info {
+                display: flex;
+                justify-content: space-between;
+                margin-bottom: 8px;
+                color: #71839e;
+                font-size: 10px;
+                font-weight: 700;
+            }
+
+            .progress-track {
+                width: 100%;
+                height: 6px;
+                overflow: hidden;
+                border-radius: 20px;
+                background: #dce4ef;
+            }
+
+            .progress-bar {
+                width: 80%;
+                height: 100%;
+                border-radius: 20px;
+                background: #12b8ce;
+            }
+
+
+            /* =====================================================
+                       CARD
+                    ===================================================== */
+
+            .form-card {
+                padding: 29px 32px;
+                border: 1px solid #d6dfeb;
+                border-radius: 14px;
+                background: white;
+            }
+
+            .card-title {
+                color: #071d3b;
+                font-size: 19px;
+                font-weight: 900;
+            }
+
+            .card-description {
+                margin-top: 8px;
+                margin-bottom: 28px;
+                color: #71839e;
+                font-size: 11px;
+            }
+
+
+            /* =====================================================
+                       FORM
+                    ===================================================== */
+
+            .form-group {
+                margin-bottom: 25px;
+            }
+
+            .form-label {
+                display: block;
+                margin-bottom: 8px;
+                color: #14233e;
+                font-size: 11px;
+                font-weight: 800;
+            }
+
+            .required {
+                color: #d64d58;
+            }
+
+            .form-control {
+                width: 100%;
+                height: 47px;
+                padding: 0 14px;
+                border: 1px solid #cfdae8;
+                border-radius: 9px;
+                outline: none;
+                background: white;
+                color: #14233e;
+                font-size: 12px;
+            }
+
+                .form-control:focus {
+                    border-color: #12b8ce;
+                    box-shadow: 0 0 0 3px rgba(18, 184, 206, .10);
+                }
+
+
+            /* =====================================================
+                       UPLOAD BOX
+                    ===================================================== */
+
+            .upload-box {
+                position: relative;
+                min-height: 135px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 20px;
+                border: 2px dashed #ccd8e7;
+                border-radius: 11px;
+                background: #fbfcfe;
+                text-align: center;
+                transition: .2s ease;
+            }
+
+                .upload-box:hover {
+                    border-color: #12b8ce;
+                    background: #f5fcfd;
+                }
+
+                .upload-box.has-error {
+                    border-color: #e0a3a8;
+                    background: #fff9f9;
+                }
+
+                .upload-box input[type="file"] {
+                    position: absolute;
+                    inset: 0;
+                    width: 100%;
+                    height: 100%;
+                    opacity: 0;
+                    cursor: pointer;
+                }
+
+            .upload-icon {
+                color: #12b8ce;
+                font-size: 27px;
+                font-weight: 900;
+            }
+
+            .upload-title {
+                margin-top: 8px;
+                color: #14233e;
+                font-size: 12px;
+                font-weight: 800;
+            }
+
+            .upload-help {
+                margin-top: 6px;
+                color: #8292a8;
+                font-size: 10px;
+            }
+
+            .selected-file {
+                margin-top: 8px;
+                color: #147f8e;
+                font-size: 10px;
+                font-weight: 800;
+            }
+
+
+            /* =====================================================
+                       EXISTING FILE
+                    ===================================================== */
+
+            .existing-file {
+                margin-top: 9px;
+                padding: 11px 13px;
+                border: 1px solid #bfe7ec;
+                border-radius: 8px;
+                background: #eefbfc;
+                color: #147f8e;
+                font-size: 10px;
+                font-weight: 700;
+            }
+
+
+            /* =====================================================
+                       VALIDATION
+                    ===================================================== */
+
+            .validation-message,
+            .client-error {
+                display: block;
+                margin-top: 7px;
+                color: #c9444d;
+                font-size: 10px;
+                font-weight: 600;
+                line-height: 1.5;
+            }
+
+                .client-error:empty {
+                    display: none;
+                }
+
+            .validation-summary {
+                margin-bottom: 20px;
+                padding: 13px 15px;
+                border: 1px solid #f0c2c5;
+                border-radius: 9px;
+                background: #fff7f7;
+                color: #b84048;
+                font-size: 11px;
+            }
+
+                .validation-summary:empty {
+                    display: none;
+                }
+
+            .upload-banner {
+                margin-bottom: 20px;
+                padding: 13px 15px;
+                border: 1px solid #f0c2c5;
+                border-radius: 9px;
+                background: #fff7f7;
+                color: #b84048;
+                font-size: 11px;
+                font-weight: 600;
+                line-height: 1.5;
+            }
+
+                .upload-banner[hidden] {
+                    display: none;
+                }
+
+
+            /* =====================================================
+                       BUTTONS
+                    ===================================================== */
 
             .actions {
-                flex-direction: column;
-
-                gap: 12px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-top: 24px;
             }
 
             .back-button,
             .continue-button {
-                width: 100%;
+                min-height: 43px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                padding: 0 21px;
+                border-radius: 8px;
+                font-size: 11px;
+                font-weight: 800;
+                text-decoration: none;
             }
 
-        }
+            .back-button {
+                min-width: 118px;
+                border: 1px solid #d3ddea;
+                background: white;
+                color: #526783;
+            }
+
+            .continue-button {
+                min-width: 145px;
+                border: none;
+                background: #12b8ce;
+                color: white;
+                cursor: pointer;
+            }
+
+                .continue-button:hover {
+                    background: #0faabd;
+                }
+
+                .continue-button:disabled {
+                    background: #8fd5df;
+                    cursor: wait;
+                }
+
+
+            /* =====================================================
+                       RESPONSIVE
+                    ===================================================== */
+
+            @@media(max-width: 900px) {
+
+                .sidebar {
+                    position: relative;
+                    width: 100%;
+                    min-height: auto;
+                }
+
+                .main {
+                    margin-left: 0;
+                }
+
+                .page {
+                    width: calc(100% - 40px);
+                }
+
+                .producer-profile {
+                    margin-top: 30px;
+                }
+            }
+
+            @@media(max-width: 600px) {
+
+                .actions {
+                    flex-direction: column;
+                    gap: 12px;
+                }
+
+                .back-button,
+                .continue-button {
+                    width: 100%;
+                }
+            }
 
     </style>
 
@@ -844,7 +757,8 @@
 
             <!-- FORM -->
 
-            <form asp-controller="Producer"
+            <form id="attachmentsForm"
+                  asp-controller="Producer"
                   asp-action="Attachments"
                   method="post"
                   enctype="multipart/form-data">
@@ -854,6 +768,14 @@
 
                 <div asp-validation-summary="ModelOnly"
                      class="validation-summary">
+                </div>
+
+
+                <!-- Shown by the script below when a file can't be used -->
+                <div id="uploadBanner"
+                     class="upload-banner"
+                     role="alert"
+                     hidden>
                 </div>
 
 
@@ -890,7 +812,8 @@
                             <input asp-for="ProposalDocument"
                                    type="file"
                                    accept=".pdf"
-                                   onchange="showFile(this, 'proposalFileName')" />
+                                   data-selected="proposalFileName"
+                                   data-error="proposalClientError" />
 
 
                             <div>
@@ -924,10 +847,14 @@
                         {
                             <div class="existing-file">
 
-                                ✓ Proposal document already uploaded
+                                ✓ Already uploaded: @Model.ExistingProposalDocument
 
                             </div>
                         }
+
+
+                        <div id="proposalClientError"
+                             class="client-error"></div>
 
 
                         <span asp-validation-for="ProposalDocument"
@@ -983,7 +910,8 @@
                             <input asp-for="BudgetDocument"
                                    type="file"
                                    accept=".pdf,.doc,.docx,.xls,.xlsx"
-                                   onchange="showFile(this, 'budgetFileName')" />
+                                   data-selected="budgetFileName"
+                                   data-error="budgetClientError" />
 
 
                             <div>
@@ -1017,10 +945,14 @@
                         {
                             <div class="existing-file">
 
-                                ✓ Budget document already uploaded
+                                ✓ Already uploaded: @Model.ExistingBudgetDocument
 
                             </div>
                         }
+
+
+                        <div id="budgetClientError"
+                             class="client-error"></div>
 
 
                         <span asp-validation-for="BudgetDocument"
@@ -1049,7 +981,8 @@
                             <input asp-for="AdditionalFile"
                                    type="file"
                                    accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
-                                   onchange="showFile(this, 'additionalFileName')" />
+                                   data-selected="additionalFileName"
+                                   data-error="additionalClientError" />
 
 
                             <div>
@@ -1083,10 +1016,14 @@
                         {
                             <div class="existing-file">
 
-                                ✓ Additional file already uploaded
+                                ✓ Already uploaded: @Model.ExistingAdditionalFile
 
                             </div>
                         }
+
+
+                        <div id="additionalClientError"
+                             class="client-error"></div>
 
 
                         <span asp-validation-for="AdditionalFile"
@@ -1115,7 +1052,8 @@
                     </a>
 
 
-                    <button type="submit"
+                    <button id="continueButton"
+                            type="submit"
                             class="continue-button">
 
                         Continue →
@@ -1136,29 +1074,253 @@
 
     <script>
 
-        function showFile(input, targetId) {
+            /*
+             * Why this script exists:
+             *
+             * Chrome shows "This site can't be reached -
+             * ERR_ACCESS_DENIED" when it can't read a file the
+             * user selected (for example a OneDrive "online-only"
+             * file while OneDrive is paused, a file that is open
+             * or changed after it was selected, or a folder
+             * blocked by Windows Security).
+             *
+             * The script tries to read each file BEFORE the form
+             * is sent. If a file can't be read, it shows a clear
+             * message on the page instead of letting Chrome fail.
+             */
 
-            const target =
-                document.getElementById(targetId);
+            (function () {
 
-            if (!target) {
-                return;
-            }
+                const MAX_BYTES = 20 * 1024 * 1024;
+
+                const UNREADABLE_MESSAGE =
+                    "Your browser couldn't read this file. " +
+                    "Close it in Word, Excel or your PDF reader. " +
+                    "If it's in OneDrive, right-click it and choose " +
+                    "\"Always keep on this device\", or copy it to a " +
+                    "folder like C:\\Temp. Then select it again.";
+
+                const form =
+                    document.getElementById("attachmentsForm");
+
+                const continueButton =
+                    document.getElementById("continueButton");
+
+                const banner =
+                    document.getElementById("uploadBanner");
+
+                const fileInputs =
+                    Array.from(
+                        form.querySelectorAll("input[type='file']"));
+
+                const originalButtonText =
+                    continueButton.textContent;
+
+                let sending = false;
 
 
-            if (input.files &&
-                input.files.length > 0) {
+                function allowedExtensions(input) {
 
-                target.textContent =
-                    "Selected: " +
-                    input.files[0].name;
-            }
-            else {
+                    return (input.getAttribute("accept") || "")
+                        .split(",")
+                        .map(function (ext) {
+                            return ext.trim().toLowerCase();
+                        })
+                        .filter(function (ext) {
+                            return ext.length > 0;
+                        });
+                }
 
-                target.textContent = "";
 
-            }
-        }
+                function extensionOf(fileName) {
+
+                    const dot = fileName.lastIndexOf(".");
+
+                    return dot >= 0
+                        ? fileName.substring(dot).toLowerCase()
+                        : "";
+                }
+
+
+                // Reading the first byte is enough to find out whether
+                // the browser is allowed to read the file.
+                async function canReadFile(file) {
+
+                    try {
+                        await file.slice(0, 1).arrayBuffer();
+                        return true;
+                    }
+                    catch (error) {
+                        return false;
+                    }
+                }
+
+
+                // Returns true if the input is empty or its file is OK.
+                async function checkFileInput(input) {
+
+                    const selectedLabel =
+                        document.getElementById(input.dataset.selected);
+
+                    const errorLabel =
+                        document.getElementById(input.dataset.error);
+
+                    const box =
+                        input.closest(".upload-box");
+
+                    selectedLabel.textContent = "";
+                    errorLabel.textContent = "";
+                    box.classList.remove("has-error");
+
+
+                    if (!input.files || input.files.length === 0) {
+                        return true;
+                    }
+
+
+                    const file = input.files[0];
+
+                    let message = "";
+
+
+                    if (file.size === 0) {
+
+                        message = "This file is empty.";
+                    }
+                    else if (file.size > MAX_BYTES) {
+
+                        message = "This file is larger than 20 MB.";
+                    }
+                    else if (allowedExtensions(input)
+                                 .indexOf(extensionOf(file.name)) < 0) {
+
+                        message = "This file type is not allowed.";
+                    }
+                    else if (!(await canReadFile(file))) {
+
+                        message = UNREADABLE_MESSAGE;
+                    }
+
+
+                    if (message) {
+
+                        errorLabel.textContent =
+                            file.name + ": " + message;
+
+                        box.classList.add("has-error");
+
+                        // Clear the bad file so it is never sent.
+                        input.value = "";
+
+                        return false;
+                    }
+
+
+                    selectedLabel.textContent =
+                        "Selected: " + file.name;
+
+                    return true;
+                }
+
+
+                function showBanner(text) {
+
+                    banner.textContent = text;
+                    banner.hidden = false;
+
+                    banner.scrollIntoView({
+                        behavior: "smooth",
+                        block: "center"
+                    });
+                }
+
+
+                function resetButton() {
+
+                    sending = false;
+
+                    continueButton.disabled = false;
+                    continueButton.textContent = originalButtonText;
+                }
+
+
+                // Check each file as soon as it is chosen.
+                fileInputs.forEach(function (input) {
+
+                    input.addEventListener("change", function () {
+
+                        banner.hidden = true;
+
+                        checkFileInput(input);
+                    });
+                });
+
+
+                // Check every file again right before sending,
+                // because a file can become unreadable after it
+                // was selected (e.g. it was edited or OneDrive
+                // went offline).
+                form.addEventListener("submit", async function (event) {
+
+                    event.preventDefault();
+
+                    if (sending) {
+                        return;
+                    }
+
+                    sending = true;
+
+                    continueButton.disabled = true;
+                    banner.hidden = true;
+
+
+                    // Keep the browser's normal checks, such as the
+                    // showreel link having to be a valid URL.
+                    if (!form.reportValidity()) {
+
+                        resetButton();
+                        return;
+                    }
+
+
+                    let allFilesOk = true;
+
+                    for (const input of fileInputs) {
+
+                        if (!(await checkFileInput(input))) {
+                            allFilesOk = false;
+                        }
+                    }
+
+
+                    if (!allFilesOk) {
+
+                        showBanner(
+                            "One or more files couldn't be used. " +
+                            "See the message under each file, fix it, " +
+                            "and select the file again.");
+
+                        resetButton();
+                        return;
+                    }
+
+
+                    continueButton.textContent = "Uploading…";
+
+                    // form.submit() sends the form without firing
+                    // this submit handler again.
+                    HTMLFormElement.prototype.submit.call(form);
+                });
+
+
+                // If the user comes back with the browser's Back
+                // button, make the Continue button usable again.
+                window.addEventListener("pageshow", function () {
+
+                    resetButton();
+                });
+
+            })();
 
     </script>
 

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using RESK.WIL.Data;
@@ -113,6 +114,24 @@ builder.Services.ConfigureApplicationCookie(options =>
 // =====================================================
 
 builder.Services.AddControllersWithViews();
+
+
+// =====================================================
+// FILE UPLOAD LIMITS
+// =====================================================
+
+/*
+ * The Attachments step accepts up to three 20 MB files
+ * (about 63 MB in total). Allow multipart forms up to
+ * 70 MB. The Attachments POST action also sets its own
+ * [RequestSizeLimit] to the same value.
+ */
+
+builder.Services.Configure<FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit =
+        70_000_000;
+});
 
 
 // =====================================================
@@ -351,137 +370,187 @@ using (var scope = app.Services.CreateScope())
     // =================================================
 
     /*
-     * This Admin account is created separately from
-     * normal public registration.
+     * Admin credentials are read from configuration
+     * (User Secrets in development), NOT from source code.
      *
-     * Public registration creates Producer accounts.
+     * Set them from the project folder with:
      *
-     * This account receives ONLY the Admin role.
+     * dotnet user-secrets init
+     * dotnet user-secrets set "SeedAdmin:Email" "admin@resk.co.za"
+     * dotnet user-secrets set "SeedAdmin:Password" "<new strong password>"
      *
-     * IMPORTANT:
-     * Move these credentials to User Secrets or another
-     * secure configuration source before production.
+     * If the Admin account already exists with a different
+     * password, the password is updated to the configured one.
+     *
+     * If the settings are missing, Admin setup is skipped.
      */
 
-    const string adminEmail =
-        "admin@resk.co.za";
+    string? adminEmail =
+        app.Configuration["SeedAdmin:Email"];
 
-    const string adminPassword =
-        "R3SK!Admin#94_Vault$K7p";
-
-
-    // =================================================
-    // FIND EXISTING ADMIN
-    // =================================================
-
-    var adminUser =
-        await userManager.FindByEmailAsync(
-            adminEmail);
+    string? adminPassword =
+        app.Configuration["SeedAdmin:Password"];
 
 
-    // =================================================
-    // CREATE ADMIN IF IT DOES NOT EXIST
-    // =================================================
-
-    if (adminUser == null)
+    if (string.IsNullOrWhiteSpace(adminEmail) ||
+        string.IsNullOrWhiteSpace(adminPassword))
     {
-        adminUser =
-            new IdentityUser
+        app.Logger.LogWarning(
+            "SeedAdmin:Email or SeedAdmin:Password is not configured. " +
+            "Skipping development Admin account setup. " +
+            "Set them with 'dotnet user-secrets'.");
+    }
+    else
+    {
+        // =============================================
+        // FIND EXISTING ADMIN
+        // =============================================
+
+        var adminUser =
+            await userManager.FindByEmailAsync(
+                adminEmail);
+
+
+        // =============================================
+        // CREATE ADMIN IF IT DOES NOT EXIST
+        // =============================================
+
+        if (adminUser == null)
+        {
+            adminUser =
+                new IdentityUser
+                {
+                    UserName = adminEmail,
+
+                    Email = adminEmail,
+
+                    EmailConfirmed = true
+                };
+
+
+            var createAdminResult =
+                await userManager.CreateAsync(
+                    adminUser,
+                    adminPassword);
+
+
+            if (!createAdminResult.Succeeded)
             {
-                UserName = adminEmail,
-
-                Email = adminEmail,
-
-                EmailConfirmed = true
-            };
-
-
-        var createAdminResult =
-            await userManager.CreateAsync(
-                adminUser,
-                adminPassword);
+                var errors =
+                    string.Join(
+                        ", ",
+                        createAdminResult.Errors.Select(
+                            error =>
+                                error.Description));
 
 
-        if (!createAdminResult.Succeeded)
-        {
-            var errors =
-                string.Join(
-                    ", ",
-                    createAdminResult.Errors.Select(
-                        error =>
-                            error.Description));
-
-
-            throw new Exception(
-                $"Failed to create Admin account: {errors}");
+                throw new Exception(
+                    $"Failed to create Admin account: {errors}");
+            }
         }
-    }
-
-
-    // =================================================
-    // ENSURE ADMIN ROLE
-    // =================================================
-
-    if (!await userManager.IsInRoleAsync(
-            adminUser,
-            "Admin"))
-    {
-        var addAdminRoleResult =
-            await userManager.AddToRoleAsync(
-                adminUser,
-                "Admin");
-
-
-        if (!addAdminRoleResult.Succeeded)
+        else if (!await userManager.CheckPasswordAsync(
+                     adminUser,
+                     adminPassword))
         {
-            var errors =
-                string.Join(
-                    ", ",
-                    addAdminRoleResult.Errors.Select(
-                        error =>
-                            error.Description));
+            // =========================================
+            // UPDATE ADMIN PASSWORD
+            // =========================================
+
+            // The old password was committed to source code,
+            // so replace it with the configured one.
+
+            var resetToken =
+                await userManager.GeneratePasswordResetTokenAsync(
+                    adminUser);
+
+            var resetResult =
+                await userManager.ResetPasswordAsync(
+                    adminUser,
+                    resetToken,
+                    adminPassword);
 
 
-            throw new Exception(
-                $"Failed to assign Admin role: {errors}");
+            if (!resetResult.Succeeded)
+            {
+                var errors =
+                    string.Join(
+                        ", ",
+                        resetResult.Errors.Select(
+                            error =>
+                                error.Description));
+
+
+                throw new Exception(
+                    $"Failed to update Admin password: {errors}");
+            }
         }
-    }
 
 
-    // =================================================
-    // REMOVE PRODUCER ROLE FROM ADMIN
-    // =================================================
+        // =============================================
+        // ENSURE ADMIN ROLE
+        // =============================================
 
-    /*
-     * If this email was previously registered as a
-     * Producer, remove that role.
-     *
-     * This keeps the Admin account separate from
-     * Producer accounts.
-     */
-
-    if (await userManager.IsInRoleAsync(
-            adminUser,
-            "Producer"))
-    {
-        var removeProducerResult =
-            await userManager.RemoveFromRoleAsync(
+        if (!await userManager.IsInRoleAsync(
                 adminUser,
-                "Producer");
-
-
-        if (!removeProducerResult.Succeeded)
+                "Admin"))
         {
-            var errors =
-                string.Join(
-                    ", ",
-                    removeProducerResult.Errors.Select(
-                        error =>
-                            error.Description));
+            var addAdminRoleResult =
+                await userManager.AddToRoleAsync(
+                    adminUser,
+                    "Admin");
 
 
-            throw new Exception(
-                $"Failed to remove Producer role from Admin: {errors}");
+            if (!addAdminRoleResult.Succeeded)
+            {
+                var errors =
+                    string.Join(
+                        ", ",
+                        addAdminRoleResult.Errors.Select(
+                            error =>
+                                error.Description));
+
+
+                throw new Exception(
+                    $"Failed to assign Admin role: {errors}");
+            }
+        }
+
+
+        // =============================================
+        // REMOVE PRODUCER ROLE FROM ADMIN
+        // =============================================
+
+        /*
+         * If this email was previously registered as a
+         * Producer, remove that role.
+         *
+         * This keeps the Admin account separate from
+         * Producer accounts.
+         */
+
+        if (await userManager.IsInRoleAsync(
+                adminUser,
+                "Producer"))
+        {
+            var removeProducerResult =
+                await userManager.RemoveFromRoleAsync(
+                    adminUser,
+                    "Producer");
+
+
+            if (!removeProducerResult.Succeeded)
+            {
+                var errors =
+                    string.Join(
+                        ", ",
+                        removeProducerResult.Errors.Select(
+                            error =>
+                                error.Description));
+
+
+                throw new Exception(
+                    $"Failed to remove Producer role from Admin: {errors}");
+            }
         }
     }
 }
