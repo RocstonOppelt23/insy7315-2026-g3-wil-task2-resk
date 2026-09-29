@@ -1,0 +1,1168 @@
+﻿@model RESK.WIL.Models.AttachmentsViewModel
+
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<IdentityUser> UserManager
+
+@{
+    Layout = null;
+    ViewData["Title"] = "Supporting Attachments";
+
+    var currentUser = await UserManager.GetUserAsync(User);
+
+    var username =
+        currentUser?.Email
+        ?? currentUser?.UserName
+        ?? "Producer";
+
+    var initial =
+        string.IsNullOrWhiteSpace(username)
+            ? "P"
+            : username.Substring(0, 1).ToUpper();
+}
+
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="utf-8" />
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0" />
+
+    <title>Supporting Attachments - R.E.S.K</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body {
+            min-height: 100%;
+        }
+
+        body {
+            font-family: Inter, "Segoe UI", Arial, sans-serif;
+            background: #f4f7fb;
+            color: #14233e;
+        }
+
+        button,
+        input,
+        textarea,
+        select,
+        a {
+            font-family: inherit;
+        }
+
+
+        /* =====================================================
+           SIDEBAR
+        ===================================================== */
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+
+            width: 277px;
+
+            display: flex;
+            flex-direction: column;
+
+            padding: 39px 21px;
+
+            background: #071d3b;
+            color: white;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+
+            gap: 16px;
+
+            margin: 0 14px 50px;
+        }
+
+        .brand-icon {
+            width: 60px;
+            height: 60px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            flex-shrink: 0;
+
+            border: 2px solid #12b8ce;
+            border-radius: 18px;
+
+            color: #12b8ce;
+
+            font-size: 25px;
+            font-weight: 900;
+        }
+
+        .brand-name {
+            color: white;
+
+            font-size: 24px;
+            font-weight: 900;
+
+            letter-spacing: 4px;
+        }
+
+        .brand-subtitle {
+            margin-top: 7px;
+
+            color: #c7d1e1;
+
+            font-size: 9px;
+            font-weight: 600;
+        }
+
+
+        /* =====================================================
+           STEPS
+        ===================================================== */
+
+        .steps-heading {
+            margin: 0 14px 12px;
+
+            color: #6f83a2;
+
+            font-size: 10px;
+            font-weight: 800;
+        }
+
+        .steps {
+            display: flex;
+            flex-direction: column;
+
+            gap: 7px;
+        }
+
+        .step {
+            min-height: 51px;
+
+            display: flex;
+            align-items: center;
+
+            gap: 13px;
+
+            padding: 0 14px;
+
+            border-radius: 10px;
+
+            color: #8093b1;
+        }
+
+        .step.active {
+            background: #15345e;
+            color: white;
+        }
+
+        .step.complete {
+            color: #8ca4c2;
+        }
+
+        .step-number {
+            width: 29px;
+            height: 29px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            flex-shrink: 0;
+
+            border: 1px solid #506685;
+            border-radius: 50%;
+
+            color: #9bacc3;
+
+            font-size: 10px;
+            font-weight: 800;
+        }
+
+        .step.complete .step-number,
+        .step.active .step-number {
+            border-color: #12b8ce;
+            background: #12b8ce;
+            color: white;
+        }
+
+        .step-name {
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+
+        /* =====================================================
+           PROFILE
+        ===================================================== */
+
+        .producer-profile {
+            margin-top: auto;
+
+            display: flex;
+            align-items: center;
+
+            gap: 11px;
+
+            padding: 13px;
+
+            border-radius: 11px;
+
+            background: #14345e;
+        }
+
+        .producer-avatar {
+            width: 37px;
+            height: 37px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            flex-shrink: 0;
+
+            border-radius: 50%;
+
+            background: #12b8ce;
+            color: white;
+
+            font-size: 11px;
+            font-weight: 900;
+        }
+
+        .producer-profile-info {
+            min-width: 0;
+        }
+
+        .producer-name {
+            max-width: 170px;
+
+            overflow: hidden;
+
+            color: white;
+
+            font-size: 11px;
+            font-weight: 800;
+
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+
+        .producer-role {
+            margin-top: 5px;
+
+            color: #b6c4d7;
+
+            font-size: 9px;
+        }
+
+
+        /* =====================================================
+           MAIN CONTENT
+        ===================================================== */
+
+        .main {
+            min-height: 100vh;
+
+            margin-left: 277px;
+
+            padding-bottom: 55px;
+        }
+
+        .page {
+            width: calc(100% - 126px);
+            max-width: 1000px;
+
+            margin: 0 auto;
+
+            padding-top: 25px;
+        }
+
+        .page-title {
+            color: #071d3b;
+
+            font-size: 23px;
+            font-weight: 900;
+        }
+
+        .page-description {
+            margin-top: 8px;
+
+            color: #71839e;
+
+            font-size: 12px;
+        }
+
+
+        /* =====================================================
+           PROGRESS
+        ===================================================== */
+
+        .progress-section {
+            margin-top: 25px;
+            margin-bottom: 20px;
+        }
+
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+
+            margin-bottom: 8px;
+
+            color: #71839e;
+
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+        .progress-track {
+            width: 100%;
+            height: 6px;
+
+            overflow: hidden;
+
+            border-radius: 20px;
+
+            background: #dce4ef;
+        }
+
+        .progress-bar {
+            width: 80%;
+            height: 100%;
+
+            border-radius: 20px;
+
+            background: #12b8ce;
+        }
+
+
+        /* =====================================================
+           CARD
+        ===================================================== */
+
+        .form-card {
+            padding: 29px 32px;
+
+            border: 1px solid #d6dfeb;
+            border-radius: 14px;
+
+            background: white;
+        }
+
+        .card-title {
+            color: #071d3b;
+
+            font-size: 19px;
+            font-weight: 900;
+        }
+
+        .card-description {
+            margin-top: 8px;
+            margin-bottom: 28px;
+
+            color: #71839e;
+
+            font-size: 11px;
+        }
+
+
+        /* =====================================================
+           FORM
+        ===================================================== */
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-label {
+            display: block;
+
+            margin-bottom: 8px;
+
+            color: #14233e;
+
+            font-size: 11px;
+            font-weight: 800;
+        }
+
+        .required {
+            color: #d64d58;
+        }
+
+        .form-control {
+            width: 100%;
+            height: 47px;
+
+            padding: 0 14px;
+
+            border: 1px solid #cfdae8;
+            border-radius: 9px;
+
+            outline: none;
+
+            background: white;
+            color: #14233e;
+
+            font-size: 12px;
+        }
+
+        .form-control:focus {
+            border-color: #12b8ce;
+
+            box-shadow:
+                0 0 0 3px rgba(18, 184, 206, .10);
+        }
+
+
+        /* =====================================================
+           UPLOAD BOX
+        ===================================================== */
+
+        .upload-box {
+            position: relative;
+
+            min-height: 135px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            padding: 20px;
+
+            border: 2px dashed #ccd8e7;
+            border-radius: 11px;
+
+            background: #fbfcfe;
+
+            text-align: center;
+
+            transition: .2s ease;
+        }
+
+        .upload-box:hover {
+            border-color: #12b8ce;
+
+            background: #f5fcfd;
+        }
+
+        .upload-box input[type="file"] {
+            position: absolute;
+
+            inset: 0;
+
+            width: 100%;
+            height: 100%;
+
+            opacity: 0;
+
+            cursor: pointer;
+        }
+
+        .upload-icon {
+            color: #12b8ce;
+
+            font-size: 27px;
+            font-weight: 900;
+        }
+
+        .upload-title {
+            margin-top: 8px;
+
+            color: #14233e;
+
+            font-size: 12px;
+            font-weight: 800;
+        }
+
+        .upload-help {
+            margin-top: 6px;
+
+            color: #8292a8;
+
+            font-size: 10px;
+        }
+
+        .selected-file {
+            margin-top: 8px;
+
+            color: #147f8e;
+
+            font-size: 10px;
+            font-weight: 800;
+        }
+
+
+        /* =====================================================
+           EXISTING FILE
+        ===================================================== */
+
+        .existing-file {
+            margin-top: 9px;
+
+            padding: 11px 13px;
+
+            border: 1px solid #bfe7ec;
+            border-radius: 8px;
+
+            background: #eefbfc;
+            color: #147f8e;
+
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+
+        /* =====================================================
+           VALIDATION
+        ===================================================== */
+
+        .validation-message {
+            display: block;
+
+            margin-top: 7px;
+
+            color: #c9444d;
+
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .validation-summary {
+            margin-bottom: 20px;
+
+            padding: 13px 15px;
+
+            border: 1px solid #f0c2c5;
+            border-radius: 9px;
+
+            background: #fff7f7;
+            color: #b84048;
+
+            font-size: 11px;
+        }
+
+        .validation-summary:empty {
+            display: none;
+        }
+
+
+        /* =====================================================
+           BUTTONS
+        ===================================================== */
+
+        .actions {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            margin-top: 24px;
+        }
+
+        .back-button,
+        .continue-button {
+            min-height: 43px;
+
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+
+            padding: 0 21px;
+
+            border-radius: 8px;
+
+            font-size: 11px;
+            font-weight: 800;
+
+            text-decoration: none;
+        }
+
+        .back-button {
+            min-width: 118px;
+
+            border: 1px solid #d3ddea;
+
+            background: white;
+            color: #526783;
+        }
+
+        .continue-button {
+            min-width: 145px;
+
+            border: none;
+
+            background: #12b8ce;
+            color: white;
+
+            cursor: pointer;
+        }
+
+        .continue-button:hover {
+            background: #0faabd;
+        }
+
+
+        /* =====================================================
+           RESPONSIVE
+        ===================================================== */
+
+        @@media(max-width: 900px) {
+
+            .sidebar {
+                position: relative;
+
+                width: 100%;
+                min-height: auto;
+            }
+
+            .main {
+                margin-left: 0;
+            }
+
+            .page {
+                width: calc(100% - 40px);
+            }
+
+            .producer-profile {
+                margin-top: 30px;
+            }
+
+        }
+
+        @@media(max-width: 600px) {
+
+            .actions {
+                flex-direction: column;
+
+                gap: 12px;
+            }
+
+            .back-button,
+            .continue-button {
+                width: 100%;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+    <!-- =====================================================
+         SIDEBAR
+    ====================================================== -->
+
+    <aside class="sidebar">
+
+        <div class="brand">
+
+            <div class="brand-icon">
+                R
+            </div>
+
+            <div>
+
+                <div class="brand-name">
+                    R.E.S.K
+                </div>
+
+                <div class="brand-subtitle">
+                    SOFTWARE STUDIO
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="steps-heading">
+            NEW PROPOSAL
+        </div>
+
+
+        <div class="steps">
+
+
+            <div class="step complete">
+
+                <div class="step-number">
+                    ✓
+                </div>
+
+                <div class="step-name">
+                    Producer details
+                </div>
+
+            </div>
+
+
+            <div class="step complete">
+
+                <div class="step-number">
+                    ✓
+                </div>
+
+                <div class="step-name">
+                    Programme details
+                </div>
+
+            </div>
+
+
+            <div class="step complete">
+
+                <div class="step-number">
+                    ✓
+                </div>
+
+                <div class="step-name">
+                    Production details
+                </div>
+
+            </div>
+
+
+            <div class="step active">
+
+                <div class="step-number">
+                    4
+                </div>
+
+                <div class="step-name">
+                    Attachments
+                </div>
+
+            </div>
+
+
+            <div class="step">
+
+                <div class="step-number">
+                    5
+                </div>
+
+                <div class="step-name">
+                    Review & submit
+                </div>
+
+            </div>
+
+
+        </div>
+
+
+        <div class="producer-profile">
+
+            <div class="producer-avatar">
+                @initial
+            </div>
+
+            <div class="producer-profile-info">
+
+                <div class="producer-name"
+                     title="@username">
+
+                    @username
+
+                </div>
+
+                <div class="producer-role">
+                    Community Producer
+                </div>
+
+            </div>
+
+        </div>
+
+    </aside>
+
+
+    <!-- =====================================================
+         MAIN CONTENT
+    ====================================================== -->
+
+    <main class="main">
+
+        <div class="page">
+
+
+            <header>
+
+                <h1 class="page-title">
+                    Supporting attachments
+                </h1>
+
+                <p class="page-description">
+                    Upload supporting material for your programme proposal.
+                </p>
+
+            </header>
+
+
+            <!-- PROGRESS -->
+
+            <div class="progress-section">
+
+                <div class="progress-info">
+
+                    <span>
+                        Step 4 of 5
+                    </span>
+
+                    <span>
+                        80% complete
+                    </span>
+
+                </div>
+
+
+                <div class="progress-track">
+
+                    <div class="progress-bar">
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- FORM -->
+
+            <form asp-controller="Producer"
+                  asp-action="Attachments"
+                  method="post"
+                  enctype="multipart/form-data">
+
+                @Html.AntiForgeryToken()
+
+
+                <div asp-validation-summary="ModelOnly"
+                     class="validation-summary">
+                </div>
+
+
+                <section class="form-card">
+
+
+                    <h2 class="card-title">
+                        Proposal documents
+                    </h2>
+
+
+                    <p class="card-description">
+                        Upload your proposal document and any supporting material.
+                    </p>
+
+
+                    <!-- =========================================
+                         PROPOSAL DOCUMENT
+                    ========================================== -->
+
+                    <div class="form-group">
+
+                        <label asp-for="ProposalDocument"
+                               class="form-label">
+
+                            Proposal document
+                            <span class="required">*</span>
+
+                        </label>
+
+
+                        <div class="upload-box">
+
+                            <input asp-for="ProposalDocument"
+                                   type="file"
+                                   accept=".pdf"
+                                   onchange="showFile(this, 'proposalFileName')" />
+
+
+                            <div>
+
+                                <div class="upload-icon">
+                                    ↑
+                                </div>
+
+
+                                <div class="upload-title">
+                                    Click to upload or drag and drop
+                                </div>
+
+
+                                <div class="upload-help">
+                                    PDF only · Maximum 20 MB
+                                </div>
+
+
+                                <div id="proposalFileName"
+                                     class="selected-file">
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+                        @if (!string.IsNullOrWhiteSpace(
+                            Model.ExistingProposalDocument))
+                        {
+                            <div class="existing-file">
+
+                                ✓ Proposal document already uploaded
+
+                            </div>
+                        }
+
+
+                        <span asp-validation-for="ProposalDocument"
+                              class="validation-message">
+                        </span>
+
+                    </div>
+
+
+                    <!-- =========================================
+                         SHOWREEL
+                    ========================================== -->
+
+                    <div class="form-group">
+
+                        <label asp-for="PilotShowreelLink"
+                               class="form-label">
+
+                            Pilot / showreel link
+
+                        </label>
+
+
+                        <input asp-for="PilotShowreelLink"
+                               type="url"
+                               class="form-control"
+                               placeholder="https://youtube.com/..." />
+
+
+                        <span asp-validation-for="PilotShowreelLink"
+                              class="validation-message">
+                        </span>
+
+                    </div>
+
+
+                    <!-- =========================================
+                         BUDGET
+                    ========================================== -->
+
+                    <div class="form-group">
+
+                        <label asp-for="BudgetDocument"
+                               class="form-label">
+
+                            Budget document
+
+                        </label>
+
+
+                        <div class="upload-box">
+
+                            <input asp-for="BudgetDocument"
+                                   type="file"
+                                   accept=".pdf,.doc,.docx,.xls,.xlsx"
+                                   onchange="showFile(this, 'budgetFileName')" />
+
+
+                            <div>
+
+                                <div class="upload-icon">
+                                    ↑
+                                </div>
+
+
+                                <div class="upload-title">
+                                    Upload budget document
+                                </div>
+
+
+                                <div class="upload-help">
+                                    PDF, Word or Excel · Maximum 20 MB
+                                </div>
+
+
+                                <div id="budgetFileName"
+                                     class="selected-file">
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+                        @if (!string.IsNullOrWhiteSpace(
+                            Model.ExistingBudgetDocument))
+                        {
+                            <div class="existing-file">
+
+                                ✓ Budget document already uploaded
+
+                            </div>
+                        }
+
+
+                        <span asp-validation-for="BudgetDocument"
+                              class="validation-message">
+                        </span>
+
+                    </div>
+
+
+                    <!-- =========================================
+                         ADDITIONAL FILE
+                    ========================================== -->
+
+                    <div class="form-group">
+
+                        <label asp-for="AdditionalFile"
+                               class="form-label">
+
+                            Additional file
+
+                        </label>
+
+
+                        <div class="upload-box">
+
+                            <input asp-for="AdditionalFile"
+                                   type="file"
+                                   accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+                                   onchange="showFile(this, 'additionalFileName')" />
+
+
+                            <div>
+
+                                <div class="upload-icon">
+                                    ↑
+                                </div>
+
+
+                                <div class="upload-title">
+                                    Upload additional supporting material
+                                </div>
+
+
+                                <div class="upload-help">
+                                    PDF, Word, Excel or image · Maximum 20 MB
+                                </div>
+
+
+                                <div id="additionalFileName"
+                                     class="selected-file">
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+                        @if (!string.IsNullOrWhiteSpace(
+                            Model.ExistingAdditionalFile))
+                        {
+                            <div class="existing-file">
+
+                                ✓ Additional file already uploaded
+
+                            </div>
+                        }
+
+
+                        <span asp-validation-for="AdditionalFile"
+                              class="validation-message">
+                        </span>
+
+                    </div>
+
+
+                </section>
+
+
+                <!-- =============================================
+                     ACTIONS
+                ============================================== -->
+
+                <div class="actions">
+
+
+                    <a asp-controller="Producer"
+                       asp-action="ProductionDetails"
+                       class="back-button">
+
+                        ← Back
+
+                    </a>
+
+
+                    <button type="submit"
+                            class="continue-button">
+
+                        Continue →
+
+                    </button>
+
+
+                </div>
+
+
+            </form>
+
+
+        </div>
+
+    </main>
+
+
+    <script>
+
+        function showFile(input, targetId) {
+
+            const target =
+                document.getElementById(targetId);
+
+            if (!target) {
+                return;
+            }
+
+
+            if (input.files &&
+                input.files.length > 0) {
+
+                target.textContent =
+                    "Selected: " +
+                    input.files[0].name;
+            }
+            else {
+
+                target.textContent = "";
+
+            }
+        }
+
+    </script>
+
+
+</body>
+
+</html>

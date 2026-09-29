@@ -116,6 +116,62 @@ builder.Services.AddControllersWithViews();
 
 
 // =====================================================
+// SESSION STORAGE
+// =====================================================
+
+/*
+ * Proposal creation currently uses ASP.NET Core Session
+ * to temporarily store the producer's progress between
+ * the multi-step proposal screens.
+ *
+ * Examples:
+ *
+ * ProposalGuidelinesAccepted
+ * ProducerDetails
+ * ProgrammeDetails
+ */
+
+builder.Services.AddDistributedMemoryCache();
+
+builder.Services.AddSession(options =>
+{
+    // Keep proposal session information for 30 minutes
+    // after the user's last request.
+
+    options.IdleTimeout =
+        TimeSpan.FromMinutes(30);
+
+
+    // Prevent JavaScript from reading the session cookie.
+
+    options.Cookie.HttpOnly = true;
+
+
+    // Allow the session cookie to be created because
+    // the proposal workflow requires it.
+
+    options.Cookie.IsEssential = true;
+
+
+    // Give the RESK session cookie its own name.
+
+    options.Cookie.Name =
+        ".RESK.WIL.Session";
+
+
+    // Match the security policy used by the
+    // authentication cookie.
+
+    options.Cookie.SecurePolicy =
+        CookieSecurePolicy.Always;
+
+
+    options.Cookie.SameSite =
+        SameSiteMode.Lax;
+});
+
+
+// =====================================================
 // BUILD APPLICATION
 // =====================================================
 
@@ -157,6 +213,31 @@ app.UseStaticFiles();
 // =====================================================
 
 app.UseRouting();
+
+
+// =====================================================
+// SESSION
+// =====================================================
+
+/*
+ * IMPORTANT:
+ *
+ * AddSession() above registers the Session services.
+ *
+ * UseSession() here adds Session to the HTTP request
+ * pipeline.
+ *
+ * Without this line:
+ *
+ * HttpContext.Session
+ *
+ * throws:
+ *
+ * "Session has not been configured for this
+ * application or request."
+ */
+
+app.UseSession();
 
 
 // =====================================================

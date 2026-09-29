@@ -1,962 +1,693 @@
-﻿@{
+﻿@using Microsoft.AspNetCore.Identity
+@inject UserManager<IdentityUser> UserManager
+
+@{
     Layout = null;
     ViewData["Title"] = "Producer Dashboard";
+
+    var currentUser = await UserManager.GetUserAsync(User);
+
+    var producerUsername =
+        currentUser?.Email
+        ?? currentUser?.UserName
+        ?? "Producer";
+
+    var initial =
+        !string.IsNullOrWhiteSpace(producerUsername)
+            ? producerUsername.Substring(0, 1).ToUpper()
+            : "P";
 }
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0" />
 
     <title>Producer Dashboard - R.E.S.K</title>
 
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
 
-        html,
-        body {
-            min-height: 100%;
-        }
+            * {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
 
-        body {
-            font-family: Inter, "Segoe UI", Arial, sans-serif;
-            background: #f4f7fb;
-            color: #13223c;
-            opacity: 0;
-            animation: pageFadeIn 0.55s ease forwards;
-        }
+            html,
+            body {
+                min-height: 100%;
+            }
 
-        @@keyframes pageFadeIn {
-            from {
+            body {
+                font-family: Inter, "Segoe UI", Arial, sans-serif;
+                background: #f4f7fb;
+                color: #13223c;
                 opacity: 0;
+                animation: pageFadeIn 0.55s ease forwards;
             }
 
-            to {
-                opacity: 1;
-            }
-        }
-
-        button,
-        a {
-            font-family: inherit;
-        }
-
-        /* =========================================================
-           SIDEBAR
-        ========================================================= */
-
-        .sidebar {
-            position: fixed;
-            left: 0;
-            top: 0;
-            bottom: 0;
-
-            width: 260px;
-
-            display: flex;
-            flex-direction: column;
-
-            background: #0c1a33;
-            color: #ffffff;
-
-            padding: 36px 20px 38px;
-
-            z-index: 100;
-        }
-
-        /* =========================================================
-           BRAND
-        ========================================================= */
-
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-
-            padding-left: 13px;
-            margin-bottom: 42px;
-        }
-
-        .brand-icon {
-            width: 56px;
-            height: 56px;
-
-            display: flex;
-            align-items: center;
-            justify-content: center;
-
-            border: 2px solid #00b9d0;
-            border-radius: 17px;
-
-            color: #00bfd7;
-
-            font-size: 28px;
-            font-weight: 700;
-        }
-
-        .brand-name {
-            color: #ffffff;
-
-            font-size: 24px;
-            font-weight: 800;
-            letter-spacing: 1.5px;
-        }
-
-        .brand-subtitle {
-            margin-top: 5px;
-
-            color: #d3dae7;
-
-            font-size: 9px;
-            letter-spacing: 0.3px;
-        }
-
-        /* =========================================================
-           SIDEBAR LABEL
-        ========================================================= */
-
-        .nav-label {
-            margin: 0 12px 8px;
-
-            color: #72809a;
-
-            font-size: 10px;
-            font-weight: 800;
-        }
-
-        /* =========================================================
-           NAVIGATION
-        ========================================================= */
-
-        .sidebar-nav {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .sidebar-link {
-            display: flex;
-            align-items: center;
-
-            min-height: 43px;
-
-            padding: 0 32px;
-
-            border-radius: 10px;
-
-            color: #b9c2d1;
-
-            font-size: 14px;
-            font-weight: 500;
-
-            text-decoration: none;
-
-            transition:
-                background 0.2s ease,
-                color 0.2s ease,
-                transform 0.2s ease;
-        }
-
-        .sidebar-link:hover {
-            color: #ffffff;
-            background: rgba(255, 255, 255, 0.05);
-            transform: translateX(2px);
-        }
-
-        .sidebar-link.active {
-            background: #142a4b;
-            color: #ffffff;
-            font-weight: 700;
-        }
-
-        /* =========================================================
-           PRODUCER PROFILE
-        ========================================================= */
-
-        .producer-account {
-            position: relative;
-            margin-top: auto;
-            padding: 0 8px;
-        }
-
-        .producer-profile {
-            width: 100%;
-
-            display: flex;
-            align-items: center;
-            gap: 11px;
-
-            padding: 12px 10px;
-
-            border: 0;
-            border-radius: 11px;
-
-            background: #142a4b;
-
-            color: white;
-
-            text-align: left;
-            cursor: pointer;
-
-            transition: background 0.2s ease;
-        }
-
-        .producer-profile:hover {
-            background: #193456;
-        }
-
-        .producer-avatar {
-            width: 34px;
-            height: 34px;
-
-            flex-shrink: 0;
-
-            display: flex;
-            align-items: center;
-            justify-content: center;
-
-            border-radius: 50%;
-
-            background: #0bb6ca;
-            color: #ffffff;
-
-            font-size: 10px;
-            font-weight: 800;
-        }
-
-        .producer-profile-text {
-            min-width: 0;
-            flex: 1;
-        }
-
-        .producer-name {
-            overflow: hidden;
-
-            color: #ffffff;
-
-            font-size: 13px;
-            font-weight: 700;
-
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        .producer-role {
-            margin-top: 4px;
-
-            color: #b5c0d1;
-
-            font-size: 10px;
-        }
-
-        /* =========================================================
-           PROFILE POPUP
-        ========================================================= */
-
-        .profile-menu {
-            position: absolute;
-
-            left: 8px;
-            right: 8px;
-            bottom: calc(100% + 9px);
-
-            padding: 7px;
-
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 10px;
-
-            background: #142a4b;
-
-            box-shadow: 0 18px 35px rgba(0, 0, 0, 0.25);
-
-            opacity: 0;
-            visibility: hidden;
-
-            transform: translateY(8px);
-
-            transition:
-                opacity 0.2s ease,
-                visibility 0.2s ease,
-                transform 0.2s ease;
-        }
-
-        .producer-account.open .profile-menu {
-            opacity: 1;
-            visibility: visible;
-            transform: translateY(0);
-        }
-
-        .profile-menu-link,
-        .logout-button {
-            width: 100%;
-
-            display: block;
-
-            padding: 10px 11px;
-
-            border: 0;
-            border-radius: 7px;
-
-            background: transparent;
-
-            color: #d6deea;
-
-            font-size: 12px;
-            font-weight: 600;
-
-            text-align: left;
-            text-decoration: none;
-
-            cursor: pointer;
-        }
-
-        .profile-menu-link:hover,
-        .logout-button:hover {
-            background: rgba(255, 255, 255, 0.06);
-            color: white;
-        }
-
-        .logout-button {
-            color: #ff9e9e;
-        }
-
-        .menu-divider {
-            height: 1px;
-            margin: 5px 4px;
-
-            background: rgba(255, 255, 255, 0.08);
-        }
-
-        /* =========================================================
-           MAIN
-        ========================================================= */
-
-        .main {
-            min-height: 100vh;
-            margin-left: 260px;
-            padding: 28px 52px 38px;
-
-            background: #f4f7fb;
-        }
-
-        .dashboard {
-            width: 100%;
-            max-width: 1070px;
-
-            margin: 0 auto;
-        }
-
-        /* =========================================================
-           WELCOME
-        ========================================================= */
-
-        .welcome {
-            margin-bottom: 26px;
-        }
-
-        .welcome h1 {
-            color: #14233e;
-
-            font-size: 31px;
-            line-height: 1.2;
-            font-weight: 800;
-        }
-
-        .welcome p {
-            margin-top: 8px;
-
-            color: #697a96;
-
-            font-size: 14px;
-        }
-
-        /* =========================================================
-           KPI CARDS
-        ========================================================= */
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: 15px;
-
-            margin-bottom: 21px;
-        }
-
-        .stat-card {
-            min-height: 117px;
-
-            padding: 20px;
-
-            border: 1px solid #d9e1ec;
-            border-radius: 13px;
-
-            background: #ffffff;
-
-            box-shadow: 0 1px 2px rgba(20, 35, 62, 0.02);
-        }
-
-        .stat-title {
-            margin-bottom: 12px;
-
-            color: #61728d;
-
-            font-size: 11px;
-            font-weight: 800;
-        }
-
-        .stat-content {
-            display: flex;
-            align-items: baseline;
-            gap: 10px;
-        }
-
-        .stat-number {
-            color: #12213b;
-
-            font-size: 35px;
-            line-height: 1;
-            font-weight: 800;
-        }
-
-        .stat-text {
-            color: #687995;
-
-            font-size: 11px;
-        }
-
-        .stat-text.review {
-            color: #d98a00;
-            font-weight: 700;
-        }
-
-        .stat-text.approved {
-            color: #209766;
-            font-weight: 700;
-        }
-
-        /* =========================================================
-           DASHBOARD COLUMNS
-        ========================================================= */
-
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: minmax(0, 1.95fr) minmax(300px, 1fr);
-            gap: 15px;
-        }
-
-        .left-column,
-        .right-column {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        /* =========================================================
-           PANEL
-        ========================================================= */
-
-        .panel {
-            border: 1px solid #d9e1ec;
-            border-radius: 13px;
-
-            background: #ffffff;
-
-            overflow: hidden;
-        }
-
-        .panel-padding {
-            padding: 20px 23px;
-        }
-
-        .panel-title {
-            color: #14233e;
-
-            font-size: 19px;
-            font-weight: 800;
-        }
-
-        .panel-subtitle {
-            margin-top: 5px;
-
-            color: #6d7e99;
-
-            font-size: 11px;
-        }
-
-        /* =========================================================
-           CURRENT PROPOSAL
-        ========================================================= */
-
-        .current-proposal {
-            margin-top: 20px;
-
-            padding: 13px 23px 10px;
-
-            border: 1px solid #dde4ee;
-            border-radius: 12px;
-
-            background: #f7f9fc;
-        }
-
-        .proposal-top {
-            display: flex;
-            justify-content: space-between;
-            gap: 15px;
-        }
-
-        .proposal-name {
-            color: #14233e;
-
-            font-size: 19px;
-            font-weight: 800;
-        }
-
-        .proposal-meta {
-            margin-top: 9px;
-
-            color: #627490;
-
-            font-size: 11px;
-        }
-
-        .proposal-date {
-            margin-top: 7px;
-
-            color: #627490;
-
-            font-size: 11px;
-        }
-
-        /* =========================================================
-           STATUS BADGES
-        ========================================================= */
-
-        .status {
-            min-width: 80px;
-
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-
-            padding: 6px 13px;
-
-            border-radius: 999px;
-
-            font-size: 10px;
-            font-weight: 700;
-        }
-
-        .status-review {
-            background: #fff2d8;
-            color: #bd7900;
-        }
-
-        .status-approved {
-            background: #e6f6ef;
-            color: #229865;
-        }
-
-        .status-draft {
-            background: #f0f3f7;
-            color: #66768e;
-        }
-
-        .status-changes {
-            background: #fde9eb;
-            color: #d34e5d;
-        }
-
-        /* =========================================================
-           WORKFLOW
-        ========================================================= */
-
-        .workflow {
-            display: grid;
-            grid-template-columns: auto 1fr auto;
-            align-items: center;
-            gap: 10px;
-
-            margin-top: 19px;
-        }
-
-        .workflow-label {
-            color: #14233e;
-
-            font-size: 11px;
-            font-weight: 700;
-        }
-
-        .progress-track {
-            height: 8px;
-
-            border-radius: 999px;
-
-            background: #e2e7ef;
-
-            overflow: hidden;
-        }
-
-        .progress-bar {
-            width: 67%;
-            height: 100%;
-
-            border-radius: inherit;
-
-            background: #14b5c8;
-        }
-
-        .workflow-stages {
-            color: #667791;
-
-            font-size: 10px;
-        }
-
-        .proposal-actions {
-            display: flex;
-            justify-content: flex-end;
-
-            margin-top: 10px;
-            padding-right: 51px;
-        }
-
-        .outline-button {
-            min-width: 106px;
-
-            padding: 8px 14px;
-
-            border: 1px solid #d5deea;
-            border-radius: 8px;
-
-            background: white;
-            color: #14233e;
-
-            font-size: 10px;
-            font-weight: 700;
-
-            text-decoration: none;
-            text-align: center;
-
-            cursor: pointer;
-        }
-
-        .outline-button:hover {
-            border-color: #12b8cc;
-            color: #00a9bd;
-        }
-
-        /* =========================================================
-           NEXT ACTION
-        ========================================================= */
-
-        .next-action-panel {
-            min-height: 252px;
-        }
-
-        .info-box {
-            display: flex;
-            gap: 12px;
-
-            margin-top: 20px;
-
-            padding: 8px 10px 8px;
-
-            border: 1px solid #8ee0e9;
-            border-radius: 10px;
-
-            background: #eefbfc;
-        }
-
-        .info-icon {
-            width: 28px;
-            height: 28px;
-
-            flex-shrink: 0;
-
-            display: flex;
-            align-items: center;
-            justify-content: center;
-
-            border-radius: 50%;
-
-            background: #10b3c7;
-            color: white;
-
-            font-size: 14px;
-            font-weight: 800;
-        }
-
-        .info-title {
-            margin-top: 5px;
-
-            color: #14233e;
-
-            font-size: 12px;
-            font-weight: 800;
-        }
-
-        .info-description {
-            margin-top: 13px;
-
-            color: #61748f;
-
-            font-size: 10px;
-            line-height: 1.7;
-        }
-
-        .status-details {
-            display: inline-block;
-
-            margin-top: 8px;
-            padding: 5px 10px;
-
-            border-radius: 999px;
-
-            background: white;
-            color: #009cb0;
-
-            font-size: 10px;
-            font-weight: 700;
-
-            text-decoration: none;
-        }
-
-        /* =========================================================
-           RECENT PROPOSALS
-        ========================================================= */
-
-        .recent-header {
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-
-            padding: 17px 23px 13px;
-        }
-
-        .view-all {
-            margin-top: 7px;
-
-            color: #00abc0;
-
-            font-size: 11px;
-            font-weight: 700;
-
-            text-decoration: none;
-        }
-
-        .proposal-table-wrap {
-            padding: 0 15px 8px;
-        }
-
-        .proposal-table {
-            width: 100%;
-
-            border-collapse: collapse;
-        }
-
-        .proposal-table thead {
-            background: #f2f5f9;
-        }
-
-        .proposal-table th {
-            padding: 12px 18px;
-
-            color: #64758f;
-
-            font-size: 10px;
-            font-weight: 800;
-
-            text-align: left;
-        }
-
-        .proposal-table th:first-child {
-            border-radius: 8px 0 0 8px;
-        }
-
-        .proposal-table th:last-child {
-            border-radius: 0 8px 8px 0;
-        }
-
-        .proposal-table td {
-            padding: 12px 18px;
-
-            border-bottom: 1px solid #edf0f5;
-
-            color: #5d6f8a;
-
-            font-size: 11px;
-        }
-
-        .proposal-table tbody tr:last-child td {
-            border-bottom: none;
-        }
-
-        .proposal-table .programme-name {
-            color: #14233e;
-            font-weight: 700;
-        }
-
-        .table-action {
-            color: #00abc0;
-
-            font-size: 11px;
-            font-weight: 700;
-
-            text-decoration: none;
-        }
-
-        /* =========================================================
-           QUICK ACTIONS
-        ========================================================= */
-
-        .quick-panel {
-            min-height: 321px;
-        }
-
-        .quick-actions {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-
-            margin-top: 20px;
-        }
-
-        .quick-action {
-            min-height: 52px;
-
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-
-            padding: 0 17px;
-
-            border: 1px solid #d7e0eb;
-            border-radius: 9px;
-
-            background: white;
-
-            color: #14233e;
-
-            font-size: 12px;
-            font-weight: 700;
-
-            text-decoration: none;
-
-            transition:
-                border 0.2s ease,
-                background 0.2s ease;
-        }
-
-        .quick-action:hover {
-            border-color: #8ddde6;
-            background: #f8feff;
-        }
-
-        .quick-action.primary {
-            border-color: #8ddde6;
-            background: #eefbfc;
-        }
-
-        .quick-arrow {
-            color: #00b2c7;
-            font-size: 17px;
-        }
-
-        .draft-count {
-            padding: 4px 7px;
-
-            border-radius: 999px;
-
-            background: #f1f4f8;
-            color: #6a7b94;
-
-            font-size: 10px;
-        }
-
-        .profile-update {
-            display: inline-block;
-
-            margin: 18px 17px 3px;
-
-            color: #00abc0;
-
-            font-size: 11px;
-            font-weight: 700;
-
-            text-decoration: none;
-        }
-
-        /* =========================================================
-           RESPONSIVE
-        ========================================================= */
-
-        @@media (max-width: 1150px) {
-            .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
+            @@keyframes pageFadeIn {
+
+                from {
+                    opacity: 0;
+                }
+
+                to {
+                    opacity: 1;
+                }
             }
 
-            .dashboard-grid {
-                grid-template-columns: 1fr;
+            button,
+            a {
+                font-family: inherit;
             }
-        }
 
-        @@media (max-width: 800px) {
+
+            /* =========================================================
+                       SIDEBAR
+                    ========================================================= */
+
             .sidebar {
-                position: relative;
-
-                width: 100%;
-                min-height: auto;
+                position: fixed;
+                left: 0;
+                top: 0;
+                bottom: 0;
+                width: 260px;
+                display: flex;
+                flex-direction: column;
+                background: #0c1a33;
+                color: white;
+                padding: 36px 20px 38px;
+                z-index: 100;
             }
 
-            .main {
-                margin-left: 0;
-                padding: 25px 20px;
+
+            /* =========================================================
+                       BRAND
+                    ========================================================= */
+
+            .brand {
+                display: flex;
+                align-items: center;
+                gap: 15px;
+                padding-left: 13px;
+                margin-bottom: 42px;
             }
+
+            .brand-icon {
+                width: 56px;
+                height: 56px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border: 2px solid #00b9d0;
+                border-radius: 17px;
+                color: #00bfd7;
+                font-size: 28px;
+                font-weight: 700;
+            }
+
+            .brand-name {
+                color: white;
+                font-size: 24px;
+                font-weight: 800;
+                letter-spacing: 1.5px;
+            }
+
+            .brand-subtitle {
+                margin-top: 5px;
+                color: #d3dae7;
+                font-size: 9px;
+            }
+
+
+            /* =========================================================
+                       NAVIGATION
+                    ========================================================= */
+
+            .nav-label {
+                margin: 0 12px 8px;
+                color: #72809a;
+                font-size: 10px;
+                font-weight: 800;
+            }
+
+            .sidebar-nav {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .sidebar-link {
+                display: flex;
+                align-items: center;
+                min-height: 43px;
+                padding: 0 32px;
+                border-radius: 10px;
+                color: #b9c2d1;
+                font-size: 14px;
+                font-weight: 500;
+                text-decoration: none;
+                transition: 0.2s;
+            }
+
+                .sidebar-link:hover {
+                    color: white;
+                    background: rgba(255,255,255,0.05);
+                    transform: translateX(2px);
+                }
+
+                .sidebar-link.active {
+                    background: #142a4b;
+                    color: white;
+                    font-weight: 700;
+                }
+
+
+            /* =========================================================
+                       PRODUCER ACCOUNT
+                    ========================================================= */
 
             .producer-account {
-                margin-top: 30px;
+                position: relative;
+                margin-top: auto;
+                padding: 0 8px;
             }
-        }
 
-        @@media (max-width: 560px) {
+            .producer-profile {
+                width: 100%;
+                display: flex;
+                align-items: center;
+                gap: 11px;
+                padding: 12px 10px;
+                border: none;
+                border-radius: 11px;
+                background: #142a4b;
+                color: white;
+                cursor: pointer;
+                text-align: left;
+            }
+
+                .producer-profile:hover {
+                    background: #193456;
+                }
+
+            .producer-avatar {
+                width: 34px;
+                height: 34px;
+                flex-shrink: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 50%;
+                background: #0bb6ca;
+                color: white;
+                font-size: 11px;
+                font-weight: 800;
+            }
+
+            .producer-profile-text {
+                min-width: 0;
+                flex: 1;
+            }
+
+            .producer-name {
+                overflow: hidden;
+                color: white;
+                font-size: 13px;
+                font-weight: 700;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            .producer-role {
+                margin-top: 4px;
+                color: #b5c0d1;
+                font-size: 10px;
+            }
+
+
+            /* =========================================================
+                       PROFILE MENU
+                    ========================================================= */
+
+            .profile-menu {
+                position: absolute;
+                left: 8px;
+                right: 8px;
+                bottom: calc(100% + 9px);
+                padding: 7px;
+                border: 1px solid rgba(255,255,255,0.08);
+                border-radius: 10px;
+                background: #142a4b;
+                box-shadow: 0 18px 35px rgba(0,0,0,0.25);
+                opacity: 0;
+                visibility: hidden;
+                transform: translateY(8px);
+                transition: 0.2s;
+            }
+
+            .producer-account.open .profile-menu {
+                opacity: 1;
+                visibility: visible;
+                transform: translateY(0);
+            }
+
+            .profile-menu-link,
+            .logout-button {
+                width: 100%;
+                display: block;
+                padding: 10px 11px;
+                border: none;
+                border-radius: 7px;
+                background: transparent;
+                color: #d6deea;
+                font-size: 12px;
+                font-weight: 600;
+                text-align: left;
+                text-decoration: none;
+                cursor: pointer;
+            }
+
+                .profile-menu-link:hover,
+                .logout-button:hover {
+                    background: rgba(255,255,255,0.06);
+                    color: white;
+                }
+
+            .logout-button {
+                color: #ff9e9e;
+            }
+
+            .menu-divider {
+                height: 1px;
+                margin: 5px 4px;
+                background: rgba(255,255,255,0.08);
+            }
+
+
+            /* =========================================================
+                       MAIN
+                    ========================================================= */
+
+            .main {
+                min-height: 100vh;
+                margin-left: 260px;
+                padding: 28px 52px 38px;
+                background: #f4f7fb;
+            }
+
+            .dashboard {
+                width: 100%;
+                max-width: 1070px;
+                margin: 0 auto;
+            }
+
+
+            /* =========================================================
+                       WELCOME
+                    ========================================================= */
+
+            .welcome {
+                margin-bottom: 26px;
+            }
+
+                .welcome h1 {
+                    color: #14233e;
+                    font-size: 31px;
+                    line-height: 1.2;
+                    font-weight: 800;
+                }
+
+                .welcome p {
+                    margin-top: 8px;
+                    color: #697a96;
+                    font-size: 14px;
+                }
+
+
+            /* =========================================================
+                       STATS
+                    ========================================================= */
+
             .stats-grid {
-                grid-template-columns: 1fr;
+                display: grid;
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+                gap: 15px;
+                margin-bottom: 21px;
             }
 
-            .welcome h1 {
-                font-size: 25px;
+            .stat-card {
+                min-height: 117px;
+                padding: 20px;
+                border: 1px solid #d9e1ec;
+                border-radius: 13px;
+                background: white;
             }
 
-            .workflow {
-                grid-template-columns: 1fr;
+            .stat-title {
+                margin-bottom: 12px;
+                color: #61728d;
+                font-size: 11px;
+                font-weight: 800;
             }
 
-            .proposal-actions {
-                padding-right: 0;
+            .stat-content {
+                display: flex;
+                align-items: baseline;
+                gap: 10px;
+            }
+
+            .stat-number {
+                color: #12213b;
+                font-size: 35px;
+                line-height: 1;
+                font-weight: 800;
+            }
+
+            .stat-text {
+                color: #687995;
+                font-size: 11px;
+            }
+
+                .stat-text.review {
+                    color: #d98a00;
+                    font-weight: 700;
+                }
+
+                .stat-text.approved {
+                    color: #209766;
+                    font-weight: 700;
+                }
+
+
+            /* =========================================================
+                       DASHBOARD GRID
+                    ========================================================= */
+
+            .dashboard-grid {
+                display: grid;
+                grid-template-columns: minmax(0,1.95fr) minmax(300px,1fr);
+                gap: 15px;
+            }
+
+            .left-column,
+            .right-column {
+                display: flex;
+                flex-direction: column;
+                gap: 15px;
+            }
+
+
+            /* =========================================================
+                       PANELS
+                    ========================================================= */
+
+            .panel {
+                border: 1px solid #d9e1ec;
+                border-radius: 13px;
+                background: white;
+                overflow: hidden;
+            }
+
+            .panel-padding {
+                padding: 20px 23px;
+            }
+
+            .panel-title {
+                color: #14233e;
+                font-size: 19px;
+                font-weight: 800;
+            }
+
+            .panel-subtitle {
+                margin-top: 5px;
+                color: #6d7e99;
+                font-size: 11px;
+            }
+
+
+            /* =========================================================
+                       EMPTY CURRENT PROPOSAL
+                    ========================================================= */
+
+            .current-proposal {
+                margin-top: 20px;
+                padding: 25px;
+                border: 1px solid #dde4ee;
+                border-radius: 12px;
+                background: #f7f9fc;
+            }
+
+            .empty-title {
+                color: #14233e;
+                font-size: 19px;
+                font-weight: 800;
+            }
+
+            .empty-text {
+                margin-top: 10px;
+                color: #627490;
+                font-size: 11px;
+                line-height: 1.8;
+            }
+
+
+            /* =========================================================
+                       BUTTONS
+                    ========================================================= */
+
+            .outline-button {
+                display: inline-block;
+                margin-top: 18px;
+                padding: 9px 27px;
+                border: 1px solid #11b6ca;
+                border-radius: 8px;
+                background: white;
+                color: #00a9bd;
+                font-size: 10px;
+                font-weight: 700;
+                text-decoration: none;
+            }
+
+                .outline-button:hover {
+                    background: #eefbfc;
+                }
+
+
+            /* =========================================================
+                       NEXT ACTION
+                    ========================================================= */
+
+            .info-box {
+                display: flex;
+                gap: 12px;
+                margin-top: 20px;
+                padding: 13px;
+                border: 1px solid #8ee0e9;
+                border-radius: 10px;
+                background: #eefbfc;
+            }
+
+            .info-icon {
+                width: 28px;
+                height: 28px;
+                flex-shrink: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 50%;
+                background: #10b3c7;
+                color: white;
+                font-size: 14px;
+                font-weight: 800;
+            }
+
+            .info-title {
+                margin-top: 4px;
+                color: #14233e;
+                font-size: 12px;
+                font-weight: 800;
+            }
+
+            .info-description {
+                margin-top: 13px;
+                color: #61748f;
+                font-size: 10px;
+                line-height: 1.7;
+            }
+
+            .status-details {
+                display: inline-block;
+                margin-top: 8px;
+                padding: 5px 10px;
+                border-radius: 999px;
+                background: white;
+                color: #009cb0;
+                font-size: 10px;
+                font-weight: 700;
+                text-decoration: none;
+            }
+
+
+            /* =========================================================
+                       RECENT PROPOSALS
+                    ========================================================= */
+
+            .recent-header {
+                padding: 17px 23px 13px;
             }
 
             .proposal-table-wrap {
-                overflow-x: auto;
+                padding: 0 15px 25px;
             }
 
             .proposal-table {
-                min-width: 620px;
+                width: 100%;
+                border-collapse: collapse;
             }
-        }
+
+                .proposal-table thead {
+                    background: #f2f5f9;
+                }
+
+                .proposal-table th {
+                    padding: 12px 18px;
+                    color: #64758f;
+                    font-size: 10px;
+                    font-weight: 800;
+                    text-align: left;
+                }
+
+            .empty-table {
+                padding: 45px 20px !important;
+                color: #8493aa !important;
+                text-align: center;
+                font-size: 12px !important;
+            }
+
+
+            /* =========================================================
+                       QUICK ACTIONS
+                    ========================================================= */
+
+            .quick-actions {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                margin-top: 20px;
+            }
+
+            .quick-action {
+                min-height: 52px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 0 17px;
+                border: 1px solid #d7e0eb;
+                border-radius: 9px;
+                background: white;
+                color: #14233e;
+                font-size: 12px;
+                font-weight: 700;
+                text-decoration: none;
+            }
+
+                .quick-action:hover {
+                    border-color: #8ddde6;
+                    background: #f8feff;
+                }
+
+                .quick-action.primary {
+                    border-color: #8ddde6;
+                    background: #eefbfc;
+                }
+
+            .quick-arrow {
+                color: #00b2c7;
+                font-size: 17px;
+            }
+
+            .draft-count {
+                padding: 4px 7px;
+                border-radius: 999px;
+                background: #f1f4f8;
+                color: #6a7b94;
+                font-size: 10px;
+            }
+
+            .profile-update {
+                display: inline-block;
+                margin-top: 18px;
+                color: #00abc0;
+                font-size: 11px;
+                font-weight: 700;
+                text-decoration: none;
+            }
+
+
+            /* =========================================================
+                       RESPONSIVE
+                    ========================================================= */
+
+            @@media(max-width:1150px) {
+
+                .stats-grid {
+                    grid-template-columns: repeat(2,1fr);
+                }
+
+                .dashboard-grid {
+                    grid-template-columns: 1fr;
+                }
+            }
+
+            @@media(max-width:800px) {
+
+                .sidebar {
+                    position: relative;
+                    width: 100%;
+                }
+
+                .main {
+                    margin-left: 0;
+                    padding: 25px 20px;
+                }
+
+                .producer-account {
+                    margin-top: 30px;
+                }
+            }
+
+            @@media(max-width:560px) {
+
+                .stats-grid {
+                    grid-template-columns: 1fr;
+                }
+
+                .welcome h1 {
+                    font-size: 25px;
+                }
+            }
+
     </style>
+
 </head>
 
+
 <body>
+
 
     <!-- =========================================================
          SIDEBAR
     ========================================================== -->
 
     <aside class="sidebar">
+
 
         <div class="brand">
 
@@ -965,6 +696,7 @@
             </div>
 
             <div>
+
                 <div class="brand-name">
                     R.E.S.K
                 </div>
@@ -972,6 +704,7 @@
                 <div class="brand-subtitle">
                     SOFTWARE STUDIO
                 </div>
+
             </div>
 
         </div>
@@ -984,55 +717,83 @@
 
         <nav class="sidebar-nav">
 
+
             <a asp-controller="Producer"
                asp-action="Index"
                class="sidebar-link active">
+
                 Dashboard
+
             </a>
 
-            <a href="#"
+
+            <a asp-controller="Producer"
+               asp-action="Guidelines"
                class="sidebar-link">
+
                 New proposal
+
             </a>
 
-            <a href="#"
+
+            <a asp-controller="Producer"
+               asp-action="MyProposals"
                class="sidebar-link">
+
                 My proposals
+
             </a>
+
 
             <a href="#"
                class="sidebar-link">
+
                 Drafts
+
             </a>
 
-            <a href="#"
+
+            <a asp-controller="Producer"
+               asp-action="Guidelines"
                class="sidebar-link">
+
                 Guidelines
+
             </a>
+
 
             <a href="#"
                class="sidebar-link">
+
                 Settings
+
             </a>
+
 
         </nav>
 
 
         <!-- =====================================================
-             PRODUCER PROFILE
+             LOGGED-IN PRODUCER
         ====================================================== -->
 
         <div class="producer-account"
              id="producerAccount">
 
+
             <div class="profile-menu">
+
 
                 <a href="#"
                    class="profile-menu-link">
+
                     Account settings
+
                 </a>
 
+
                 <div class="menu-divider"></div>
+
 
                 <form asp-controller="Account"
                       asp-action="Logout"
@@ -1042,10 +803,13 @@
 
                     <button type="submit"
                             class="logout-button">
+
                         Log out
+
                     </button>
 
                 </form>
+
 
             </div>
 
@@ -1055,27 +819,43 @@
                     id="producerProfileButton"
                     aria-expanded="false">
 
+
                 <div class="producer-avatar">
-                    KC
+
+                    @initial
+
                 </div>
+
 
                 <div class="producer-profile-text">
 
-                    <div class="producer-name">
-                        Kuan Chi
+
+                    <div class="producer-name"
+                         title="@producerUsername">
+
+                        @producerUsername
+
                     </div>
 
+
                     <div class="producer-role">
+
                         Community Producer
+
                     </div>
+
 
                 </div>
 
+
             </button>
+
 
         </div>
 
+
     </aside>
+
 
 
     <!-- =========================================================
@@ -1084,7 +864,9 @@
 
     <main class="main">
 
+
         <div class="dashboard">
+
 
             <!-- =================================================
                  WELCOME
@@ -1092,22 +874,27 @@
 
             <section class="welcome">
 
+
                 <h1>
-                    Welcome back, Kuan Chi
+                    Welcome back, @producerUsername
                 </h1>
+
 
                 <p>
                     Track your proposals, continue drafts and start a new programme submission.
                 </p>
 
+
             </section>
 
 
+
             <!-- =================================================
-                 STATISTICS
+                 STATISTICS - EVERYTHING STARTS AT ZERO
             ================================================== -->
 
             <section class="stats-grid">
+
 
                 <article class="stat-card">
 
@@ -1118,7 +905,7 @@
                     <div class="stat-content">
 
                         <div class="stat-number">
-                            8
+                            0
                         </div>
 
                         <div class="stat-text">
@@ -1130,6 +917,7 @@
                 </article>
 
 
+
                 <article class="stat-card">
 
                     <div class="stat-title">
@@ -1139,7 +927,7 @@
                     <div class="stat-content">
 
                         <div class="stat-number">
-                            3
+                            0
                         </div>
 
                         <div class="stat-text review">
@@ -1151,6 +939,7 @@
                 </article>
 
 
+
                 <article class="stat-card">
 
                     <div class="stat-title">
@@ -1160,7 +949,7 @@
                     <div class="stat-content">
 
                         <div class="stat-number">
-                            3
+                            0
                         </div>
 
                         <div class="stat-text approved">
@@ -1172,6 +961,7 @@
                 </article>
 
 
+
                 <article class="stat-card">
 
                     <div class="stat-title">
@@ -1181,7 +971,7 @@
                     <div class="stat-content">
 
                         <div class="stat-number">
-                            2
+                            0
                         </div>
 
                         <div class="stat-text">
@@ -1192,28 +982,32 @@
 
                 </article>
 
+
             </section>
 
 
+
             <!-- =================================================
-                 MAIN TWO-COLUMN AREA
+                 DASHBOARD CONTENT
             ================================================== -->
 
             <section class="dashboard-grid">
 
-                <!-- =================================================
-                     LEFT COLUMN
-                ================================================== -->
+
+                <!-- LEFT -->
 
                 <div class="left-column">
+
 
                     <!-- CURRENT PROPOSAL -->
 
                     <article class="panel panel-padding">
 
+
                         <div class="panel-title">
                             Current proposal
                         </div>
+
 
                         <div class="panel-subtitle">
                             Your most recently updated submission
@@ -1222,67 +1016,39 @@
 
                         <div class="current-proposal">
 
-                            <div class="proposal-top">
 
-                                <div>
+                            <div class="empty-title">
 
-                                    <div class="proposal-name">
-                                        Voices of Cape Town
-                                    </div>
-
-                                    <div class="proposal-meta">
-                                        Documentary • 30 minute episode • English
-                                    </div>
-
-                                    <div class="proposal-date">
-                                        Submitted 5 August 2026
-                                    </div>
-
-                                </div>
-
-
-                                <div>
-
-                                    <span class="status status-review">
-                                        Under review
-                                    </span>
-
-                                </div>
+                                No proposals yet
 
                             </div>
 
 
-                            <div class="workflow">
+                            <div class="empty-text">
 
-                                <div class="workflow-label">
-                                    Workflow progress
-                                </div>
+                                You have not created a programme proposal yet.
 
-                                <div class="progress-track">
+                                <br />
 
-                                    <div class="progress-bar"></div>
-
-                                </div>
-
-                                <div class="workflow-stages">
-                                    3 of 5 stages
-                                </div>
+                                Start your first proposal when you are ready.
 
                             </div>
 
 
-                            <div class="proposal-actions">
+                            <a asp-controller="Producer"
+                               asp-action="Guidelines"
+                               class="outline-button">
 
-                                <a href="#"
-                                   class="outline-button">
-                                    View proposal
-                                </a>
+                                New proposal
 
-                            </div>
+                            </a>
+
 
                         </div>
 
+
                     </article>
+
 
 
                     <!-- =================================================
@@ -1291,158 +1057,79 @@
 
                     <article class="panel">
 
+
                         <div class="recent-header">
 
-                            <div>
 
-                                <div class="panel-title">
-                                    My recent proposals
-                                </div>
+                            <div class="panel-title">
 
-                                <div class="panel-subtitle">
-                                    Recent submissions and their current status
-                                </div>
+                                My recent proposals
 
                             </div>
 
 
-                            <a href="#"
-                               class="view-all">
-                                View all
-                            </a>
+                            <div class="panel-subtitle">
+
+                                Recent submissions and their current status
+
+                            </div>
+
 
                         </div>
 
 
                         <div class="proposal-table-wrap">
 
+
                             <table class="proposal-table">
+
 
                                 <thead>
 
                                     <tr>
+
                                         <th>PROGRAMME</th>
+
                                         <th>UPDATED</th>
+
                                         <th>STATUS</th>
+
                                         <th>ACTION</th>
+
                                     </tr>
 
                                 </thead>
 
+
                                 <tbody>
 
+
                                     <tr>
 
-                                        <td class="programme-name">
-                                            Voices of Cape Town
-                                        </td>
+                                        <td colspan="4"
+                                            class="empty-table">
 
-                                        <td>
-                                            05 Aug
-                                        </td>
+                                            No proposals have been submitted yet.
 
-                                        <td>
-                                            <span class="status status-review">
-                                                In review
-                                            </span>
-                                        </td>
-
-                                        <td>
-                                            <a href="#"
-                                               class="table-action">
-                                                View
-                                            </a>
                                         </td>
 
                                     </tr>
 
-
-                                    <tr>
-
-                                        <td class="programme-name">
-                                            Youth Lens
-                                        </td>
-
-                                        <td>
-                                            01 Aug
-                                        </td>
-
-                                        <td>
-                                            <span class="status status-approved">
-                                                Approved
-                                            </span>
-                                        </td>
-
-                                        <td>
-                                            <a href="#"
-                                               class="table-action">
-                                                View
-                                            </a>
-                                        </td>
-
-                                    </tr>
-
-
-                                    <tr>
-
-                                        <td class="programme-name">
-                                            Street Stories
-                                        </td>
-
-                                        <td>
-                                            30 Jul
-                                        </td>
-
-                                        <td>
-                                            <span class="status status-draft">
-                                                Draft
-                                            </span>
-                                        </td>
-
-                                        <td>
-                                            <a href="#"
-                                               class="table-action">
-                                                Continue
-                                            </a>
-                                        </td>
-
-                                    </tr>
-
-
-                                    <tr>
-
-                                        <td class="programme-name">
-                                            Cape Voices
-                                        </td>
-
-                                        <td>
-                                            25 Jul
-                                        </td>
-
-                                        <td>
-                                            <span class="status status-changes">
-                                                Changes
-                                            </span>
-                                        </td>
-
-                                        <td>
-                                            <a href="#"
-                                               class="table-action">
-                                                Edit
-                                            </a>
-                                        </td>
-
-                                    </tr>
 
                                 </tbody>
 
+
                             </table>
+
 
                         </div>
 
+
                     </article>
 
+
                 </div>
+
 
 
                 <!-- =================================================
@@ -1451,184 +1138,252 @@
 
                 <div class="right-column">
 
+
                     <!-- NEXT ACTION -->
 
-                    <article class="panel panel-padding next-action-panel">
+                    <article class="panel panel-padding">
+
 
                         <div class="panel-title">
+
                             Next action
+
                         </div>
 
+
                         <div class="panel-subtitle">
+
                             What you need to do next
+
                         </div>
 
 
                         <div class="info-box">
 
+
                             <div class="info-icon">
+
                                 i
+
                             </div>
 
 
                             <div>
 
+
                                 <div class="info-title">
-                                    No action required right now
+
+                                    Create your first proposal
+
                                 </div>
+
 
                                 <div class="info-description">
-                                    Your proposal is currently being reviewed.
+
+                                    You currently have no proposals.
+
                                     <br />
-                                    You will be notified if changes are requested.
+
+                                    Start a new programme submission to begin.
+
                                 </div>
 
-                                <a href="#"
+
+                                <a asp-controller="Producer"
+                                   asp-action="Guidelines"
                                    class="status-details">
-                                    Check status details
+
+                                    Start proposal
+
                                 </a>
+
 
                             </div>
 
+
                         </div>
+
 
                     </article>
 
 
+
                     <!-- QUICK ACTIONS -->
 
-                    <article class="panel panel-padding quick-panel">
+                    <article class="panel panel-padding">
+
 
                         <div class="panel-title">
+
                             Quick actions
+
                         </div>
 
+
                         <div class="panel-subtitle">
+
                             Continue your proposal work
+
                         </div>
 
 
                         <div class="quick-actions">
 
-                            <a href="#"
+
+                            <a asp-controller="Producer"
+                               asp-action="Guidelines"
                                class="quick-action primary">
+
 
                                 <span>
                                     Start a new proposal
                                 </span>
 
+
                                 <span class="quick-arrow">
                                     ›
                                 </span>
 
+
                             </a>
+
 
 
                             <a href="#"
                                class="quick-action">
+
 
                                 <span>
                                     Continue saved drafts
                                 </span>
 
+
                                 <span class="draft-count">
-                                    2 drafts
+                                    0 drafts
                                 </span>
+
 
                             </a>
 
 
-                            <a href="#"
+
+                            <a asp-controller="Producer"
+                               asp-action="Guidelines"
                                class="quick-action">
+
 
                                 <span>
                                     Read proposal guidelines
                                 </span>
 
-                                <span>
+
+                                <span class="quick-arrow">
                                     ›
                                 </span>
 
+
                             </a>
+
 
                         </div>
 
 
                         <a href="#"
                            class="profile-update">
+
                             Update producer profile
+
                         </a>
+
 
                     </article>
 
+
                 </div>
+
 
             </section>
 
+
         </div>
+
 
     </main>
 
 
+
+    <!-- =========================================================
+         PROFILE MENU SCRIPT
+    ========================================================== -->
+
     <script>
-        const producerAccount =
-            document.getElementById("producerAccount");
 
-        const producerProfileButton =
-            document.getElementById("producerProfileButton");
+            const producerAccount =
+                document.getElementById("producerAccount");
 
-
-        producerProfileButton.addEventListener(
-            "click",
-            function (event) {
-
-                event.stopPropagation();
-
-                producerAccount.classList.toggle("open");
-
-                producerProfileButton.setAttribute(
-                    "aria-expanded",
-                    producerAccount.classList.contains("open")
-                        ? "true"
-                        : "false"
-                );
-            }
-        );
+            const producerProfileButton =
+                document.getElementById("producerProfileButton");
 
 
-        document.addEventListener(
-            "click",
-            function (event) {
+            producerProfileButton.addEventListener(
+                "click",
+                function (event) {
 
-                if (!producerAccount.contains(event.target)) {
+                    event.stopPropagation();
 
-                    producerAccount.classList.remove("open");
+                    producerAccount.classList.toggle("open");
 
                     producerProfileButton.setAttribute(
                         "aria-expanded",
-                        "false"
+                        producerAccount.classList.contains("open")
+                            ? "true"
+                            : "false"
                     );
+
                 }
-            }
-        );
+            );
 
 
-        document.addEventListener(
-            "keydown",
-            function (event) {
+            document.addEventListener(
+                "click",
+                function (event) {
 
-                if (event.key === "Escape") {
+                    if (!producerAccount.contains(event.target)) {
 
-                    producerAccount.classList.remove("open");
+                        producerAccount.classList.remove("open");
 
-                    producerProfileButton.setAttribute(
-                        "aria-expanded",
-                        "false"
-                    );
+                        producerProfileButton.setAttribute(
+                            "aria-expanded",
+                            "false"
+                        );
+
+                    }
+
                 }
-            }
-        );
+            );
+
+
+            document.addEventListener(
+                "keydown",
+                function (event) {
+
+                    if (event.key === "Escape") {
+
+                        producerAccount.classList.remove("open");
+
+                        producerProfileButton.setAttribute(
+                            "aria-expanded",
+                            "false"
+                        );
+
+                    }
+
+                }
+            );
+
     </script>
 
+
 </body>
+
 </html>

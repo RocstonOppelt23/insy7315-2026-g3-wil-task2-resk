@@ -1,0 +1,475 @@
+﻿@using Microsoft.AspNetCore.Identity
+@inject UserManager<IdentityUser> UserManager
+
+@{
+    Layout = null;
+    ViewData["Title"] = "Proposal Submitted";
+
+    var currentUser =
+        await UserManager.GetUserAsync(User);
+
+    var username =
+        currentUser?.Email
+        ?? currentUser?.UserName
+        ?? "Producer";
+
+    var initial =
+        string.IsNullOrWhiteSpace(username)
+            ? "P"
+            : username.Substring(0, 1).ToUpper();
+
+    var reference =
+        TempData["SubmittedReference"]?.ToString()
+        ?? "CTV-PENDING";
+
+    var submittedDate =
+        TempData["SubmittedDate"]?.ToString()
+        ?? DateTime.Now.ToString(
+            "dd MMMM yyyy 'at' HH:mm"
+        );
+}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="utf-8" />
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0" />
+
+    <title>Proposal Submitted - R.E.S.K</title>
+
+    <style>
+
+            * {
+                box-sizing: border-box;
+            }
+
+            body {
+                margin: 0;
+                min-height: 100vh;
+                font-family: "Segoe UI", Arial, sans-serif;
+                background: #f4f7fb;
+                color: #14233e;
+            }
+
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                bottom: 0;
+                width: 300px;
+                display: flex;
+                flex-direction: column;
+                padding: 40px 24px;
+                background: #06264d;
+                color: white;
+            }
+
+            .brand {
+                display: flex;
+                align-items: center;
+                gap: 15px;
+            }
+
+            .logo {
+                width: 62px;
+                height: 62px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border: 2px solid #17bdd2;
+                border-radius: 17px;
+                color: #17bdd2;
+                font-size: 22px;
+                font-weight: 900;
+            }
+
+            .brand-name {
+                font-size: 23px;
+                font-weight: 900;
+                letter-spacing: 4px;
+            }
+
+            .brand-subtitle {
+                margin-top: 5px;
+                color: #b3c1d3;
+                font-size: 9px;
+            }
+
+            .profile {
+                margin-top: auto;
+                display: flex;
+                align-items: center;
+                gap: 11px;
+                padding: 13px;
+                border-radius: 10px;
+                background: #174979;
+            }
+
+            .avatar {
+                width: 40px;
+                height: 40px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+                border-radius: 50%;
+                background: #17bdd2;
+                font-weight: 900;
+            }
+
+            .email {
+                max-width: 175px;
+                overflow: hidden;
+                font-size: 10px;
+                font-weight: 800;
+                white-space: nowrap;
+                text-overflow: ellipsis;
+            }
+
+            .role {
+                margin-top: 4px;
+                color: #afbdd0;
+                font-size: 9px;
+            }
+
+            .main {
+                min-height: 100vh;
+                margin-left: 300px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 50px;
+            }
+
+            .card {
+                width: 100%;
+                max-width: 720px;
+                padding: 48px;
+                border: 1px solid #d7e1ec;
+                border-radius: 16px;
+                background: white;
+                text-align: center;
+            }
+
+            .check {
+                width: 76px;
+                height: 76px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin: 0 auto 23px;
+                border-radius: 50%;
+                background: #e5fafb;
+                color: #0aa6b9;
+                font-size: 34px;
+                font-weight: 900;
+            }
+
+            h1 {
+                margin: 0;
+                color: #071f42;
+                font-size: 27px;
+                font-weight: 900;
+            }
+
+            .intro {
+                max-width: 520px;
+                margin: 12px auto 28px;
+                color: #71839b;
+                font-size: 12px;
+                line-height: 1.7;
+            }
+
+            .reference-box {
+                padding: 23px;
+                border-radius: 12px;
+                background: #f3f8fc;
+            }
+
+            .reference-label {
+                color: #8190a4;
+                font-size: 9px;
+                font-weight: 800;
+                text-transform: uppercase;
+            }
+
+            .reference {
+                margin-top: 7px;
+                color: #071f42;
+                font-size: 22px;
+                font-weight: 900;
+                letter-spacing: 1px;
+            }
+
+            .date {
+                margin-top: 8px;
+                color: #7c8ba0;
+                font-size: 10px;
+            }
+
+            .next {
+                margin-top: 28px;
+                padding-top: 24px;
+                border-top: 1px solid #e1e8f0;
+                text-align: left;
+            }
+
+                .next h2 {
+                    margin: 0 0 18px;
+                    color: #071f42;
+                    font-size: 15px;
+                }
+
+            .timeline-item {
+                display: flex;
+                gap: 12px;
+                margin-bottom: 14px;
+                color: #526782;
+                font-size: 11px;
+                font-weight: 700;
+            }
+
+            .number {
+                width: 27px;
+                height: 27px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+                border-radius: 50%;
+                background: #e7f9fb;
+                color: #0aa6b9;
+                font-size: 9px;
+                font-weight: 900;
+            }
+
+            .actions {
+                margin-top: 30px;
+                display: flex;
+                justify-content: center;
+                gap: 12px;
+            }
+
+            .button {
+                min-height: 44px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                padding: 0 22px;
+                border-radius: 8px;
+                font-size: 11px;
+                font-weight: 900;
+                text-decoration: none;
+            }
+
+            .secondary {
+                border: 1px solid #d3ddea;
+                background: white;
+                color: #526783;
+            }
+
+            .primary {
+                background: #17b9ce;
+                color: white;
+            }
+
+            @@media(max-width: 850px) {
+
+                .sidebar {
+                    position: relative;
+                    width: 100%;
+                }
+
+                .main {
+                    margin-left: 0;
+                    padding: 25px;
+                }
+
+                .card {
+                    padding: 30px 20px;
+                }
+            }
+
+    </style>
+
+</head>
+
+<body>
+
+
+    <aside class="sidebar">
+
+        <div class="brand">
+
+            <div class="logo">
+                R
+            </div>
+
+            <div>
+
+                <div class="brand-name">
+                    R.E.S.K
+                </div>
+
+                <div class="brand-subtitle">
+                    SOFTWARE STUDIO
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="profile">
+
+            <div class="avatar">
+                @initial
+            </div>
+
+            <div>
+
+                <div class="email">
+                    @username
+                </div>
+
+                <div class="role">
+                    Community Producer
+                </div>
+
+            </div>
+
+        </div>
+
+    </aside>
+
+
+    <main class="main">
+
+        <section class="card">
+
+            <div class="check">
+                ✓
+            </div>
+
+
+            <h1>
+                Proposal submitted successfully
+            </h1>
+
+
+            <p class="intro">
+                Your programme proposal has been submitted.
+                Keep your reference number for future correspondence.
+            </p>
+
+
+            <div class="reference-box">
+
+                <div class="reference-label">
+                    Proposal reference
+                </div>
+
+                <div class="reference">
+                    @reference
+                </div>
+
+                <div class="date">
+                    Submitted @submittedDate
+                </div>
+
+            </div>
+
+
+            <div class="next">
+
+                <h2>
+                    What happens next?
+                </h2>
+
+
+                <div class="timeline-item">
+
+                    <div class="number">
+                        1
+                    </div>
+
+                    <div>
+                        Staff completeness check
+                    </div>
+
+                </div>
+
+
+                <div class="timeline-item">
+
+                    <div class="number">
+                        2
+                    </div>
+
+                    <div>
+                        Programme review
+                    </div>
+
+                </div>
+
+
+                <div class="timeline-item">
+
+                    <div class="number">
+                        3
+                    </div>
+
+                    <div>
+                        Management decision
+                    </div>
+
+                </div>
+
+
+                <div class="timeline-item">
+
+                    <div class="number">
+                        4
+                    </div>
+
+                    <div>
+                        Producer notification
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="actions">
+
+                <a asp-controller="Producer"
+                   asp-action="Index"
+                   class="button secondary">
+
+                    Go to dashboard
+
+                </a>
+
+
+                <a asp-controller="Producer"
+                   asp-action="Guidelines"
+                   class="button primary">
+
+                    Start another proposal
+
+                </a>
+
+            </div>
+
+        </section>
+
+    </main>
+
+</body>
+
+</html>

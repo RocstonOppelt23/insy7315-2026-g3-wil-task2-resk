@@ -1,17 +1,42 @@
-﻿@model RESK.WIL.Models.Proposal
+﻿@model RESK.WIL.Models.ProducerDetailsViewModel
+
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<IdentityUser> UserManager
 
 @{
     Layout = null;
-    ViewData["Title"] = "New Proposal";
+
+    ViewData["Title"] = "Producer Details";
+
+    var currentUser =
+        await UserManager.GetUserAsync(User);
+
+    var producerUsername =
+        currentUser?.Email
+        ?? currentUser?.UserName
+        ?? "Producer";
+
+    var producerInitial =
+        !string.IsNullOrWhiteSpace(producerUsername)
+            ? producerUsername.Substring(0, 1).ToUpper()
+            : "P";
 }
 
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <title>Create Proposal - R.E.S.K</title>
+<html lang="en">
+
+<head>
+
+    <meta charset="utf-8" />
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0" />
+
+    <title>
+        Producer Details - R.E.S.K
+    </title>
+
 
     <style>
 
@@ -21,223 +46,1335 @@
             padding: 0;
         }
 
+        html,
+        body {
+            min-height: 100%;
+        }
+
         body {
             font-family: Inter, "Segoe UI", Arial, sans-serif;
+
             background: #f4f7fb;
-            color: #13223c;
+
+            color: #14233e;
+        }
+
+        button,
+        input,
+        textarea,
+        select,
+        a {
+            font-family: inherit;
+        }
+
+
+        /* =========================================================
+           SIDEBAR
+        ========================================================= */
+
+        .sidebar {
+            position: fixed;
+
+            top: 0;
+            left: 0;
+            bottom: 0;
+
+            width: 260px;
+
+            display: flex;
+            flex-direction: column;
+
+            padding: 36px 20px 38px;
+
+            background: #0c1a33;
+
+            color: white;
+        }
+
+
+        /* =========================================================
+           BRAND
+        ========================================================= */
+
+        .brand {
+            display: flex;
+
+            align-items: center;
+
+            gap: 15px;
+
+            padding-left: 13px;
+
+            margin-bottom: 42px;
+        }
+
+        .brand-icon {
+            width: 56px;
+            height: 56px;
+
+            display: flex;
+
+            align-items: center;
+            justify-content: center;
+
+            border: 2px solid #00b9d0;
+
+            border-radius: 17px;
+
+            color: #00bfd7;
+
+            font-size: 28px;
+
+            font-weight: 800;
+        }
+
+        .brand-name {
+            color: white;
+
+            font-size: 24px;
+
+            font-weight: 800;
+
+            letter-spacing: 1.5px;
+        }
+
+        .brand-subtitle {
+            margin-top: 5px;
+
+            color: #d3dae7;
+
+            font-size: 9px;
+        }
+
+
+        /* =========================================================
+           STEPS
+        ========================================================= */
+
+        .steps-label {
+            margin: 0 13px 13px;
+
+            color: #72809a;
+
+            font-size: 10px;
+
+            font-weight: 800;
+        }
+
+        .steps {
+            display: flex;
+
+            flex-direction: column;
+
+            gap: 7px;
+        }
+
+        .step {
+            display: flex;
+
+            align-items: center;
+
+            gap: 12px;
+
+            min-height: 47px;
+
+            padding: 0 13px;
+
+            border-radius: 10px;
+
+            color: #8997ac;
+        }
+
+        .step.active {
+            background: #142a4b;
+
+            color: white;
+        }
+
+        .step-number {
+            width: 27px;
+            height: 27px;
+
+            flex-shrink: 0;
+
+            display: flex;
+
+            align-items: center;
+            justify-content: center;
+
+            border: 1px solid #53627a;
+
+            border-radius: 50%;
+
+            color: #9ba8ba;
+
+            font-size: 10px;
+
+            font-weight: 800;
+        }
+
+        .step.active .step-number {
+            border-color: #11b6ca;
+
+            background: #11b6ca;
+
+            color: white;
+        }
+
+        .step-title {
+            font-size: 11px;
+
+            font-weight: 700;
+        }
+
+
+        /* =========================================================
+           SIDEBAR USER
+        ========================================================= */
+
+        .producer-profile {
+            margin-top: auto;
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 11px;
+
+            padding: 12px 10px;
+
+            border-radius: 11px;
+
+            background: #142a4b;
+        }
+
+        .producer-avatar {
+            width: 34px;
+            height: 34px;
+
+            flex-shrink: 0;
+
+            display: flex;
+
+            align-items: center;
+            justify-content: center;
+
+            border-radius: 50%;
+
+            background: #0bb6ca;
+
+            color: white;
+
+            font-size: 11px;
+
+            font-weight: 800;
+        }
+
+        .producer-profile-content {
+            min-width: 0;
+        }
+
+        .producer-name {
+            overflow: hidden;
+
+            color: white;
+
+            font-size: 11px;
+
+            font-weight: 700;
+
+            white-space: nowrap;
+
+            text-overflow: ellipsis;
+        }
+
+        .producer-role {
+            margin-top: 4px;
+
+            color: #b5c0d1;
+
+            font-size: 9px;
+        }
+
+
+        /* =========================================================
+           MAIN
+        ========================================================= */
+
+        .main {
+            min-height: 100vh;
+
+            margin-left: 260px;
+
+            padding: 31px 52px 50px;
         }
 
         .page {
-            padding: 40px;
-            max-width: 1000px;
-            margin: auto;
+            width: 100%;
+
+            max-width: 930px;
+
+            margin: 0 auto;
         }
 
-        .card {
-            background: white;
-            border-radius: 16px;
-            overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-        }
 
-        .card-header {
-            background: #0c1a33;
-            color: white;
-            padding: 25px 35px;
-        }
+        /* =========================================================
+           PAGE HEADER
+        ========================================================= */
 
-        .card-header h1 {
-            font-size: 28px;
-        }
-
-        .card-header p {
-            margin-top: 8px;
-            color: #ced5e2;
-        }
-
-        .card-body {
-            padding: 35px;
-        }
-
-        .form-group {
+        .page-header {
             margin-bottom: 25px;
         }
 
-        label {
-            display: block;
-            margin-bottom: 8px;
+        .back-link {
+            display: inline-block;
+
+            margin-bottom: 18px;
+
+            color: #657791;
+
+            font-size: 11px;
+
             font-weight: 700;
+
+            text-decoration: none;
+        }
+
+        .back-link:hover {
+            color: #00a9bd;
+        }
+
+        .page-title {
             color: #14233e;
+
+            font-size: 30px;
+
+            font-weight: 800;
+        }
+
+        .page-description {
+            margin-top: 8px;
+
+            color: #6c7d97;
+
+            font-size: 13px;
+        }
+
+
+        /* =========================================================
+           PROGRESS
+        ========================================================= */
+
+        .progress-wrapper {
+            margin-bottom: 21px;
+        }
+
+        .progress-header {
+            display: flex;
+
+            justify-content: space-between;
+
+            margin-bottom: 8px;
+
+            color: #6a7b95;
+
+            font-size: 10px;
+
+            font-weight: 700;
+        }
+
+        .progress-track {
+            width: 100%;
+
+            height: 7px;
+
+            border-radius: 999px;
+
+            background: #dde4ed;
+
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            width: 20%;
+
+            height: 100%;
+
+            border-radius: inherit;
+
+            background: #11b6ca;
+        }
+
+
+        /* =========================================================
+           CARD
+        ========================================================= */
+
+        .form-card {
+            padding: 26px 30px;
+
+            border: 1px solid #d9e1ec;
+
+            border-radius: 13px;
+
+            background: white;
+        }
+
+        .section-title {
+            color: #14233e;
+
+            font-size: 20px;
+
+            font-weight: 800;
+        }
+
+        .section-description {
+            margin-top: 7px;
+
+            color: #6d7e98;
+
+            font-size: 11px;
+        }
+
+
+        /* =========================================================
+           FORM
+        ========================================================= */
+
+        .form-grid {
+            display: grid;
+
+            grid-template-columns: repeat(2, 1fr);
+
+            gap: 19px 22px;
+
+            margin-top: 27px;
+        }
+
+        .form-group {
+            display: flex;
+
+            flex-direction: column;
+
+            gap: 7px;
+        }
+
+        .form-group.full {
+            grid-column: 1 / -1;
+        }
+
+        .form-label {
+            color: #263751;
+
+            font-size: 11px;
+
+            font-weight: 800;
+        }
+
+        .required {
+            color: #e05656;
         }
 
         .form-control {
             width: 100%;
-            padding: 14px;
-            border: 1px solid #d7deea;
-            border-radius: 10px;
-            font-size: 14px;
+
+            min-height: 44px;
+
+            padding: 10px 13px;
+
+            border: 1px solid #d4dde8;
+
+            border-radius: 8px;
+
+            outline: none;
+
+            background: white;
+
+            color: #263751;
+
+            font-size: 12px;
+
+            transition:
+                border-color 0.2s ease,
+                box-shadow 0.2s ease;
         }
 
-        textarea {
+        .form-control:focus {
+            border-color: #12b5c9;
+
+            box-shadow:
+                0 0 0 3px rgba(18,181,201,0.10);
+        }
+
+        textarea.form-control {
+            min-height: 90px;
+
             resize: vertical;
-            min-height: 140px;
         }
 
-        .btn {
-            border: none;
-            border-radius: 10px;
-            padding: 14px 22px;
+        .readonly-control {
+            background: #f6f8fb;
+
+            color: #66768e;
+        }
+
+        .field-help {
+            color: #8593a8;
+
+            font-size: 9px;
+        }
+
+        .validation-message {
+            color: #cf4b4b;
+
+            font-size: 10px;
+
+            font-weight: 600;
+        }
+
+
+        /* =========================================================
+           CONTACT OPTIONS
+        ========================================================= */
+
+        .contact-options {
+            display: flex;
+
+            gap: 10px;
+
+            flex-wrap: wrap;
+        }
+
+        .contact-option {
+            position: relative;
+        }
+
+        .contact-option input {
+            position: absolute;
+
+            opacity: 0;
+
+            pointer-events: none;
+        }
+
+        .contact-option label {
+            min-width: 100px;
+
+            display: flex;
+
+            align-items: center;
+            justify-content: center;
+
+            padding: 10px 18px;
+
+            border: 1px solid #d6dfe9;
+
+            border-radius: 8px;
+
+            background: white;
+
+            color: #65758e;
+
+            font-size: 11px;
+
             font-weight: 700;
+
             cursor: pointer;
         }
 
-        .btn-primary {
-            background: #0bb6ca;
-            color: white;
+        .contact-option input:checked + label {
+            border-color: #12b5c9;
+
+            background: #eefbfc;
+
+            color: #009daf;
         }
 
-        .btn-primary:hover {
-            background: #09a8bb;
-        }
 
-        .btn-secondary {
-            background: #e9edf4;
-            color: #13223c;
-            text-decoration: none;
-            display: inline-block;
-        }
+        /* =========================================================
+           ROLE
+        ========================================================= */
 
-        .button-row {
+        .role-box {
+            min-height: 44px;
+
             display: flex;
-            gap: 12px;
-            margin-top: 30px;
+
+            align-items: center;
+
+            padding: 0 13px;
+
+            border: 1px solid #d4dde8;
+
+            border-radius: 8px;
+
+            background: #f6f8fb;
+
+            color: #53647e;
+
+            font-size: 12px;
+
+            font-weight: 700;
         }
 
-        .validation-summary-errors {
-            background: #ffe7e7;
-            color: #cc3939;
-            padding: 15px;
-            border-radius: 10px;
+
+        /* =========================================================
+           MESSAGE
+        ========================================================= */
+
+        .success-message {
             margin-bottom: 20px;
+
+            padding: 12px 15px;
+
+            border: 1px solid #8edee8;
+
+            border-radius: 9px;
+
+            background: #eefbfc;
+
+            color: #087e8d;
+
+            font-size: 11px;
+
+            font-weight: 700;
+        }
+
+
+        /* =========================================================
+           ACTIONS
+        ========================================================= */
+
+        .actions {
+            display: flex;
+
+            align-items: center;
+            justify-content: space-between;
+
+            gap: 15px;
+
+            margin-top: 22px;
+        }
+
+        .cancel-button {
+            min-width: 110px;
+
+            display: inline-flex;
+
+            align-items: center;
+            justify-content: center;
+
+            padding: 11px 20px;
+
+            border: 1px solid #d5dee9;
+
+            border-radius: 8px;
+
+            background: white;
+
+            color: #5e6f88;
+
+            font-size: 11px;
+
+            font-weight: 700;
+
+            text-decoration: none;
+        }
+
+        .cancel-button:hover {
+            border-color: #b9c6d6;
+
+            color: #14233e;
+        }
+
+        .right-actions {
+            display: flex;
+
+            gap: 10px;
+        }
+
+        .draft-button {
+            min-width: 120px;
+
+            padding: 11px 18px;
+
+            border: 1px solid #d5dee9;
+
+            border-radius: 8px;
+
+            background: white;
+
+            color: #53647e;
+
+            font-size: 11px;
+
+            font-weight: 700;
+
+            cursor: pointer;
+        }
+
+        .continue-button {
+            min-width: 130px;
+
+            padding: 11px 20px;
+
+            border: 0;
+
+            border-radius: 8px;
+
+            background: #11b6ca;
+
+            color: white;
+
+            font-size: 11px;
+
+            font-weight: 800;
+
+            cursor: pointer;
+        }
+
+        .continue-button:hover {
+            background: #0da7ba;
+        }
+
+
+        /* =========================================================
+           RESPONSIVE
+        ========================================================= */
+
+        @@media (max-width: 850px) {
+
+            .sidebar {
+                position: relative;
+
+                width: 100%;
+            }
+
+            .main {
+                margin-left: 0;
+
+                padding: 25px 20px;
+            }
+
+            .producer-profile {
+                margin-top: 30px;
+            }
+
+        }
+
+        @@media (max-width: 600px) {
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-group.full {
+                grid-column: auto;
+            }
+
+            .actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .right-actions {
+                flex-direction: column;
+            }
+
+            .cancel-button,
+            .draft-button,
+            .continue-button {
+                width: 100%;
+            }
+
         }
 
     </style>
+
 </head>
+
+
 <body>
 
-    <div class="page">
 
-        <div class="card">
+    <!-- =========================================================
+         SIDEBAR
+    ========================================================== -->
 
-            <div class="card-header">
+    <aside class="sidebar">
 
-                <h1>Submit New Programme Proposal</h1>
 
-                <p>
-                    Complete the proposal form and submit it for review.
-                </p>
+        <div class="brand">
 
+            <div class="brand-icon">
+                R
             </div>
 
-            <div class="card-body">
+            <div>
 
-                <form asp-controller="Producer"
-                      asp-action="Create"
-                      method="post">
+                <div class="brand-name">
+                    R.E.S.K
+                </div>
 
-                    @Html.AntiForgeryToken()
-
-                    <div asp-validation-summary="All">
-                    </div>
-
-                    <div class="form-group">
-
-                        <label asp-for="Title">
-                            Programme Title
-                        </label>
-
-                        <input asp-for="Title"
-                               class="form-control" />
-
-                    </div>
-
-                    <div class="form-group">
-
-                        <label asp-for="Description">
-                            Programme Description
-                        </label>
-
-                        <textarea asp-for="Description"
-                                  class="form-control">
-                        </textarea>
-
-                    </div>
-
-                    <div class="form-group">
-
-                        <label asp-for="Category">
-                            Category
-                        </label>
-
-                        <select asp-for="Category"
-                                class="form-control">
-
-                            <option value="">
-                                Select Category
-                            </option>
-
-                            <option value="Documentary">
-                                Documentary
-                            </option>
-
-                            <option value="News">
-                                News
-                            </option>
-
-                            <option value="Education">
-                                Education
-                            </option>
-
-                            <option value="Entertainment">
-                                Entertainment
-                            </option>
-
-                            <option value="Community">
-                                Community
-                            </option>
-
-                        </select>
-
-                    </div>
-
-                    <div class="button-row">
-
-                        <a asp-controller="Producer"
-                           asp-action="Index"
-                           class="btn btn-secondary">
-
-                            Cancel
-
-                        </a>
-
-                        <button type="submit"
-                                class="btn btn-primary">
-
-                            Submit Proposal
-
-                        </button>
-
-                    </div>
-
-                </form>
+                <div class="brand-subtitle">
+                    SOFTWARE STUDIO
+                </div>
 
             </div>
 
         </div>
 
-    </div>
 
-    <partial name="_ValidationScriptsPartial" />
+        <!-- =====================================================
+             PROPOSAL STEPS
+        ====================================================== -->
+
+        <div class="steps-label">
+            NEW PROPOSAL
+        </div>
+
+
+        <div class="steps">
+
+
+            <div class="step active">
+
+                <div class="step-number">
+                    1
+                </div>
+
+                <div class="step-title">
+                    Producer details
+                </div>
+
+            </div>
+
+
+            <div class="step">
+
+                <div class="step-number">
+                    2
+                </div>
+
+                <div class="step-title">
+                    Programme details
+                </div>
+
+            </div>
+
+
+            <div class="step">
+
+                <div class="step-number">
+                    3
+                </div>
+
+                <div class="step-title">
+                    Production details
+                </div>
+
+            </div>
+
+
+            <div class="step">
+
+                <div class="step-number">
+                    4
+                </div>
+
+                <div class="step-title">
+                    Attachments
+                </div>
+
+            </div>
+
+
+            <div class="step">
+
+                <div class="step-number">
+                    5
+                </div>
+
+                <div class="step-title">
+                    Review & submit
+                </div>
+
+            </div>
+
+
+        </div>
+
+
+        <!-- =====================================================
+             LOGGED-IN PRODUCER
+        ====================================================== -->
+
+        <div class="producer-profile">
+
+
+            <div class="producer-avatar">
+                @producerInitial
+            </div>
+
+
+            <div class="producer-profile-content">
+
+
+                <div class="producer-name"
+                     title="@producerUsername">
+
+                    @producerUsername
+
+                </div>
+
+
+                <div class="producer-role">
+                    Community Producer
+                </div>
+
+
+            </div>
+
+
+        </div>
+
+
+    </aside>
+
+
+
+    <!-- =========================================================
+         MAIN
+    ========================================================== -->
+
+    <main class="main">
+
+
+        <div class="page">
+
+
+            <!-- =================================================
+                 HEADER
+            ================================================== -->
+
+            <header class="page-header">
+
+
+                <a asp-controller="Producer"
+                   asp-action="Index"
+                   class="back-link">
+
+                    ← Back to dashboard
+
+                </a>
+
+
+                <h1 class="page-title">
+                    New proposal
+                </h1>
+
+
+                <p class="page-description">
+                    Complete each section to prepare your programme proposal for review.
+                </p>
+
+
+            </header>
+
+
+
+            <!-- =================================================
+                 PROGRESS
+            ================================================== -->
+
+            <div class="progress-wrapper">
+
+
+                <div class="progress-header">
+
+                    <span>
+                        Step 1 of 5
+                    </span>
+
+                    <span>
+                        20% complete
+                    </span>
+
+                </div>
+
+
+                <div class="progress-track">
+
+                    <div class="progress-fill"></div>
+
+                </div>
+
+
+            </div>
+
+
+
+            @if (TempData["StepMessage"] != null)
+            {
+                <div class="success-message">
+                    @TempData["StepMessage"]
+                </div>
+            }
+
+
+
+            <!-- =================================================
+                 PRODUCER DETAILS FORM
+            ================================================== -->
+
+            <form asp-controller="Producer"
+                  asp-action="Create"
+                  method="post">
+
+                @Html.AntiForgeryToken()
+
+
+                <section class="form-card">
+
+
+                    <h2 class="section-title">
+                        Producer details
+                    </h2>
+
+
+                    <p class="section-description">
+                        Tell us who is submitting this proposal and how we can contact you.
+                    </p>
+
+
+
+                    <div class="form-grid">
+
+
+                        <!-- FIRST NAME -->
+
+                        <div class="form-group">
+
+
+                            <label asp-for="FirstName"
+                                   class="form-label">
+
+                                First name
+                                <span class="required">*</span>
+
+                            </label>
+
+
+                            <input asp-for="FirstName"
+                                   class="form-control"
+                                   placeholder="Enter your first name" />
+
+
+                            <span asp-validation-for="FirstName"
+                                  class="validation-message">
+                            </span>
+
+
+                        </div>
+
+
+
+                        <!-- LAST NAME -->
+
+                        <div class="form-group">
+
+
+                            <label asp-for="LastName"
+                                   class="form-label">
+
+                                Last name
+                                <span class="required">*</span>
+
+                            </label>
+
+
+                            <input asp-for="LastName"
+                                   class="form-control"
+                                   placeholder="Enter your last name" />
+
+
+                            <span asp-validation-for="LastName"
+                                  class="validation-message">
+                            </span>
+
+
+                        </div>
+
+
+
+                        <!-- EMAIL -->
+
+                        <div class="form-group">
+
+
+                            <label asp-for="Email"
+                                   class="form-label">
+
+                                Email address
+                                <span class="required">*</span>
+
+                            </label>
+
+
+                            <input asp-for="Email"
+                                   class="form-control readonly-control"
+                                   readonly />
+
+
+                            <span class="field-help">
+                                Email is linked to your signed-in R.E.S.K account.
+                            </span>
+
+
+                            <span asp-validation-for="Email"
+                                  class="validation-message">
+                            </span>
+
+
+                        </div>
+
+
+
+                        <!-- MOBILE -->
+
+                        <div class="form-group">
+
+
+                            <label asp-for="MobileNumber"
+                                   class="form-label">
+
+                                Mobile number
+                                <span class="required">*</span>
+
+                            </label>
+
+
+                            <input asp-for="MobileNumber"
+                                   class="form-control"
+                                   placeholder="+27 00 000 0000" />
+
+
+                            <span asp-validation-for="MobileNumber"
+                                  class="validation-message">
+                            </span>
+
+
+                        </div>
+
+
+
+                        <!-- ROLE -->
+
+                        <div class="form-group">
+
+
+                            <label class="form-label">
+                                Account role
+                            </label>
+
+
+                            <div class="role-box">
+                                Community Producer
+                            </div>
+
+
+                        </div>
+
+
+
+                        <!-- ORGANISATION -->
+
+                        <div class="form-group">
+
+
+                            <label asp-for="Organisation"
+                                   class="form-label">
+
+                                Organisation / production group
+
+                            </label>
+
+
+                            <input asp-for="Organisation"
+                                   class="form-control"
+                                   placeholder="Optional" />
+
+
+                            <span asp-validation-for="Organisation"
+                                  class="validation-message">
+                            </span>
+
+
+                        </div>
+
+
+
+                        <!-- ADDRESS -->
+
+                        <div class="form-group full">
+
+
+                            <label asp-for="PhysicalAddress"
+                                   class="form-label">
+
+                                Physical address
+                                <span class="required">*</span>
+
+                            </label>
+
+
+                            <textarea asp-for="PhysicalAddress"
+                                      class="form-control"
+                                      placeholder="Enter your physical address">
+                            </textarea>
+
+
+                            <span asp-validation-for="PhysicalAddress"
+                                  class="validation-message">
+                            </span>
+
+
+                        </div>
+
+
+
+                        <!-- CONTACT METHOD -->
+
+                        <div class="form-group full">
+
+
+                            <label class="form-label">
+
+                                Preferred contact method
+                                <span class="required">*</span>
+
+                            </label>
+
+
+                            <div class="contact-options">
+
+
+                                <div class="contact-option">
+
+                                    <input asp-for="PreferredContactMethod"
+                                           type="radio"
+                                           value="Email"
+                                           id="contactEmail" />
+
+                                    <label for="contactEmail">
+                                        Email
+                                    </label>
+
+                                </div>
+
+
+                                <div class="contact-option">
+
+                                    <input asp-for="PreferredContactMethod"
+                                           type="radio"
+                                           value="Phone"
+                                           id="contactPhone" />
+
+                                    <label for="contactPhone">
+                                        Phone
+                                    </label>
+
+                                </div>
+
+
+                                <div class="contact-option">
+
+                                    <input asp-for="PreferredContactMethod"
+                                           type="radio"
+                                           value="Either"
+                                           id="contactEither" />
+
+                                    <label for="contactEither">
+                                        Either
+                                    </label>
+
+                                </div>
+
+
+                            </div>
+
+
+                            <span asp-validation-for="PreferredContactMethod"
+                                  class="validation-message">
+                            </span>
+
+
+                        </div>
+
+
+                    </div>
+
+
+                </section>
+
+
+
+                <!-- =================================================
+                     ACTION BUTTONS
+                ================================================== -->
+
+                <div class="actions">
+
+
+                    <a asp-controller="Producer"
+                       asp-action="Index"
+                       class="cancel-button">
+
+                        Cancel
+
+                    </a>
+
+
+                    <div class="right-actions">
+
+
+                        <!--
+                            We'll wire Save Draft to the real proposal
+                            persistence once the proposal model/database
+                            workflow is connected.
+                        -->
+
+                        <button type="button"
+                                class="draft-button">
+
+                            Save draft
+
+                        </button>
+
+
+                        <button type="submit"
+                                class="continue-button">
+
+                            Continue →
+
+                        </button>
+
+
+                    </div>
+
+
+                </div>
+
+
+            </form>
+
+
+        </div>
+
+
+    </main>
+
 
 </body>
+
 </html>

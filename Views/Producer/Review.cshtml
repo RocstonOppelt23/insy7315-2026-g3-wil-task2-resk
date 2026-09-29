@@ -1,0 +1,989 @@
+﻿@model RESK.WIL.Models.ReviewProposalViewModel
+
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<IdentityUser> UserManager
+
+@{
+    Layout = null;
+    ViewData["Title"] = "Review & Submit";
+
+    var currentUser =
+        await UserManager.GetUserAsync(User);
+
+    var username =
+        currentUser?.Email
+        ?? currentUser?.UserName
+        ?? "Producer";
+
+    var initial =
+        string.IsNullOrWhiteSpace(username)
+            ? "P"
+            : username.Substring(0, 1).ToUpper();
+
+    var startDateText =
+        Model.ProductionDetails.ProposedStartDate.HasValue
+            ? Model.ProductionDetails.ProposedStartDate.Value
+                .ToString("dd MMMM yyyy")
+            : "Not provided";
+
+    var budgetText =
+        Model.ProductionDetails.EstimatedBudget.HasValue
+            ? Model.ProductionDetails.EstimatedBudget.Value
+                .ToString("N2")
+            : "0.00";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="utf-8" />
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0" />
+
+    <title>Review & Submit - R.E.S.K</title>
+
+    <style>
+
+            * {
+                box-sizing: border-box;
+            }
+
+            body {
+                margin: 0;
+                font-family: "Segoe UI", Arial, sans-serif;
+                background: #f4f7fb;
+                color: #14233e;
+            }
+
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                bottom: 0;
+                width: 300px;
+                display: flex;
+                flex-direction: column;
+                padding: 40px 24px;
+                background: #06264d;
+                color: white;
+            }
+
+            .brand {
+                display: flex;
+                align-items: center;
+                gap: 15px;
+                margin-bottom: 55px;
+            }
+
+            .logo {
+                width: 62px;
+                height: 62px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border: 2px solid #17bdd2;
+                border-radius: 17px;
+                color: #17bdd2;
+                font-size: 22px;
+                font-weight: 900;
+            }
+
+            .brand-name {
+                font-size: 23px;
+                font-weight: 900;
+                letter-spacing: 4px;
+            }
+
+            .brand-subtitle {
+                margin-top: 5px;
+                color: #b3c1d3;
+                font-size: 9px;
+            }
+
+            .proposal-title {
+                margin: 0 14px 15px;
+                color: #8196b2;
+                font-size: 10px;
+                font-weight: 900;
+            }
+
+            .step {
+                min-height: 54px;
+                display: flex;
+                align-items: center;
+                gap: 13px;
+                padding: 0 14px;
+                margin-bottom: 6px;
+                border-radius: 9px;
+                color: #92a6c0;
+            }
+
+                .step.active {
+                    background: #1a477b;
+                    color: white;
+                }
+
+            .circle {
+                width: 30px;
+                height: 30px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border: 1px solid #597390;
+                border-radius: 50%;
+                font-size: 10px;
+                font-weight: 900;
+            }
+
+            .complete .circle,
+            .active .circle {
+                border-color: #17bdd2;
+                background: #17bdd2;
+                color: white;
+            }
+
+            .step-name {
+                font-size: 11px;
+                font-weight: 700;
+            }
+
+            .profile {
+                margin-top: auto;
+                display: flex;
+                align-items: center;
+                gap: 11px;
+                padding: 13px;
+                border-radius: 10px;
+                background: #174979;
+            }
+
+            .avatar {
+                width: 40px;
+                height: 40px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+                border-radius: 50%;
+                background: #17bdd2;
+                font-weight: 900;
+            }
+
+            .email {
+                max-width: 175px;
+                overflow: hidden;
+                font-size: 10px;
+                font-weight: 800;
+                white-space: nowrap;
+                text-overflow: ellipsis;
+            }
+
+            .role {
+                margin-top: 4px;
+                color: #afbdd0;
+                font-size: 9px;
+            }
+
+            .main {
+                min-height: 100vh;
+                margin-left: 300px;
+                padding: 40px 65px 70px;
+            }
+
+            .container {
+                width: 100%;
+                max-width: 1050px;
+                margin: auto;
+            }
+
+            h1 {
+                margin: 0;
+                color: #071f42;
+                font-size: 27px;
+            }
+
+            .subtitle {
+                margin: 8px 0 25px;
+                color: #71839b;
+                font-size: 12px;
+            }
+
+            .progress-info {
+                display: flex;
+                justify-content: space-between;
+                margin-bottom: 8px;
+                color: #71839b;
+                font-size: 10px;
+                font-weight: 700;
+            }
+
+            .progress {
+                height: 6px;
+                margin-bottom: 28px;
+                border-radius: 20px;
+                background: #dce4ee;
+                overflow: hidden;
+            }
+
+            .progress-value {
+                width: 100%;
+                height: 100%;
+                background: #17bdd2;
+            }
+
+            .error {
+                margin-bottom: 20px;
+                padding: 14px;
+                border: 1px solid #efb9bd;
+                border-radius: 8px;
+                background: #fff4f4;
+                color: #b83e47;
+                font-size: 11px;
+                font-weight: 700;
+            }
+
+            .card {
+                margin-bottom: 17px;
+                padding: 27px 30px;
+                border: 1px solid #d7e1ec;
+                border-radius: 13px;
+                background: white;
+            }
+
+            .card-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 22px;
+            }
+
+            .card-title {
+                margin: 0;
+                color: #071f42;
+                font-size: 16px;
+            }
+
+            .edit {
+                color: #0ca7bc;
+                font-size: 10px;
+                font-weight: 800;
+                text-decoration: none;
+            }
+
+            .grid {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 20px 35px;
+            }
+
+            .full {
+                grid-column: 1 / -1;
+            }
+
+            .label {
+                margin-bottom: 5px;
+                color: #8291a5;
+                font-size: 9px;
+                font-weight: 800;
+                text-transform: uppercase;
+            }
+
+            .value {
+                color: #263b57;
+                font-size: 11px;
+                font-weight: 700;
+                line-height: 1.55;
+                overflow-wrap: anywhere;
+            }
+
+            .uploaded {
+                color: #0d9caf;
+            }
+
+            .muted {
+                color: #8a98aa;
+            }
+
+            .confirm-card {
+                padding: 21px;
+                border: 1px solid #d7e1ec;
+                border-radius: 12px;
+                background: white;
+            }
+
+                .confirm-card label {
+                    display: flex;
+                    gap: 12px;
+                    color: #344a67;
+                    font-size: 11px;
+                    font-weight: 700;
+                    line-height: 1.6;
+                }
+
+                .confirm-card input {
+                    width: 18px;
+                    height: 18px;
+                    margin-top: 1px;
+                    flex-shrink: 0;
+                    accent-color: #17bdd2;
+                }
+
+            .actions {
+                margin-top: 25px;
+                display: flex;
+                justify-content: space-between;
+            }
+
+            .button {
+                min-height: 46px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                padding: 0 27px;
+                border-radius: 8px;
+                font-size: 11px;
+                font-weight: 900;
+                text-decoration: none;
+            }
+
+            .back {
+                border: 1px solid #d3ddea;
+                background: white;
+                color: #526783;
+            }
+
+            .submit {
+                min-width: 185px;
+                border: none;
+                background: #17b9ce;
+                color: white;
+                cursor: pointer;
+            }
+
+            @@media(max-width: 900px) {
+                .sidebar {
+                    position: relative;
+                    width: 100%;
+                }
+
+                .main {
+                    margin-left: 0;
+                    padding: 30px 20px;
+                }
+
+                .grid {
+                    grid-template-columns: 1fr;
+                }
+
+                .full {
+                    grid-column: auto;
+                }
+            }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+    <aside class="sidebar">
+
+        <div class="brand">
+
+            <div class="logo">
+                R
+            </div>
+
+            <div>
+
+                <div class="brand-name">
+                    R.E.S.K
+                </div>
+
+                <div class="brand-subtitle">
+                    SOFTWARE STUDIO
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="proposal-title">
+            NEW PROPOSAL
+        </div>
+
+
+        <div class="step complete">
+            <div class="circle">✓</div>
+            <div class="step-name">
+                Producer details
+            </div>
+        </div>
+
+
+        <div class="step complete">
+            <div class="circle">✓</div>
+            <div class="step-name">
+                Programme details
+            </div>
+        </div>
+
+
+        <div class="step complete">
+            <div class="circle">✓</div>
+            <div class="step-name">
+                Production details
+            </div>
+        </div>
+
+
+        <div class="step complete">
+            <div class="circle">✓</div>
+            <div class="step-name">
+                Attachments
+            </div>
+        </div>
+
+
+        <div class="step active">
+            <div class="circle">5</div>
+            <div class="step-name">
+                Review & submit
+            </div>
+        </div>
+
+
+        <div class="profile">
+
+            <div class="avatar">
+                @initial
+            </div>
+
+            <div>
+
+                <div class="email">
+                    @username
+                </div>
+
+                <div class="role">
+                    Community Producer
+                </div>
+
+            </div>
+
+        </div>
+
+    </aside>
+
+
+    <main class="main">
+
+        <div class="container">
+
+
+            <h1>
+                Review & submit
+            </h1>
+
+            <p class="subtitle">
+                Review your proposal before submitting it.
+            </p>
+
+
+            <div class="progress-info">
+                <span>Step 5 of 5</span>
+                <span>100% complete</span>
+            </div>
+
+
+            <div class="progress">
+                <div class="progress-value"></div>
+            </div>
+
+
+            @if (TempData["SubmitError"] != null)
+            {
+                <div class="error">
+                    @TempData["SubmitError"]
+                </div>
+            }
+
+
+            <!-- PRODUCER DETAILS -->
+
+            <section class="card">
+
+                <div class="card-header">
+
+                    <h2 class="card-title">
+                        Producer details
+                    </h2>
+
+                    <a asp-controller="Producer"
+                       asp-action="Create"
+                       class="edit">
+                        Edit
+                    </a>
+
+                </div>
+
+
+                <div class="grid">
+
+                    <div>
+                        <div class="label">Name</div>
+
+                        <div class="value">
+                            @Model.ProducerDetails.FirstName
+                            @Model.ProducerDetails.LastName
+                        </div>
+                    </div>
+
+
+                    <div>
+                        <div class="label">Email</div>
+
+                        <div class="value">
+                            @Model.ProducerDetails.Email
+                        </div>
+                    </div>
+
+
+                    <div>
+                        <div class="label">Mobile</div>
+
+                        <div class="value">
+                            @Model.ProducerDetails.MobileNumber
+                        </div>
+                    </div>
+
+
+                    <div>
+                        <div class="label">
+                            Preferred contact
+                        </div>
+
+                        <div class="value">
+                            @Model.ProducerDetails.PreferredContactMethod
+                        </div>
+                    </div>
+
+
+                    <div>
+                        <div class="label">
+                            Organisation
+                        </div>
+
+                        <div class="value">
+                            @(string.IsNullOrWhiteSpace(
+                                Model.ProducerDetails.Organisation)
+                                ? "Not provided"
+                                : Model.ProducerDetails.Organisation)
+                        </div>
+                    </div>
+
+
+                    <div class="full">
+                        <div class="label">Address</div>
+
+                        <div class="value">
+                            @Model.ProducerDetails.PhysicalAddress
+                        </div>
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- PROGRAMME DETAILS -->
+
+            <section class="card">
+
+                <div class="card-header">
+
+                    <h2 class="card-title">
+                        Programme details
+                    </h2>
+
+                    <a asp-controller="Producer"
+                       asp-action="ProgrammeDetails"
+                       class="edit">
+                        Edit
+                    </a>
+
+                </div>
+
+
+                <div class="grid">
+
+                    <div>
+                        <div class="label">
+                            Programme title
+                        </div>
+
+                        <div class="value">
+                            @Model.ProgrammeDetails.ProgrammeTitle
+                        </div>
+                    </div>
+
+
+                    <div>
+                        <div class="label">Category</div>
+
+                        <div class="value">
+                            @Model.ProgrammeDetails.Category
+                        </div>
+                    </div>
+
+
+                    <div>
+                        <div class="label">Format</div>
+
+                        <div class="value">
+                            @Model.ProgrammeDetails.ProgrammeFormat
+                        </div>
+                    </div>
+
+
+                    <div>
+                        <div class="label">
+                            Language
+                        </div>
+
+                        <div class="value">
+                            @Model.ProgrammeDetails.PrimaryLanguage
+                        </div>
+                    </div>
+
+
+                    <div>
+                        <div class="label">
+                            Episode duration
+                        </div>
+
+                        <div class="value">
+                            @Model.ProgrammeDetails.EpisodeDuration
+                        </div>
+                    </div>
+
+
+                    <div>
+                        <div class="label">
+                            Frequency
+                        </div>
+
+                        <div class="value">
+                            @Model.ProgrammeDetails.BroadcastFrequency
+                        </div>
+                    </div>
+
+
+                    <div class="full">
+                        <div class="label">
+                            Target audience
+                        </div>
+
+                        <div class="value">
+                            @Model.ProgrammeDetails.TargetAudience
+                        </div>
+                    </div>
+
+
+                    <div class="full">
+                        <div class="label">
+                            Synopsis
+                        </div>
+
+                        <div class="value">
+                            @Model.ProgrammeDetails.Synopsis
+                        </div>
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- PRODUCTION DETAILS -->
+
+            <section class="card">
+
+                <div class="card-header">
+
+                    <h2 class="card-title">
+                        Production details
+                    </h2>
+
+                    <a asp-controller="Producer"
+                       asp-action="ProductionDetails"
+                       class="edit">
+                        Edit
+                    </a>
+
+                </div>
+
+
+                <div class="grid">
+
+                    <div>
+                        <div class="label">
+                            Episodes
+                        </div>
+
+                        <div class="value">
+                            @Model.ProductionDetails.NumberOfEpisodes
+                        </div>
+                    </div>
+
+
+                    <div>
+                        <div class="label">
+                            Start date
+                        </div>
+
+                        <div class="value">
+                            @startDateText
+                        </div>
+                    </div>
+
+
+                    <div>
+                        <div class="label">
+                            Recording location
+                        </div>
+
+                        <div class="value">
+                            @Model.ProductionDetails.RecordingLocation
+                        </div>
+                    </div>
+
+
+                    <div>
+                        <div class="label">
+                            Production company
+                        </div>
+
+                        <div class="value">
+                            @(string.IsNullOrWhiteSpace(
+                                Model.ProductionDetails.ProductionCompany)
+                                ? "Not provided"
+                                : Model.ProductionDetails.ProductionCompany)
+                        </div>
+                    </div>
+
+
+                    <div>
+                        <div class="label">
+                            Producer / director
+                        </div>
+
+                        <div class="value">
+                            @Model.ProductionDetails.ProducerDirector
+                        </div>
+                    </div>
+
+
+                    <div>
+                        <div class="label">
+                            Budget
+                        </div>
+
+                        <div class="value">
+                            R @budgetText
+                        </div>
+                    </div>
+
+
+                    <div>
+                        <div class="label">
+                            Funding status
+                        </div>
+
+                        <div class="value">
+                            @Model.ProductionDetails.FundingStatus
+                        </div>
+                    </div>
+
+
+                    <div class="full">
+                        <div class="label">
+                            Crew / contributors
+                        </div>
+
+                        <div class="value">
+                            @Model.ProductionDetails.CrewContributors
+                        </div>
+                    </div>
+
+
+                    <div class="full">
+                        <div class="label">
+                            Equipment / facilities
+                        </div>
+
+                        <div class="value">
+                            @Model.ProductionDetails.EquipmentFacilities
+                        </div>
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- ATTACHMENTS -->
+
+            <section class="card">
+
+                <div class="card-header">
+
+                    <h2 class="card-title">
+                        Attachments
+                    </h2>
+
+                    <a asp-controller="Producer"
+                       asp-action="Attachments"
+                       class="edit">
+                        Edit
+                    </a>
+
+                </div>
+
+
+                <div class="grid">
+
+                    <div>
+
+                        <div class="label">
+                            Proposal document
+                        </div>
+
+                        <div class="value uploaded">
+                            ✓ @Model.ProposalDocumentName
+                        </div>
+
+                    </div>
+
+
+                    <div>
+
+                        <div class="label">
+                            Budget document
+                        </div>
+
+                        <div class="value">
+
+                            @(string.IsNullOrWhiteSpace(
+                                Model.BudgetDocumentName)
+                                ? "Not provided"
+                                : Model.BudgetDocumentName)
+
+                        </div>
+
+                    </div>
+
+
+                    <div>
+
+                        <div class="label">
+                            Additional file
+                        </div>
+
+                        <div class="value">
+
+                            @(string.IsNullOrWhiteSpace(
+                                Model.AdditionalFileName)
+                                ? "Not provided"
+                                : Model.AdditionalFileName)
+
+                        </div>
+
+                    </div>
+
+
+                    <div>
+
+                        <div class="label">
+                            Pilot / showreel
+                        </div>
+
+                        <div class="value">
+
+                            @(string.IsNullOrWhiteSpace(
+                                Model.PilotShowreelLink)
+                                ? "Not provided"
+                                : Model.PilotShowreelLink)
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- SUBMIT FORM -->
+
+            <form asp-controller="Producer"
+                  asp-action="SubmitProposal"
+                  method="post">
+
+                @Html.AntiForgeryToken()
+
+
+                <div class="confirm-card">
+
+                    <label>
+
+                        <input asp-for="ConfirmSubmission"
+                               type="checkbox" />
+
+                        <span>
+                            I confirm that all information is accurate
+                            and that I have permission to submit the
+                            proposal and supporting material.
+                        </span>
+
+                    </label>
+
+                </div>
+
+
+                <div class="actions">
+
+                    <a asp-controller="Producer"
+                       asp-action="Attachments"
+                       class="button back">
+
+                        ← Back
+
+                    </a>
+
+
+                    <button type="submit"
+                            class="button submit">
+
+                        Submit proposal →
+
+                    </button>
+
+                </div>
+
+            </form>
+
+
+        </div>
+
+    </main>
+
+</body>
+
+</html>
