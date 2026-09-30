@@ -1443,9 +1443,16 @@ namespace RESK.WIL.Controllers
             IdentityUser? user =
                 await _userManager.GetUserAsync(User);
 
-            return user?.Email
-                   ?? user?.UserName
-                   ?? "Producer";
+            if (user == null)
+            {
+                return "Producer";
+            }
+
+            return RESK.WIL.Services.ProducerProfileStore.DisplayName(
+                RESK.WIL.Services.ProducerProfileStore.Load(
+                    _environment.ContentRootPath,
+                    user.Id),
+                user);
         }
 
 

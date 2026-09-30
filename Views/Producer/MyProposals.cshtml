@@ -1,0 +1,326 @@
+﻿@model RESK.WIL.Models.ProducerMyProposalsViewModel
+
+@{
+    Layout = null;
+    ViewData["Title"] = "My proposals";
+
+    var producerName = Model.ProducerName;
+
+    var initial = !string.IsNullOrWhiteSpace(producerName)
+        ? producerName.Substring(0, 1).ToUpper()
+        : "P";
+
+    var hasProposals = Model.Proposals.Count > 0;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My proposals - R.E.S.K</title>
+
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { min-height: 100%; }
+        body { font-family: Inter, "Segoe UI", Arial, sans-serif; background: #f4f7fb; color: #13223c; }
+        button, input, a { font-family: inherit; }
+
+        /* ===== PAGE FADE (only the main area fades, the sidebar stays still) ===== */
+        .main { animation: pageFadeIn 0.4s ease-out both; }
+        body.page-leaving .main { animation: pageFadeOut 0.18s ease-in both; }
+        @@keyframes pageFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+        @@keyframes pageFadeOut { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(-4px); } }
+        @@media (prefers-reduced-motion: reduce) { .main, body.page-leaving .main { animation: none; } }
+
+        /* ===== SIDEBAR ===== */
+        .sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 260px; display: flex; flex-direction: column; background: #0c1a33; color: white; padding: 36px 20px 38px; z-index: 100; }
+        .brand { display: flex; align-items: center; gap: 15px; padding-left: 13px; margin-bottom: 42px; }
+        .brand-icon { width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; border: 2px solid #00b9d0; border-radius: 17px; color: #00bfd7; font-size: 28px; font-weight: 700; }
+        .brand-name { color: white; font-size: 24px; font-weight: 800; letter-spacing: 1.5px; }
+        .brand-subtitle { margin-top: 5px; color: #d3dae7; font-size: 9px; }
+        .nav-label { margin: 0 12px 8px; color: #72809a; font-size: 10px; font-weight: 800; }
+        .sidebar-nav { display: flex; flex-direction: column; gap: 8px; }
+        .sidebar-link { display: flex; align-items: center; min-height: 43px; padding: 0 32px; border-radius: 10px; color: #b9c2d1; font-size: 14px; font-weight: 500; text-decoration: none; transition: 0.2s; }
+        .sidebar-link:hover { color: white; background: rgba(255,255,255,0.05); transform: translateX(2px); }
+        .sidebar-link.active { background: #142a4b; color: white; font-weight: 700; }
+
+        /* ===== PRODUCER ACCOUNT ===== */
+        .producer-account { position: relative; margin-top: auto; padding: 0 8px; }
+        .producer-profile { width: 100%; display: flex; align-items: center; gap: 11px; padding: 12px 10px; border: none; border-radius: 11px; background: #142a4b; color: white; cursor: pointer; text-align: left; }
+        .producer-profile:hover { background: #193456; }
+        .producer-avatar { width: 34px; height: 34px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: #0bb6ca; color: white; font-size: 11px; font-weight: 800; }
+        .producer-profile-text { min-width: 0; flex: 1; }
+        .producer-name { overflow: hidden; color: white; font-size: 13px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+        .producer-role { margin-top: 4px; color: #b5c0d1; font-size: 10px; }
+        .profile-menu { position: absolute; left: 8px; right: 8px; bottom: calc(100% + 9px); padding: 7px; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; background: #142a4b; box-shadow: 0 18px 35px rgba(0,0,0,0.25); opacity: 0; visibility: hidden; transform: translateY(8px); transition: 0.2s; }
+        .producer-account.open .profile-menu { opacity: 1; visibility: visible; transform: translateY(0); }
+        .profile-menu-link, .logout-button { width: 100%; display: block; padding: 10px 11px; border: none; border-radius: 7px; background: transparent; color: #d6deea; font-size: 12px; font-weight: 600; text-align: left; text-decoration: none; cursor: pointer; }
+        .profile-menu-link:hover, .logout-button:hover { background: rgba(255,255,255,0.06); color: white; }
+        .logout-button { color: #ff9e9e; }
+        .menu-divider { height: 1px; margin: 5px 4px; background: rgba(255,255,255,0.08); }
+
+        /* ===== MAIN ===== */
+        .main { min-height: 100vh; margin-left: 260px; padding: 28px 52px 38px; }
+        .page { width: 100%; max-width: 1070px; margin: 0 auto; }
+        .page-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; margin-bottom: 24px; }
+        .page-header h1 { color: #14233e; font-size: 31px; line-height: 1.2; font-weight: 800; }
+        .page-header p { margin-top: 8px; color: #697a96; font-size: 14px; }
+        .primary-button { display: inline-flex; align-items: center; justify-content: center; min-height: 43px; padding: 0 24px; border: none; border-radius: 8px; background: #12b8ce; color: white; font-size: 13px; font-weight: 800; text-decoration: none; white-space: nowrap; transition: background 0.2s; }
+        .primary-button:hover { background: #0faabd; }
+        .notice { margin-bottom: 18px; padding: 12px 16px; border: 1px solid #f0c2c5; border-radius: 10px; background: #fff7f7; color: #b84048; font-size: 12px; font-weight: 600; }
+
+        /* ===== PROPOSALS PANEL ===== */
+        .panel { min-height: 560px; padding: 30px 27px 34px; border: 1px solid #d9e1ec; border-radius: 13px; background: white; }
+        .panel-title { color: #14233e; font-size: 17px; font-weight: 800; }
+        .panel-subtitle { margin-top: 6px; color: #6d7e99; font-size: 12px; }
+        .search-input { width: 100%; max-width: 340px; height: 41px; margin-top: 24px; padding: 0 15px; border: 1px solid #cfdae8; border-radius: 8px; outline: none; background: white; color: #14233e; font-size: 12px; }
+        .search-input:focus { border-color: #12b8ce; box-shadow: 0 0 0 3px rgba(18,184,206,0.10); }
+        .proposal-list { display: flex; flex-direction: column; gap: 22px; margin-top: 31px; }
+        .proposal-row { display: flex; align-items: center; gap: 20px; min-height: 90px; padding: 16px 40px 16px 23px; border: 1px solid #dde4ee; border-radius: 11px; background: #f7f9fc; transition: border-color 0.2s, box-shadow 0.2s; }
+        .proposal-row:hover { border-color: #c7d4e4; box-shadow: 0 6px 18px rgba(20,35,62,0.05); }
+        .proposal-row[hidden] { display: none; }
+        .proposal-info { flex: 1; min-width: 0; }
+        .proposal-title { color: #14233e; font-size: 16px; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .proposal-meta { margin-top: 8px; color: #6d7e99; font-size: 12px; }
+        .proposal-status { width: 180px; flex-shrink: 0; color: #14233e; font-size: 12px; font-weight: 800; }
+        .view-link { flex-shrink: 0; color: #00a9bd; font-size: 12px; font-weight: 800; text-decoration: none; }
+        .view-link:hover { text-decoration: underline; }
+        .no-results { padding: 30px 10px; color: #8493aa; font-size: 12px; text-align: center; }
+        .no-results[hidden] { display: none; }
+
+        /* ===== EMPTY STATE ===== */
+        .empty-state { display: flex; flex-direction: column; align-items: center; padding: 90px 20px 40px; text-align: center; }
+        .empty-circle { width: 96px; height: 96px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: #eefbfc; color: #12b8ce; font-size: 32px; font-weight: 800; }
+        .empty-title { margin-top: 22px; color: #14233e; font-size: 22px; font-weight: 800; }
+        .empty-text { margin-top: 12px; margin-bottom: 28px; color: #6d7e99; font-size: 13px; line-height: 1.7; }
+        .secondary-link { margin-top: 14px; color: #00a9bd; font-size: 12px; font-weight: 700; text-decoration: none; }
+
+        /* ===== RESPONSIVE ===== */
+        @@media (max-width: 800px) {
+            .sidebar { position: relative; width: 100%; }
+            .main { margin-left: 0; padding: 25px 20px; }
+            .producer-account { margin-top: 30px; }
+            .page-header { flex-direction: column; align-items: stretch; }
+            .proposal-row { flex-wrap: wrap; padding-right: 23px; }
+            .proposal-status { width: auto; }
+        }
+
+        @@media (max-width: 560px) {
+            .page-header h1 { font-size: 25px; }
+            .panel { padding: 24px 18px; }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ===================== SIDEBAR ===================== -->
+    <aside class="sidebar">
+
+        <div class="brand">
+            <div class="brand-icon">R</div>
+            <div>
+                <div class="brand-name">R.E.S.K</div>
+                <div class="brand-subtitle">SOFTWARE STUDIO</div>
+            </div>
+        </div>
+
+        <div class="nav-label">PROPOSAL WORKSPACE</div>
+
+        <nav class="sidebar-nav">
+            <a href="/Producer/Index" class="sidebar-link">Dashboard</a>
+            <a href="/Producer/Guidelines" class="sidebar-link">New proposal</a>
+            <a href="/Producer/MyProposals" class="sidebar-link active" aria-current="page">My proposals</a>
+            <a href="/Producer/Drafts" class="sidebar-link">Drafts</a>
+            <a href="/Producer/Guidelines" class="sidebar-link">Guidelines</a>
+            <a href="/Producer/Settings" class="sidebar-link">Settings</a>
+        </nav>
+
+        <div class="producer-account" id="producerAccount">
+
+            <div class="profile-menu">
+                <a href="/Producer/Settings" class="profile-menu-link">Account settings</a>
+                <div class="menu-divider"></div>
+                <form asp-controller="Account" asp-action="Logout" method="post">
+                    <button type="submit" class="logout-button">Log out</button>
+                </form>
+            </div>
+
+            <button type="button" class="producer-profile" id="producerProfileButton" aria-expanded="false">
+                <div class="producer-avatar">@await Component.InvokeAsync("ProducerAvatar", new { part = "avatar" })</div>
+                <div class="producer-profile-text">
+                    <div class="producer-name">@await Component.InvokeAsync("ProducerAvatar", new { part = "name" })</div>
+                    <div class="producer-role">Community Producer</div>
+                </div>
+            </button>
+
+        </div>
+
+    </aside>
+
+    <!-- ===================== MAIN ===================== -->
+    <main class="main">
+        <div class="page">
+
+            <header class="page-header">
+                <div>
+                    <h1>My proposals</h1>
+                    <p>Track submissions and workflow decisions.</p>
+                </div>
+                <a href="/Producer/Guidelines" class="primary-button">+ Start new proposal</a>
+            </header>
+
+            @if (!string.IsNullOrWhiteSpace(Model.Message))
+            {
+                <div class="notice" role="status">@Model.Message</div>
+            }
+
+            <section class="panel">
+
+                <h2 class="panel-title">My proposals</h2>
+                <p class="panel-subtitle">Track all proposals you have submitted.</p>
+
+                @if (!hasProposals)
+                {
+                    <div class="empty-state">
+                        <div class="empty-circle">0</div>
+                        <h3 class="empty-title">No submitted proposals yet</h3>
+                        <p class="empty-text">
+                            Proposals appear here once you submit them.
+                            <br />
+                            Unfinished proposals are kept in Drafts.
+                        </p>
+                        <a href="/Producer/Guidelines" class="primary-button">Start new proposal</a>
+                        <a href="/Producer/Drafts" class="secondary-link">Go to drafts</a>
+                    </div>
+                }
+                else
+                {
+                    <input id="proposalSearch"
+                           class="search-input"
+                           type="search"
+                           placeholder="Search proposals..."
+                           aria-label="Search proposals"
+                           autocomplete="off" />
+
+                    <div class="proposal-list" id="proposalList">
+
+                        @foreach (var proposal in Model.Proposals)
+                        {
+                            var searchText = (proposal.Title + " " + proposal.Category + " " + proposal.Reference).ToLowerInvariant();
+
+                            <article class="proposal-row" data-search="@searchText">
+
+                                <div class="proposal-info">
+                                    <h3 class="proposal-title" title="@proposal.Title">@proposal.Title</h3>
+                                    <div class="proposal-meta">@proposal.Category • @proposal.UpdatedText</div>
+                                </div>
+
+                                <div class="proposal-status">@proposal.StatusLabel</div>
+
+                                <a href="/Producer/Details/@proposal.Id"
+                                   class="view-link"
+                                   aria-label="View @proposal.Title">
+                                    View
+                                </a>
+
+                            </article>
+                        }
+
+                    </div>
+
+                    <p class="no-results" id="noResults" hidden>No proposals match your search.</p>
+                }
+
+            </section>
+
+        </div>
+    </main>
+
+    <!-- ===================== SCRIPTS ===================== -->
+    <script>
+        (function () {
+
+            // ---------- Fade out when following a link to another page ----------
+            const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+            document.addEventListener("click", function (event) {
+                const link = event.target.closest("a[href]");
+                if (!link || reduceMotion) { return; }
+
+                const href = link.getAttribute("href");
+
+                if (!href ||
+                    href.startsWith("#") ||
+                    link.target === "_blank" ||
+                    link.hasAttribute("download") ||
+                    link.origin !== window.location.origin ||
+                    event.button !== 0 ||
+                    event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+                    return;
+                }
+
+                event.preventDefault();
+                document.body.classList.add("page-leaving");
+
+                setTimeout(function () {
+                    window.location.href = link.href;
+                }, 170);
+            });
+
+            window.addEventListener("pageshow", function () {
+                document.body.classList.remove("page-leaving");
+            });
+
+            // ---------- Profile menu ----------
+            const producerAccount = document.getElementById("producerAccount");
+            const producerProfileButton = document.getElementById("producerProfileButton");
+
+            producerProfileButton.addEventListener("click", function (event) {
+                event.stopPropagation();
+                const isOpen = producerAccount.classList.toggle("open");
+                producerProfileButton.setAttribute("aria-expanded", isOpen ? "true" : "false");
+            });
+
+            document.addEventListener("click", function (event) {
+                if (!producerAccount.contains(event.target)) {
+                    producerAccount.classList.remove("open");
+                    producerProfileButton.setAttribute("aria-expanded", "false");
+                }
+            });
+
+            document.addEventListener("keydown", function (event) {
+                if (event.key === "Escape") {
+                    producerAccount.classList.remove("open");
+                    producerProfileButton.setAttribute("aria-expanded", "false");
+                }
+            });
+
+            // ---------- Search (title, category or reference) ----------
+            const search = document.getElementById("proposalSearch");
+            const list = document.getElementById("proposalList");
+            const noResults = document.getElementById("noResults");
+
+            if (search && list) {
+                const rows = Array.from(list.querySelectorAll(".proposal-row"));
+
+                search.addEventListener("input", function () {
+                    const term = search.value.trim().toLowerCase();
+                    let visible = 0;
+
+                    rows.forEach(function (row) {
+                        const match = row.dataset.search.indexOf(term) !== -1;
+                        row.hidden = !match;
+                        if (match) { visible++; }
+                    });
+
+                    noResults.hidden = visible !== 0;
+                });
+            }
+
+        })();
+    </script>
+
+</body>
+</html>

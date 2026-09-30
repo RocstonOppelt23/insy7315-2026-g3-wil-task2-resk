@@ -912,20 +912,13 @@
         <div class="producer-profile">
 
 
-            <div class="producer-avatar">
-                @producerInitial
-            </div>
+            <div class="producer-avatar">@await Component.InvokeAsync("ProducerAvatar", new { part = "avatar" })</div>
 
 
             <div class="producer-profile-content">
 
 
-                <div class="producer-name"
-                     title="@producerUsername">
-
-                    @producerUsername
-
-                </div>
+                <div class="producer-name">@await Component.InvokeAsync("ProducerAvatar", new { part = "name" })</div>
 
 
                 <div class="producer-role">

@@ -877,7 +877,7 @@
                 Guidelines
             </a>
 
-            <a href="#"
+            <a href="/Producer/Settings"
                class="sidebar-link">
                 Settings
             </a>
@@ -890,7 +890,7 @@
 
             <div class="profile-menu">
 
-                <a href="#"
+                <a href="/Producer/Settings"
                    class="profile-menu-link">
                     Account settings
                 </a>
@@ -915,16 +915,11 @@
                     id="producerProfileButton"
                     aria-expanded="false">
 
-                <div class="producer-avatar">
-                    @initial
-                </div>
+                <div class="producer-avatar">@await Component.InvokeAsync("ProducerAvatar", new { part = "avatar" })</div>
 
                 <div class="producer-profile-text">
 
-                    <div class="producer-name"
-                         title="@producerName">
-                        @producerName
-                    </div>
+                    <div class="producer-name">@await Component.InvokeAsync("ProducerAvatar", new { part = "name" })</div>
 
                     <div class="producer-role">
                         Community Producer
