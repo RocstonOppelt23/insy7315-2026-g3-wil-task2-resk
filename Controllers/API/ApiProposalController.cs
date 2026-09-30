@@ -2,9 +2,11 @@ using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 using Microsoft.EntityFrameworkCore;
 using RESK.WIL.Data;
 using RESK.WIL.Models;
+using RESK.WIL.Services;
 
 namespace RESK.WIL.Controllers.API
 {
@@ -82,7 +84,7 @@ namespace RESK.WIL.Controllers.API
             var proposal = new Proposal
             {
                 ProducerId = userId,
-                ProposalStatus = "Draft",
+                ProposalStatus = ProposalWorkflow.Draft,
                 CreatedAtUtc = now,
                 UpdatedAtUtc = now,
                 LastChangerId = userId,
@@ -117,7 +119,7 @@ namespace RESK.WIL.Controllers.API
             if (proposal is null)
                 return NotFound();
 
-            if (proposal.ProposalStatus != "Draft")
+            if (proposal.ProposalStatus != ProposalWorkflow.Draft)
                 return Conflict("Only drafts can be edited through this endpoint.");
 
             ApplyFields(proposal, request);
@@ -145,7 +147,7 @@ namespace RESK.WIL.Controllers.API
             if (proposal is null)
                 return NotFound();
 
-            if (proposal.ProposalStatus != "Draft")
+            if (proposal.ProposalStatus != ProposalWorkflow.Draft)
                 return Conflict("Only drafts can be submitted.");
 
             var errors = new List<ValidationResult>();
@@ -170,10 +172,14 @@ namespace RESK.WIL.Controllers.API
                 return ValidationProblem(ModelState);
             }
 
-            var now = DateTime.UtcNow;
-            proposal.ProposalStatus = "Pending";
-            proposal.SubmittedAtUtc ??= now;
-            proposal.UpdatedAtUtc = now;
+            if (!ProposalWorkflow.TryMove(
+                    proposal,
+                    ProposalWorkflow.Submitted,
+                    out string moveError))
+            {
+                return Conflict(moveError);
+            }
+
             proposal.LastChangerId = userId;
             proposal.LastAction = "Submitted";
 
@@ -190,7 +196,13 @@ namespace RESK.WIL.Controllers.API
             Proposal proposal,
             SaveProposalRequest request)
         {
-            proposal.ProposalType = request.ProposalType.Trim().ToUpperInvariant();
+            proposal.Title = request.Title ?? string.Empty;
+            proposal.Description = request.Description ?? string.Empty;
+            proposal.Category = request.Category ?? string.Empty;
+
+            proposal.ProposalType = (request.ProposalType ?? string.Empty)
+                .Trim()
+                .ToUpperInvariant();
             proposal.PhysicalAddress = request.PhysicalAddress;
             proposal.ProgrammeTitle = request.ProgrammeTitle;
             proposal.Partner = request.Partner;
@@ -229,6 +241,9 @@ namespace RESK.WIL.Controllers.API
                 proposal.UpdatedAtUtc,
                 new SaveProposalRequest
                 {
+                    Title = proposal.Title,
+                    Description = proposal.Description,
+                    Category = proposal.Category,
                     ProposalType = proposal.ProposalType,
                     PhysicalAddress = proposal.PhysicalAddress,
                     ProgrammeTitle = proposal.ProgrammeTitle,
@@ -277,8 +292,12 @@ namespace RESK.WIL.Controllers.API
         DateTime UpdatedAtUtc,
         SaveProposalRequest Fields);
 
+    [ValidateNever]
     public class SaveProposalRequest
     {
+        public string Title { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public string Category { get; set; } = string.Empty;
         public string ProposalType { get; set; } = string.Empty;
         public string PhysicalAddress { get; set; } = string.Empty;
         public string ProgrammeTitle { get; set; } = string.Empty;
