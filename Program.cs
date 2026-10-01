@@ -118,6 +118,11 @@ builder.Services.AddControllersWithViews();
 // =====================================================
 // BUILD APPLICATION
 // =====================================================
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("ManageProposals", policy =>
+        policy.RequireRole("Producer", "Admin"));
+});
 
 var app = builder.Build();
 
