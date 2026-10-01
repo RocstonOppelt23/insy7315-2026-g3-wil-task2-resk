@@ -1,0 +1,158 @@
+﻿@model RESK.WIL.Models.AdminUserForm
+
+@{
+    Layout = "~/Views/AdminProposals/_AdminLayout.cshtml";
+    ViewData["Title"] = "Add user";
+
+    var roles = RESK.WIL.Controllers.AdminUsersController.SystemRoles;
+    bool activate = Model.Status == "Active";
+}
+
+@section Styles {
+    <style>
+        .field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px 24px; margin-top: 26px; }
+        .field-error { display: block; margin-top: 6px; color: #c9444d; font-size: 11px; font-weight: 600; }
+        .section-title { margin-top: 38px; color: #14233e; font-size: 18px; font-weight: 800; }
+        .toggles { display: flex; flex-direction: column; gap: 14px; margin-top: 22px; }
+        .toggle { display: flex; align-items: center; gap: 18px; padding: 14px 20px; border: 1px solid #dde4ee; border-radius: 10px; background: #f7f9fc; cursor: pointer; }
+        .toggle input { position: absolute; opacity: 0; pointer-events: none; }
+        .switch { position: relative; width: 38px; height: 21px; flex-shrink: 0; border: 1px solid #cfdae8; border-radius: 999px; background: white; transition: background 0.2s, border-color 0.2s; }
+        .switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 15px; height: 15px; border-radius: 50%; background: #cfdae8; transition: transform 0.2s, background 0.2s; }
+        .toggle:has(input:checked) .switch { border-color: #12b8ce; background: #12b8ce; }
+        .toggle:has(input:checked) .switch::after { background: white; transform: translateX(17px); }
+        .toggle:has(input:focus-visible) { outline: 2px solid #12b8ce; outline-offset: 2px; }
+        .toggle strong { display: block; color: #14233e; font-size: 13px; }
+        .toggle small { display: block; margin-top: 4px; color: #6d7e99; font-size: 11px; }
+        .hint { margin-top: 18px; color: #6d7e99; font-size: 12px; line-height: 1.6; }
+
+        @@media (max-width: 800px) {
+            .field-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+}
+
+<header class="page-header">
+    <div>
+        <h1>Add user</h1>
+        <p>Create a user account and assign initial access.</p>
+    </div>
+    <div class="header-actions">
+        <a href="/Admin/Users" class="secondary-button">Cancel</a>
+        <button type="submit" form="userForm" class="primary-button">Create user</button>
+    </div>
+</header>
+
+<section class="card">
+
+    <h2 class="card-title">Account details</h2>
+
+    @Html.ValidationSummary(true, "", new { @class = "field-error" })
+
+    <form id="userForm" method="post" action="/Admin/Users/Create" novalidate>
+        @Html.AntiForgeryToken()
+
+        <div class="field-grid">
+
+            <div>
+                <label class="section-label" for="FullName">Full name</label>
+                <input class="input" id="FullName" name="FullName" value="@Model.FullName" maxlength="100" placeholder="Example: Amina Jacobs" />
+                @Html.ValidationMessage("FullName", new { @class = "field-error" })
+            </div>
+
+            <div>
+                <label class="section-label" for="Email">Email address</label>
+                <input class="input" id="Email" name="Email" type="email" value="@Model.Email" placeholder="name@example.com" />
+                @Html.ValidationMessage("Email", new { @class = "field-error" })
+            </div>
+
+            <div>
+                <label class="section-label" for="Phone">Phone number</label>
+                <input class="input" id="Phone" name="Phone" type="tel" value="@Model.Phone" maxlength="30" placeholder="+27..." />
+                @Html.ValidationMessage("Phone", new { @class = "field-error" })
+            </div>
+
+            <div>
+                <label class="section-label" for="Role">Role</label>
+                <select class="input" id="Role" name="Role">
+                    @foreach (var role in roles)
+                    {
+                        if (role == Model.Role) { <option value="@role" selected>@role</option> }
+                        else { <option value="@role">@role</option> }
+                    }
+                </select>
+                @Html.ValidationMessage("Role", new { @class = "field-error" })
+            </div>
+
+            <div>
+                <label class="section-label" for="Organisation">Organisation</label>
+                <input class="input" id="Organisation" name="Organisation" value="@Model.Organisation" maxlength="150" placeholder="Organisation or group" />
+            </div>
+
+            <div>
+                <label class="section-label" for="Status">Status</label>
+                <select class="input" id="Status" name="Status">
+                    @if (activate)
+                    {
+                        <option value="Pending">Pending approval</option>
+                        <option value="Active" selected>Active</option>
+                    }
+                    else
+                    {
+                        <option value="Pending" selected>Pending approval</option>
+                        <option value="Active">Active</option>
+                    }
+                </select>
+            </div>
+
+        </div>
+
+        <h3 class="section-title">Access options</h3>
+
+        <div class="toggles">
+
+            <label class="toggle">
+                <input type="checkbox" name="RequirePasswordChange" value="true" checked="@Model.RequirePasswordChange" />
+                <input type="hidden" name="RequirePasswordChange" value="false" />
+                <span class="switch" aria-hidden="true"></span>
+                <span>
+                    <strong>Require password change</strong>
+                    <small>User should choose a new password at first login</small>
+                </span>
+            </label>
+
+            <label class="toggle">
+                <input type="checkbox" id="activateToggle" checked="@activate" />
+                <span class="switch" aria-hidden="true"></span>
+                <span>
+                    <strong>Activate immediately</strong>
+                    <small>Skip pending approval and give the role straight away</small>
+                </span>
+            </label>
+
+        </div>
+
+        <p class="hint">
+            A temporary password is created for the new account and shown once after you click
+            <strong>Create user</strong>. Share it with the user securely.
+        </p>
+    </form>
+
+</section>
+
+@section Scripts {
+    <script>
+        // "Activate immediately" and the Status box always agree.
+        (function () {
+            var toggle = document.getElementById("activateToggle");
+            var status = document.getElementById("Status");
+
+            toggle.addEventListener("change", function () {
+                status.value = toggle.checked ? "Active" : "Pending";
+            });
+
+            status.addEventListener("change", function () {
+                toggle.checked = status.value === "Active";
+            });
+        })();
+    </script>
+}

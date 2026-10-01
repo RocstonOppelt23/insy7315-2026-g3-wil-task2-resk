@@ -128,9 +128,7 @@
                 Proposals
             </a>
 
-            <a class="nav-link"
-               asp-controller="Users"
-               asp-action="Index">
+            <a class="nav-link" href="/Admin/Users">
                 Users
             </a>
 
@@ -255,6 +253,27 @@
                 }
             });
 
+        })();
+    </script>
+
+    <script id="reskNavHighlight">
+        // Highlight the sidebar link for the page you are on.
+        (function () {
+            var links = Array.prototype.slice.call(document.querySelectorAll(".sidebar nav a[href]"));
+            var path = window.location.pathname.toLowerCase().replace(/\/+$/, "");
+            var best = null, bestLength = -1;
+
+            links.forEach(function (link) {
+                link.removeAttribute("aria-current");
+                if (link.getAttribute("href") === "#") { return; }
+                var target = new URL(link.href, window.location.origin).pathname.toLowerCase().replace(/\/+$/, "");
+                if ((path === target || path.indexOf(target + "/") === 0) && target.length > bestLength) {
+                    best = link;
+                    bestLength = target.length;
+                }
+            });
+
+            if (best) { best.setAttribute("aria-current", "page"); }
         })();
     </script>
 

@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Http.Features;
+﻿using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using RESK.WIL.Data;
@@ -269,6 +269,9 @@ app.UseAuthentication();
 // =====================================================
 // AUTHORIZATION
 // =====================================================
+
+// Signs out suspended / banned users straight away.
+app.UseMiddleware<RESK.WIL.Services.ReskRestrictionMiddleware>();
 
 app.UseAuthorization();
 

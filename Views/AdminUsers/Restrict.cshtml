@@ -1,0 +1,209 @@
+﻿@model RESK.WIL.Models.AdminRestrictViewModel
+
+@{
+    Layout = "~/Views/AdminProposals/_AdminLayout.cshtml";
+    ViewData["Title"] = "Suspend or ban user";
+
+    bool isBan = Model.Mode == "ban";
+    string cancelUrl = "/Admin/Users/" + Model.UserId + (string.IsNullOrEmpty(Model.ReturnTab) ? "" : "?tab=" + Model.ReturnTab);
+
+    var durations = new[]
+    {
+        ("1", "1 day"), ("3", "3 days"), ("7", "7 days"), ("14", "14 days"),
+        ("30", "30 days"), ("90", "90 days"), ("custom", "Choose an end date"), ("0", "Until I lift it")
+    };
+}
+
+@section Styles {
+    <style>
+        .who { display: flex; align-items: center; gap: 18px; margin-top: 22px; padding: 18px 20px; border: 1px solid #e3e9f0; border-radius: 11px; background: #f7f9fc; }
+        .who-avatar { width: 52px; height: 52px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: #ffffff; font-size: 15px; font-weight: 800; line-height: 1; }
+        .who strong { display: block; color: #14233e; font-size: 15px; }
+        .who small { display: block; margin-top: 4px; color: #6d7e99; font-size: 12px; }
+
+        .choices { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 26px; }
+        .choice { position: relative; display: block; padding: 18px 20px 18px 52px; border: 1px solid #dde4ee; border-radius: 11px; background: white; cursor: pointer; transition: border-color 0.2s, background 0.2s; }
+        .choice input { position: absolute; left: 20px; top: 21px; width: 17px; height: 17px; accent-color: #12b8ce; }
+        .choice strong { display: block; color: #14233e; font-size: 14px; }
+        .choice small { display: block; margin-top: 6px; color: #6d7e99; font-size: 12px; line-height: 1.5; }
+        .choice:hover { border-color: #b9c6d8; }
+        .choice:has(input:checked) { border-color: #12b8ce; background: #eefafc; }
+        .choice.ban input { accent-color: #c9444d; }
+        .choice.ban:has(input:checked) { border-color: #e7a3a8; background: #fdf0f1; }
+
+        .group { margin-top: 24px; }
+        .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        textarea.input { height: auto; min-height: 110px; padding: 12px 14px; line-height: 1.5; resize: vertical; }
+        .field-error { display: block; margin-top: 6px; color: #c9444d; font-size: 11px; font-weight: 600; }
+        .hint { margin-top: 8px; color: #6d7e99; font-size: 11px; line-height: 1.5; }
+
+        .notice { margin-top: 24px; padding: 14px 18px; border-radius: 10px; font-size: 12px; line-height: 1.6; }
+        .notice.amber { border: 1px solid #f3dca0; background: #fff8e6; color: #8a5d00; }
+        .notice.red { border: 1px solid #f0c2c5; background: #fde9ea; color: #a8323b; }
+        .notice ul { margin: 6px 0 0 18px; }
+
+        .danger-button { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 24px; border: none; border-radius: 8px; background: #c9444d; color: white; font-size: 13px; font-weight: 800; cursor: pointer; }
+        .danger-button:hover { background: #b23a42; }
+        .amber-button { background: #d39a12; }
+        .amber-button:hover { background: #bd8a0f; }
+
+        [hidden] { display: none !important; }
+
+        @@media (max-width: 800px) {
+            .choices, .row-2 { grid-template-columns: 1fr; }
+        }
+    </style>
+}
+
+<header class="page-header">
+    <div>
+        <h1>Suspend or ban user</h1>
+        <p>Stop this person from signing in, for a while or permanently.</p>
+    </div>
+    <div class="header-actions">
+        <a href="@cancelUrl" class="secondary-button">Cancel</a>
+        <button type="submit" form="restrictForm" id="submitButton" class="danger-button @(isBan ? "" : "amber-button")">
+            @(isBan ? "Ban user" : "Suspend user")
+        </button>
+    </div>
+</header>
+
+<section class="card">
+
+    <h2 class="card-title">Account restriction</h2>
+    <p class="card-subtitle">The user is signed out straight away and the change is recorded in their activity.</p>
+
+    <div class="who">
+        <span class="who-avatar" style="background:@Model.AvatarColour;">@Model.Initials</span>
+        <div>
+            <strong>@Model.Name</strong>
+            <small>@Model.Email • @Model.RoleLabel</small>
+        </div>
+    </div>
+
+    @if (Model.CurrentRestriction != null)
+    {
+        <p class="notice amber">@Model.CurrentRestriction</p>
+    }
+
+    @if (Model.IsAdmin)
+    {
+        <p class="notice amber">This person is an admin (Proposal Manager). Make sure another admin can still manage the system.</p>
+    }
+
+    <form id="restrictForm" method="post" action="/Admin/Users/@Model.UserId/Restrict" novalidate>
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="ReturnTab" value="@Model.ReturnTab" />
+
+        <div class="choices" role="radiogroup" aria-label="Restriction type">
+            <label class="choice">
+                <input type="radio" name="Mode" value="suspend" checked="@(!isBan)" />
+                <strong>Temporary suspension</strong>
+                <small>Blocks sign-in for a set time. The account is restored automatically when it ends.</small>
+            </label>
+
+            <label class="choice ban">
+                <input type="radio" name="Mode" value="ban" checked="@isBan" />
+                <strong>Permanent ban</strong>
+                <small>Blocks sign-in until an admin lifts the ban. Their proposals and history are kept.</small>
+            </label>
+        </div>
+
+        <div id="suspendFields" class="group" hidden="@isBan">
+            <div class="row-2">
+                <div>
+                    <label class="section-label" for="Duration">Suspend for</label>
+                    <select class="input" id="Duration" name="Duration">
+                        @foreach (var (value, text) in durations)
+                        {
+                            if (value == Model.Duration) { <option value="@value" selected>@text</option> }
+                            else { <option value="@value">@text</option> }
+                        }
+                    </select>
+                    @Html.ValidationMessage("Duration", new { @class = "field-error" })
+                </div>
+
+                <div id="untilField" hidden="@(Model.Duration != "custom")">
+                    <label class="section-label" for="Until">Suspension ends on</label>
+                    <input class="input" id="Until" name="Until" type="date" value="@Model.Until" min="@Model.MinDate" max="@Model.MaxDate" />
+                    @Html.ValidationMessage("Until", new { @class = "field-error" })
+                    <p class="hint">Ends at 00:00 on this date (South African time).</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="group">
+            <label class="section-label" for="Reason">Reason <span id="reasonOptional" hidden="@isBan" style="text-transform:none;font-weight:600;">(optional)</span></label>
+            <textarea class="input" id="Reason" name="Reason" maxlength="500"
+                      placeholder="Example: Repeated inappropriate submissions after a warning.">@Model.Reason</textarea>
+            @Html.ValidationMessage("Reason", new { @class = "field-error" })
+            <p class="hint">Only admins can see this. It is saved in the user's activity history.</p>
+        </div>
+
+        <div id="suspendNotice" class="notice amber" hidden="@isBan">
+            While suspended the user:
+            <ul>
+                <li>is signed out of every device and cannot sign in</li>
+                <li>keeps their account, proposals and drafts</li>
+                <li>can sign in again when the suspension ends or you lift it</li>
+            </ul>
+        </div>
+
+        <div id="banNotice" class="notice red" hidden="@(!isBan)">
+            A ban:
+            <ul>
+                <li>signs the user out of every device and blocks sign-in permanently</li>
+                <li>keeps their proposals and history for your records</li>
+                <li>can only be undone by an admin using <strong>Lift ban</strong></li>
+            </ul>
+        </div>
+    </form>
+
+</section>
+
+@section Scripts {
+    <script>
+        (function () {
+            var form = document.getElementById("restrictForm");
+            var duration = document.getElementById("Duration");
+            var untilField = document.getElementById("untilField");
+            var button = document.getElementById("submitButton");
+
+            function mode() {
+                var checked = form.querySelector("input[name='Mode']:checked");
+                return checked ? checked.value : "suspend";
+            }
+
+            function refresh() {
+                var ban = mode() === "ban";
+
+                document.getElementById("suspendFields").hidden = ban;
+                document.getElementById("suspendNotice").hidden = ban;
+                document.getElementById("banNotice").hidden = !ban;
+                document.getElementById("reasonOptional").hidden = ban;
+                untilField.hidden = duration.value !== "custom";
+
+                button.textContent = ban ? "Ban user" : "Suspend user";
+                button.classList.toggle("amber-button", !ban);
+            }
+
+            form.querySelectorAll("input[name='Mode']").forEach(function (radio) {
+                radio.addEventListener("change", refresh);
+            });
+
+            duration.addEventListener("change", refresh);
+
+            form.addEventListener("submit", function (event) {
+                var text = mode() === "ban"
+                    ? "Ban this user? They will be signed out and blocked until an admin lifts the ban."
+                    : "Suspend this user? They will be signed out and blocked until the suspension ends.";
+
+                if (!confirm(text)) {
+                    event.preventDefault();
+                }
+            });
+
+            refresh();
+        })();
+    </script>
+}
