@@ -1,0 +1,97 @@
+﻿@model RESK.WIL.Models.AdminAssignViewModel
+
+@{
+    Layout = "~/Views/AdminProposals/_AdminLayout.cshtml";
+    ViewData["Title"] = "Assign reviewer";
+
+    var row = Model.Row;
+}
+
+@section Styles {
+    <style>
+        .reviewers { display: flex; flex-direction: column; gap: 16px; }
+        .reviewer { position: relative; display: flex; align-items: center; gap: 16px; padding: 18px 18px; border: 1px solid #dde4ee; border-radius: 10px; background: white; cursor: pointer; transition: border-color 0.2s, box-shadow 0.2s; }
+        .reviewer:hover { border-color: #b9c6d8; }
+        .reviewer input { position: absolute; opacity: 0; pointer-events: none; }
+        .reviewer:has(input:checked) { border: 2px solid #12b8ce; padding: 17px; box-shadow: 0 0 0 3px rgba(18,184,206,0.08); }
+        .reviewer:has(input:focus-visible) { outline: 2px solid #12b8ce; outline-offset: 2px; }
+        .reviewer-avatar { width: 36px; height: 36px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: #1d3557; color: white; font-size: 10px; font-weight: 800; }
+        .reviewer strong { display: block; color: #14233e; font-size: 14px; }
+        .reviewer small { display: block; margin-top: 5px; color: #6d7e99; font-size: 11px; }
+        .assign-grid { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1fr); gap: 30px; margin-top: 32px; }
+        .no-reviewers { padding: 20px; border: 1px dashed #cfdae8; border-radius: 10px; color: #6d7e99; font-size: 13px; line-height: 1.6; }
+
+        @@media (max-width: 900px) {
+            .assign-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+}
+
+<header class="page-header">
+    <div>
+        <h1>Assign reviewer</h1>
+        <p>Choose a reviewer and review deadline.</p>
+    </div>
+    <div class="header-actions">
+        <a href="/Admin/Proposals/@row.Id" class="secondary-button">Cancel</a>
+        <button type="submit" form="assignForm" class="primary-button">Assign reviewer</button>
+    </div>
+</header>
+
+<section class="card">
+
+    <h2 class="card-title">Assign proposal reviewer</h2>
+
+    <div class="summary-box" style="margin-top:24px;">
+        <h2 style="font-size:15px;">@row.Title</h2>
+        <p>@row.Reference • @row.Category</p>
+    </div>
+
+    <form id="assignForm" method="post" action="/Admin/Proposals/@row.Id/Assign">
+        @Html.AntiForgeryToken()
+
+        <span class="section-label" style="margin-top:32px;">Select reviewer</span>
+
+        @if (Model.Reviewers.Count == 0)
+        {
+            <div class="no-reviewers">
+                There are no reviewers yet. Give a user the <strong>Reviewer</strong> role first,
+                then come back to assign them.
+            </div>
+        }
+        else
+        {
+            <div class="reviewers" role="radiogroup" aria-label="Reviewer">
+                @foreach (var reviewer in Model.Reviewers)
+                {
+                    bool chosen = reviewer.UserId == Model.SelectedReviewerId;
+
+                    <label class="reviewer">
+                        <input type="radio" name="reviewerId" value="@reviewer.UserId" checked="@chosen" required />
+                        <span class="reviewer-avatar">@reviewer.Initials</span>
+                        <span>
+                            <strong>@reviewer.Name</strong>
+                            <small>@reviewer.RoleLabel • @reviewer.ActiveReviews active @(reviewer.ActiveReviews == 1 ? "review" : "reviews")</small>
+                        </span>
+                    </label>
+                }
+            </div>
+        }
+
+        <div class="assign-grid">
+
+            <div>
+                <label class="section-label" for="deadline">Review deadline</label>
+                <input class="input" id="deadline" name="deadline" type="date" value="@Model.Deadline" />
+            </div>
+
+            <div>
+                <label class="section-label" for="note">Assignment note</label>
+                <textarea class="input" id="note" name="note" maxlength="1000"
+                          placeholder="Anything the reviewer should know (optional)">@Model.Note</textarea>
+            </div>
+
+        </div>
+    </form>
+
+</section>

@@ -1,0 +1,518 @@
+﻿@model RESK.WIL.Models.AdminDashboardViewModel
+@using System.Globalization
+
+@{
+    Layout = null;
+    ViewData["Title"] = "Dashboard";
+
+    // ----- Chart maths (SVG drawn on the server, no chart library) -----
+    const double chartLeft = 30, chartRight = 600, chartTop = 20, chartBottom = 150;
+
+    int pointCount = Model.Months.Count;
+    int maxValue = Math.Max(1, Math.Max(
+        Model.SubmittedPerMonth.DefaultIfEmpty(0).Max(),
+        Model.ApprovedPerMonth.DefaultIfEmpty(0).Max()));
+
+    // Round the top of the scale up so the lines never touch the edge.
+    int scaleMax = maxValue <= 4 ? 4 : (int)Math.Ceiling(maxValue / 4.0) * 4;
+
+    double X(int index) =>
+        pointCount <= 1 ? chartLeft : chartLeft + index * (chartRight - chartLeft) / (pointCount - 1);
+
+    double Y(int value) =>
+        chartBottom - value * (chartBottom - chartTop) / scaleMax;
+
+    string N(double value) => value.ToString("0.0", CultureInfo.InvariantCulture);
+
+    string Points(List<int> values) =>
+        string.Join(" ", values.Select((v, i) => N(X(i)) + "," + N(Y(v))));
+
+    string pendingNote = Model.PendingReview > 0 ? "Needs attention" : "All clear";
+    string pendingCss = Model.PendingReview > 0 ? "note-amber" : "note-green";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Dashboard - R.E.S.K</title>
+
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { min-height: 100%; }
+        body { font-family: Inter, "Segoe UI", Arial, sans-serif; background: #f4f7fb; color: #13223c; }
+        button, a { font-family: inherit; }
+
+        /* ===== PAGE FADE ===== */
+        .main { animation: pageFadeIn 0.4s ease-out both; }
+        body.page-leaving .main { animation: pageFadeOut 0.18s ease-in both; }
+        @@keyframes pageFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+        @@keyframes pageFadeOut { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(-4px); } }
+        @@media (prefers-reduced-motion: reduce) { .main, body.page-leaving .main { animation: none; } }
+
+        /* ===== SIDEBAR ===== */
+        .sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 260px; display: flex; flex-direction: column; background: #0c1a33; color: white; padding: 36px 20px 38px; z-index: 100; overflow-y: auto; }
+        .brand { display: flex; align-items: center; gap: 15px; padding-left: 13px; margin-bottom: 42px; }
+        .brand-icon { width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; border: 2px solid #00b9d0; border-radius: 17px; color: #00bfd7; font-size: 28px; font-weight: 700; }
+        .brand-name { color: white; font-size: 24px; font-weight: 800; letter-spacing: 1.5px; }
+        .brand-subtitle { margin-top: 5px; color: #d3dae7; font-size: 9px; }
+        .nav-label { margin: 0 12px 8px; color: #72809a; font-size: 10px; font-weight: 800; }
+        .sidebar-nav { display: flex; flex-direction: column; gap: 8px; }
+        .sidebar-link { display: flex; align-items: center; min-height: 43px; padding: 0 32px; border-radius: 10px; color: #b9c2d1; font-size: 14px; font-weight: 500; text-decoration: none; transition: 0.2s; }
+        .sidebar-link:hover { color: white; background: rgba(255,255,255,0.05); transform: translateX(2px); }
+        .sidebar-link.active { background: #142a4b; color: white; font-weight: 700; }
+
+        /* ===== ADMIN ACCOUNT ===== */
+        .admin-account { position: relative; margin-top: auto; padding: 0 8px; }
+        .admin-profile { width: 100%; display: flex; align-items: center; gap: 11px; padding: 12px 14px; border: none; border-radius: 11px; background: #142a4b; color: white; cursor: pointer; text-align: left; }
+        .admin-profile:hover { background: #193456; }
+        .admin-initials { width: 34px; flex-shrink: 0; color: #12c4da; font-size: 13px; font-weight: 800; }
+        .admin-text { min-width: 0; flex: 1; }
+        .admin-name { overflow: hidden; color: white; font-size: 13px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+        .admin-role { margin-top: 4px; color: #b5c0d1; font-size: 10px; }
+        .account-menu { position: absolute; left: 8px; right: 8px; bottom: calc(100% + 9px); padding: 7px; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; background: #142a4b; box-shadow: 0 18px 35px rgba(0,0,0,0.25); opacity: 0; visibility: hidden; transform: translateY(8px); transition: 0.2s; }
+        .admin-account.open .account-menu { opacity: 1; visibility: visible; transform: translateY(0); }
+        .logout-button { width: 100%; display: block; padding: 10px 11px; border: none; border-radius: 7px; background: transparent; color: #ff9e9e; font-size: 12px; font-weight: 600; text-align: left; cursor: pointer; }
+        .logout-button:hover { background: rgba(255,255,255,0.06); }
+
+        /* ===== MAIN ===== */
+        .main { min-height: 100vh; margin-left: 260px; padding: 28px 52px 38px; }
+        .page { width: 100%; max-width: 1070px; margin: 0 auto; }
+        .page-header h1 { color: #14233e; font-size: 31px; line-height: 1.2; font-weight: 800; }
+        .page-header p { margin-top: 8px; color: #697a96; font-size: 14px; }
+
+        .card { padding: 22px 24px; border: 1px solid #d9e1ec; border-radius: 13px; background: white; }
+        .card-title { color: #14233e; font-size: 18px; font-weight: 800; }
+        .card-subtitle { margin-top: 7px; color: #6d7e99; font-size: 12px; }
+
+        /* ===== STAT CARDS ===== */
+        .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-top: 26px; }
+        .stat { padding: 22px 20px; border: 1px solid #d9e1ec; border-radius: 13px; background: white; }
+        .stat-label { color: #5d6d87; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+        .stat-row { display: flex; align-items: baseline; gap: 10px; margin-top: 12px; }
+        .stat-value { color: #12213b; font-size: 34px; font-weight: 800; line-height: 1; }
+        .stat-note { font-size: 12px; font-weight: 700; }
+        .note-green { color: #1f9a66; }
+        .note-amber { color: #d08a00; }
+        .note-grey { color: #7b8aa1; font-weight: 600; }
+
+        /* ===== GRID ===== */
+        .grid { display: grid; grid-template-columns: minmax(0, 1.85fr) minmax(0, 1fr); gap: 16px; margin-top: 22px; align-items: start; }
+
+        /* ===== CHART ===== */
+        .chart-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+        .legend { display: flex; gap: 18px; margin-top: 4px; color: #5d6d87; font-size: 11px; }
+        .legend span { display: inline-flex; align-items: center; gap: 7px; }
+        .legend i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+        .chart { width: 100%; height: auto; margin-top: 14px; display: block; }
+        .chart-empty { margin-top: 10px; color: #8493aa; font-size: 12px; }
+
+        /* ===== PENDING ACTIONS ===== */
+        .actions-list { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
+        .action { display: flex; align-items: center; gap: 13px; padding: 12px 14px; border: 1px solid #dde4ee; border-radius: 10px; background: #f7f9fc; }
+        .action.amber { border-color: #f3dca0; background: #fff8e6; }
+        .action.teal { border-color: #bfeaf0; background: #eefafc; }
+        .action-icon { width: 28px; height: 28px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: white; font-size: 12px; font-weight: 800; }
+        .action.amber .action-icon { background: #e0a100; }
+        .action.teal .action-icon { background: #12b8ce; }
+        .action.grey .action-icon { background: #5b6b85; }
+        .action strong { display: block; color: #14233e; font-size: 13px; }
+        .action small { display: block; margin-top: 3px; color: #5d6d87; font-size: 11px; }
+
+        /* ===== RECENT PROPOSALS ===== */
+        .table-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+        .view-all { color: #00a9bd; font-size: 12px; font-weight: 800; text-decoration: none; white-space: nowrap; }
+        .view-all:hover { text-decoration: underline; }
+        table { width: 100%; margin-top: 18px; border-collapse: collapse; }
+        thead th { padding: 12px 14px; background: #f4f7fb; color: #5d6d87; font-size: 11px; font-weight: 800; text-align: left; text-transform: uppercase; }
+        thead th:first-child { border-radius: 8px 0 0 8px; }
+        thead th:last-child { border-radius: 0 8px 8px 0; }
+        tbody td { padding: 15px 14px; border-bottom: 1px solid #edf1f6; color: #52637e; font-size: 12px; }
+        tbody tr:last-child td { border-bottom: none; }
+        tbody td.title { color: #14233e; font-weight: 800; }
+        .pill { display: inline-block; padding: 5px 13px; border-radius: 999px; font-size: 11px; font-weight: 800; white-space: nowrap; }
+        .pill-review { background: #fdf1d6; color: #c77c00; }
+        .pill-approved { background: #e3f5ec; color: #1f8a5c; }
+        .pill-changes, .pill-rejected { background: #fde7e8; color: #c9444d; }
+        .pill-draft { background: #eef2f7; color: #5b6b85; }
+        .empty-row { padding: 26px 14px; color: #8493aa; font-size: 12px; text-align: center; }
+
+        /* ===== QUICK ACTIONS ===== */
+        .quick-list { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
+        .quick { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border: 1px solid #dde4ee; border-radius: 9px; background: white; color: #14233e; font-size: 13px; font-weight: 800; text-decoration: none; transition: border-color 0.2s, background 0.2s; }
+        .quick:hover { border-color: #12b8ce; }
+        .quick.highlight { border-color: #bfeaf0; background: #eefafc; }
+        .quick span:last-child { color: #8493aa; font-weight: 600; }
+        .roles-link { display: inline-block; margin-top: 16px; color: #00a9bd; font-size: 12px; font-weight: 800; text-decoration: none; }
+        .roles-link:hover { text-decoration: underline; }
+
+        /* ===== RESPONSIVE ===== */
+        @@media (max-width: 1150px) {
+            .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .grid { grid-template-columns: 1fr; }
+        }
+
+        @@media (max-width: 800px) {
+            .sidebar { position: relative; width: 100%; }
+            .main { margin-left: 0; padding: 25px 20px; }
+            .admin-account { margin-top: 30px; }
+            table { display: block; overflow-x: auto; }
+        }
+
+        @@media (max-width: 560px) {
+            .stats { grid-template-columns: 1fr; }
+            .page-header h1 { font-size: 25px; }
+            .chart-head, .table-head { flex-direction: column; }
+        }
+    
+        /* ===== SIDEBAR LINKS (works with any class names on the links) ===== */
+        .sidebar nav { display: flex !important; flex-direction: column !important; gap: 8px !important; margin: 0 !important; padding: 0 !important; list-style: none !important; }
+        .sidebar nav ul, .sidebar nav li { display: block; margin: 0; padding: 0; list-style: none; }
+        .sidebar nav a { display: flex !important; align-items: center !important; min-height: 43px; padding: 0 32px !important; border-radius: 10px; color: #b9c2d1 !important; font-size: 14px !important; font-weight: 500; text-decoration: none !important; background: transparent; transition: 0.2s; }
+        .sidebar nav a:hover { color: #ffffff !important; background: rgba(255,255,255,0.05); transform: translateX(2px); }
+        .sidebar nav a.active, .sidebar nav a[aria-current="page"] { background: #142a4b !important; color: #ffffff !important; font-weight: 700 !important; }</style>
+</head>
+
+<body>
+
+    <!-- ===================== SIDEBAR ===================== -->
+    <aside class="sidebar">
+
+        <div class="brand">
+            <div class="brand-icon">R</div>
+            <div>
+                <div class="brand-name">R.E.S.K</div>
+                <div class="brand-subtitle">SOFTWARE STUDIO</div>
+            </div>
+        </div>
+
+        <div class="nav-label">MANAGEMENT</div>
+
+        <nav class="navigation">
+
+            <a aria-current="page" class="nav-link active"
+               asp-controller="Admin"
+               asp-action="Index">
+                Dashboard
+            </a>
+
+            <a class="nav-link" href="/Admin/Proposals">
+                Proposals
+            </a>
+
+            <a class="nav-link"
+               asp-controller="Users"
+               asp-action="Index">
+                Users
+            </a>
+
+            <a class="nav-link" href="#">
+                Categories
+            </a>
+
+            <a class="nav-link" href="#">
+                Reports
+            </a>
+
+            <a class="nav-link" href="#">
+                Roles &amp; permissions
+            </a>
+
+            <a class="nav-link" href="#">
+                Audit log
+            </a>
+
+            <a class="nav-link" href="#">
+                System settings
+            </a>
+
+        </nav>
+
+        <div class="admin-account" id="adminAccount">
+
+            <div class="account-menu">
+                <form method="post" action="/Producer/Logout" style="margin:0;">
+                    <button type="submit" class="logout-button">Log out</button>
+                </form>
+            </div>
+
+            <button type="button" class="admin-profile" id="adminProfileButton" aria-expanded="false">
+                <div class="admin-initials">@Model.AdminInitials</div>
+                <div class="admin-text">
+                    <div class="admin-name" title="@Model.AdminName">@Model.AdminName</div>
+                    <div class="admin-role">Station Management</div>
+                </div>
+            </button>
+
+        </div>
+
+    </aside>
+
+    <!-- ===================== MAIN ===================== -->
+    <main class="main">
+        <div class="page">
+
+            <header class="page-header">
+                <h1>Dashboard</h1>
+                <p>Overview of proposals, users, workflow activity and pending actions.</p>
+            </header>
+
+            <!-- ===== STAT CARDS ===== -->
+            <section class="stats" aria-label="Summary">
+
+                <div class="stat">
+                    <div class="stat-label">Total proposals</div>
+                    <div class="stat-row">
+                        <span class="stat-value">@Model.TotalProposals</span>
+                        <span class="stat-note @(Model.SubmittedThisMonth > 0 ? "note-green" : "note-grey")">+@Model.SubmittedThisMonth this month</span>
+                    </div>
+                </div>
+
+                <div class="stat">
+                    <div class="stat-label">Pending review</div>
+                    <div class="stat-row">
+                        <span class="stat-value">@Model.PendingReview</span>
+                        <span class="stat-note @pendingCss">@pendingNote</span>
+                    </div>
+                </div>
+
+                <div class="stat">
+                    <div class="stat-label">Active users</div>
+                    <div class="stat-row">
+                        <span class="stat-value">@Model.ActiveUsers</span>
+                        <span class="stat-note @(Model.ActiveThisWeek > 0 ? "note-green" : "note-grey")">+@Model.ActiveThisWeek this week</span>
+                    </div>
+                </div>
+
+                <div class="stat">
+                    <div class="stat-label">Average review time</div>
+                    <div class="stat-row">
+                        <span class="stat-value">@Model.AverageReviewDays</span>
+                        <span class="stat-note note-grey">days</span>
+                    </div>
+                </div>
+
+            </section>
+
+            <!-- ===== CHART + PENDING ACTIONS ===== -->
+            <div class="grid">
+
+                <section class="card">
+
+                    <div class="chart-head">
+                        <div>
+                            <h2 class="card-title">Proposal workflow activity</h2>
+                            <p class="card-subtitle">Submissions and decisions over the last six months</p>
+                        </div>
+                        <div class="legend">
+                            <span><i style="background:#12b8ce;"></i>Submitted</span>
+                            <span><i style="background:#14233e;"></i>Approved</span>
+                        </div>
+                    </div>
+
+                    <svg class="chart" viewBox="0 0 630 185" role="img"
+                         aria-label="Line chart of submitted and approved proposals per month">
+
+                        <!-- grid lines -->
+                        @for (int g = 0; g <= 3; g++)
+                        {
+                            var gy = N(chartTop + g * (chartBottom - chartTop) / 3);
+                            <line x1="@N(chartLeft)" x2="@N(chartRight)" y1="@gy" y2="@gy" stroke="#e6ebf2" stroke-width="1" />
+                        }
+
+                        <!-- submitted -->
+                        <polyline points="@Points(Model.SubmittedPerMonth)" fill="none" stroke="#12b8ce" stroke-width="3"
+                                  stroke-linejoin="round" stroke-linecap="round" />
+
+                        <!-- approved -->
+                        <polyline points="@Points(Model.ApprovedPerMonth)" fill="none" stroke="#14233e" stroke-width="2"
+                                  stroke-linejoin="round" stroke-linecap="round" />
+
+                        @for (int i = 0; i < pointCount; i++)
+                        {
+                            <circle cx="@N(X(i))" cy="@N(Y(Model.SubmittedPerMonth[i]))" r="5" fill="#12b8ce">
+                                <title>@(Model.Months[i]): @(Model.SubmittedPerMonth[i]) submitted</title>
+                            </circle>
+
+                            <circle cx="@N(X(i))" cy="@N(Y(Model.ApprovedPerMonth[i]))" r="4" fill="#14233e">
+                                <title>@(Model.Months[i]): @(Model.ApprovedPerMonth[i]) approved</title>
+                            </circle>
+
+                            @* month label ("text" is a special word in Razor, so it is written out like this) *@
+                            @Html.Raw("<text x=\"" + N(X(i)) + "\" y=\"178\" text-anchor=\"middle\" font-size=\"11\" fill=\"#6d7e99\">" + System.Net.WebUtility.HtmlEncode(Model.Months[i]) + "</text>")
+                        }
+                    </svg>
+
+                    @if (Model.SubmittedPerMonth.Sum() == 0)
+                    {
+                        <p class="chart-empty">No proposals have been submitted in the last six months yet.</p>
+                    }
+
+                </section>
+
+                <section class="card">
+
+                    <h2 class="card-title">Pending actions</h2>
+                    <p class="card-subtitle">Items that require administrator attention</p>
+
+                    <div class="actions-list">
+
+                        <div class="action amber">
+                            <span class="action-icon">!</span>
+                            <div>
+                                <strong>@Model.AwaitingReview @(Model.AwaitingReview == 1 ? "proposal" : "proposals") awaiting assignment</strong>
+                                <small>Assign reviewers to continue workflow</small>
+                            </div>
+                        </div>
+
+                        <div class="action teal">
+                            <span class="action-icon">@Model.RoleChangeRequests</span>
+                            <div>
+                                <strong>@Model.RoleChangeRequests role-change @(Model.RoleChangeRequests == 1 ? "request" : "requests")</strong>
+                                <small>Review requested position changes</small>
+                            </div>
+                        </div>
+
+                        <div class="action grey">
+                            <span class="action-icon">@Model.UsersWithoutRole</span>
+                            <div>
+                                <strong>@Model.UsersWithoutRole inactive @(Model.UsersWithoutRole == 1 ? "registration" : "registrations")</strong>
+                                <small>Approve or reject new accounts</small>
+                            </div>
+                        </div>
+
+                    </div>
+
+                </section>
+
+            </div>
+
+            <!-- ===== RECENT PROPOSALS + QUICK ACTIONS ===== -->
+            <div class="grid">
+
+                <section class="card">
+
+                    <div class="table-head">
+                        <div>
+                            <h2 class="card-title">Recent proposals</h2>
+                            <p class="card-subtitle">Latest programme proposals submitted to the system</p>
+                        </div>
+                        <a href="/Admin/Proposals" class="view-all">View all proposals</a>
+                    </div>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Programme</th>
+                                <th>Producer</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.RecentProposals.Count == 0)
+                            {
+                                <tr>
+                                    <td colspan="4" class="empty-row">No proposals have been submitted yet.</td>
+                                </tr>
+                            }
+
+                            @foreach (var row in Model.RecentProposals)
+                            {
+                                <tr>
+                                    <td class="title">@row.Title</td>
+                                    <td>@row.Producer</td>
+                                    <td>@row.DateText</td>
+                                    <td><span class="pill @row.StatusCss">@row.StatusLabel</span></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+
+                </section>
+
+                <section class="card">
+
+                    <h2 class="card-title">Quick actions</h2>
+                    <p class="card-subtitle">Common management tasks</p>
+
+                    <div class="quick-list">
+                        <a href="/Admin/Proposals?status=review" class="quick highlight"><span>Review pending proposals</span><span>›</span></a>
+                        <a href="#" class="quick"><span>Manage user approvals</span><span>›</span></a>
+                        <a href="#" class="quick"><span>Create management report</span><span>›</span></a>
+                    </div>
+
+                    <a href="#" class="roles-link">Open roles &amp; permissions</a>
+
+                </section>
+
+            </div>
+
+        </div>
+    </main>
+
+    <!-- ===================== SCRIPTS ===================== -->
+    <script>
+        (function () {
+
+            // ---------- Fade out when following a link to another page ----------
+            const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+            document.addEventListener("click", function (event) {
+                const link = event.target.closest("a[href]");
+                if (!link || reduceMotion) { return; }
+
+                const href = link.getAttribute("href");
+
+                if (!href ||
+                    href.startsWith("#") ||
+                    link.target === "_blank" ||
+                    link.hasAttribute("download") ||
+                    link.origin !== window.location.origin ||
+                    event.button !== 0 ||
+                    event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+                    return;
+                }
+
+                event.preventDefault();
+                document.body.classList.add("page-leaving");
+
+                setTimeout(function () {
+                    window.location.href = link.href;
+                }, 170);
+            });
+
+            window.addEventListener("pageshow", function () {
+                document.body.classList.remove("page-leaving");
+            });
+
+            // ---------- Account menu (Log out) ----------
+            const account = document.getElementById("adminAccount");
+            const button = document.getElementById("adminProfileButton");
+
+            button.addEventListener("click", function (event) {
+                event.stopPropagation();
+                const isOpen = account.classList.toggle("open");
+                button.setAttribute("aria-expanded", isOpen ? "true" : "false");
+            });
+
+            document.addEventListener("click", function (event) {
+                if (!account.contains(event.target)) {
+                    account.classList.remove("open");
+                    button.setAttribute("aria-expanded", "false");
+                }
+            });
+
+            document.addEventListener("keydown", function (event) {
+                if (event.key === "Escape") {
+                    account.classList.remove("open");
+                    button.setAttribute("aria-expanded", "false");
+                }
+            });
+
+        })();
+    </script>
+
+</body>
+</html>

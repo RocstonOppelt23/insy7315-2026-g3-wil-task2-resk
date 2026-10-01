@@ -841,7 +841,7 @@
                 My proposals
             </a>
 
-            <a href="#"
+            <a href="/Producer/Drafts"
                class="sidebar-link">
                 Drafts
             </a>
@@ -856,8 +856,7 @@
                class="sidebar-link">
                 Settings
             </a>
-
-        </nav>
+</nav>
 
 
         <div class="producer-account">
@@ -880,7 +879,72 @@
 
         </div>
 
-    </aside>
+    
+        <!-- ===== PRODUCER ACCOUNT (photo, name, Account settings, Log out) ===== -->
+        <style>
+            .producer-account:not(.resk-account), .sidebar > .producer-profile { display: none !important; }
+            .resk-account { position: relative; margin-top: auto; padding: 0 8px; }
+            .resk-profile { width: 100%; display: flex; align-items: center; gap: 11px; padding: 12px 10px; border: none; border-radius: 11px; background: #142a4b; color: #ffffff; cursor: pointer; text-align: left; font-family: inherit; }
+            .resk-profile:hover { background: #193456; }
+            .resk-avatar { width: 34px; height: 34px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 50%; background: #0bb6ca; color: #ffffff; font-size: 11px; font-weight: 800; }
+            .resk-text { min-width: 0; flex: 1; }
+            .resk-name { overflow: hidden; color: #ffffff; font-size: 13px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+            .resk-role { margin-top: 4px; color: #b5c0d1; font-size: 10px; }
+            .resk-menu { position: absolute; left: 8px; right: 8px; bottom: calc(100% + 9px); z-index: 10; padding: 7px; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; background: #142a4b; box-shadow: 0 18px 35px rgba(0,0,0,0.25); opacity: 0; visibility: hidden; transform: translateY(8px); transition: 0.2s; }
+            .resk-account.open .resk-menu { opacity: 1; visibility: visible; transform: translateY(0); }
+            .resk-menu-link, .resk-logout { width: 100%; display: block; padding: 10px 11px; border: none; border-radius: 7px; background: transparent; color: #d6deea; font-family: inherit; font-size: 12px; font-weight: 600; text-align: left; text-decoration: none; cursor: pointer; }
+            .resk-menu-link:hover, .resk-logout:hover { background: rgba(255,255,255,0.06); color: #ffffff; }
+            .resk-logout { color: #ff9e9e; }
+            .resk-divider { height: 1px; margin: 5px 4px; background: rgba(255,255,255,0.08); }
+        </style>
+
+        <div class="resk-account" id="reskAccount">
+
+            <div class="resk-menu">
+                <a href="/Producer/Settings" class="resk-menu-link">Account settings</a>
+                <div class="resk-divider"></div>
+                <form method="post" action="/Producer/Logout" style="margin:0;">
+                    <button type="submit" class="resk-logout">Log out</button>
+                </form>
+            </div>
+
+            <button type="button" class="resk-profile" id="reskProfileButton" aria-expanded="false">
+                <div class="resk-avatar">@await Component.InvokeAsync("ProducerAvatar", new { part = "avatar" })</div>
+                <div class="resk-text">
+                    <div class="resk-name">@await Component.InvokeAsync("ProducerAvatar", new { part = "name" })</div>
+                    <div class="resk-role">Community Producer</div>
+                </div>
+            </button>
+
+        </div>
+
+        <script>
+            (function () {
+                var account = document.getElementById("reskAccount");
+                var button = document.getElementById("reskProfileButton");
+
+                button.addEventListener("click", function (event) {
+                    event.stopPropagation();
+                    var isOpen = account.classList.toggle("open");
+                    button.setAttribute("aria-expanded", isOpen ? "true" : "false");
+                });
+
+                document.addEventListener("click", function (event) {
+                    if (!account.contains(event.target)) {
+                        account.classList.remove("open");
+                        button.setAttribute("aria-expanded", "false");
+                    }
+                });
+
+                document.addEventListener("keydown", function (event) {
+                    if (event.key === "Escape") {
+                        account.classList.remove("open");
+                        button.setAttribute("aria-expanded", "false");
+                    }
+                });
+            })();
+        </script>
+</aside>
 
 
     <!-- =========================================================

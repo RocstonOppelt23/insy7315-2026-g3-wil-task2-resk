@@ -1,0 +1,113 @@
+﻿@model RESK.WIL.Models.AdminReviewViewModel
+
+@{
+    Layout = "~/Views/AdminProposals/_AdminLayout.cshtml";
+    ViewData["Title"] = "Review proposal";
+
+    var row = Model.Row;
+    var review = Model.Review;
+
+    var options = new[]
+    {
+        ("Approve", "Approve", "approve"),
+        ("RequestChanges", "Request changes", "changes"),
+        ("Reject", "Reject", "reject")
+    };
+}
+
+@section Styles {
+    <style>
+        .options { display: flex; flex-wrap: wrap; gap: 18px; }
+        .option { position: relative; width: 200px; display: flex; align-items: center; gap: 14px; padding: 15px 16px; border: 1px solid #dde4ee; border-radius: 9px; background: white; cursor: pointer; color: #14233e; font-size: 13px; font-weight: 800; transition: border-color 0.2s; }
+        .option input { position: absolute; opacity: 0; pointer-events: none; }
+        .option-dot { width: 17px; height: 17px; flex-shrink: 0; border: 2px solid; border-radius: 50%; }
+        .option.approve .option-dot { border-color: #1f9a66; }
+        .option.changes .option-dot { border-color: #d39a12; }
+        .option.reject .option-dot { border-color: #d64d58; }
+        .option.approve:has(input:checked) { border: 2px solid #1f9a66; padding: 14px 15px; }
+        .option.changes:has(input:checked) { border: 2px solid #d39a12; padding: 14px 15px; }
+        .option.reject:has(input:checked) { border: 2px solid #d64d58; padding: 14px 15px; }
+        .option.approve:has(input:checked) .option-dot { background: #1f9a66; }
+        .option.changes:has(input:checked) .option-dot { background: #d39a12; }
+        .option.reject:has(input:checked) .option-dot { background: #d64d58; }
+        .option:has(input:focus-visible) { outline: 2px solid #12b8ce; outline-offset: 2px; }
+
+        .block { margin-top: 30px; }
+        .checklist-title { margin-top: 36px; color: #14233e; font-size: 18px; font-weight: 800; }
+        .checklist { display: flex; flex-direction: column; gap: 10px; margin-top: 22px; }
+        .check { display: flex; align-items: center; gap: 16px; padding: 11px 20px; border-radius: 7px; background: #f4f7fb; color: #14233e; font-size: 13px; cursor: pointer; }
+        .check input { width: 20px; height: 20px; flex-shrink: 0; accent-color: #12b8ce; cursor: pointer; }
+        .saved-note { margin-top: 18px; color: #8493aa; font-size: 11px; }
+    </style>
+}
+
+<header class="page-header">
+    <div>
+        <h1>Review proposal</h1>
+        <p>Record comments and a workflow recommendation.</p>
+    </div>
+    <div class="header-actions">
+        <button type="submit" form="reviewForm" name="submitAction" value="draft" class="secondary-button" formnovalidate>Save draft</button>
+        <button type="submit" form="reviewForm" name="submitAction" value="submit" class="primary-button">Submit review</button>
+    </div>
+</header>
+
+<section class="card">
+
+    <h2 class="card-title">Review: @row.Title</h2>
+    <p class="card-subtitle">Assess the proposal and submit a recommendation.</p>
+
+    <form id="reviewForm" method="post" action="/Admin/Proposals/@row.Id/Review">
+        @Html.AntiForgeryToken()
+
+        <div class="block">
+            <span class="section-label">Recommendation</span>
+
+            <div class="options" role="radiogroup" aria-label="Recommendation">
+                @foreach (var (value, text, css) in options)
+                {
+                    bool chosen = review.Recommendation == value;
+
+                    <label class="option @css">
+                        <input type="radio" name="recommendation" value="@value" checked="@chosen" required />
+                        <span class="option-dot" aria-hidden="true"></span>
+                        @text
+                    </label>
+                }
+            </div>
+        </div>
+
+        <div class="block">
+            <label class="section-label" for="comments">Review comments *</label>
+            <textarea class="input" id="comments" name="comments" maxlength="4000" required
+                      placeholder="Explain your assessment and any changes the producer must make...">@review.Comments</textarea>
+        </div>
+
+        <h3 class="checklist-title">Checklist</h3>
+
+        <div class="checklist">
+            <label class="check">
+                <input type="checkbox" name="purposeIsClear" value="true" checked="@review.PurposeIsClear" />
+                Programme purpose is clear
+            </label>
+            <label class="check">
+                <input type="checkbox" name="audienceIsSuitable" value="true" checked="@review.AudienceIsSuitable" />
+                Target audience is suitable
+            </label>
+            <label class="check">
+                <input type="checkbox" name="planIsRealistic" value="true" checked="@review.PlanIsRealistic" />
+                Production plan is realistic
+            </label>
+            <label class="check">
+                <input type="checkbox" name="budgetIsComplete" value="true" checked="@review.BudgetIsComplete" />
+                Budget information is complete
+            </label>
+        </div>
+
+        @if (review.ReviewSavedAtUtc.HasValue)
+        {
+            <p class="saved-note">Draft last saved @RESK.WIL.Models.SouthAfricaTime.Friendly(review.ReviewSavedAtUtc.Value).</p>
+        }
+    </form>
+
+</section>

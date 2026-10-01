@@ -1038,7 +1038,7 @@
 
                 <div class="menu-divider"></div>
 
-                <form asp-controller="Account"
+                <form asp-controller="ProducerAccount"
                       asp-action="Logout"
                       method="post">
 
@@ -1300,7 +1300,7 @@
                                     <a asp-controller="Producer"
                                        asp-action="ContinueDraft"
                                        asp-route-id="@draft.Id"
-                                       class="continue-button @(i == 0 ? "primary" : "")">
+                                       class="continue-button primary">
                                         Continue editing
                                     </a>
 
