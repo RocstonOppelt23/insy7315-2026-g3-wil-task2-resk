@@ -271,6 +271,8 @@ app.UseAuthentication();
 // =====================================================
 
 // Signs out suspended / banned users straight away.
+app.UseMiddleware<RESK.WIL.Services.ReskAuditMiddleware>();
+app.UseMiddleware<RESK.WIL.Services.ReskSettingsMiddleware>();
 app.UseMiddleware<RESK.WIL.Services.ReskRestrictionMiddleware>();
 
 app.UseAuthorization();

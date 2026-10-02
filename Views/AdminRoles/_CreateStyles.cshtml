@@ -1,0 +1,97 @@
+﻿    <style>
+        .steps { display: flex; align-items: center; gap: 14px; padding-bottom: 6px; }
+        .step-item { display: flex; align-items: center; gap: 10px; color: #6d7e99; font-size: 13px; white-space: nowrap; }
+        .step-num { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border: 1.5px solid #d3dce8; border-radius: 50%; background: #f7f9fc; color: #52637e; font-size: 12px; font-weight: 800; }
+        .step-item.current { color: #14233e; font-weight: 800; }
+        .step-item.current .step-num { border-color: #12b8ce; background: white; color: #0a9fb2; }
+        .step-item.done .step-num { border-color: #12b8ce; background: #12b8ce; color: white; }
+        .step-line { flex: 1; height: 2px; max-width: 120px; background: #dde4ee; }
+        .step-line.done { background: #12b8ce; }
+
+        .section-head { margin-top: 26px; }
+        .section-head h2 { color: #14233e; font-size: 20px; font-weight: 800; }
+        .section-head p { margin-top: 6px; color: #6d7e99; font-size: 12px; }
+        .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 24px; margin-top: 22px; }
+        .field { margin-top: 20px; }
+        .field-error { display: block; margin-top: 6px; color: #c9444d; font-size: 11px; font-weight: 600; }
+        .hint { margin-top: 7px; color: #8493aa; font-size: 11px; line-height: 1.5; }
+        .select-wrap { position: relative; }
+        .status-dot { position: absolute; right: 36px; top: 50%; width: 9px; height: 9px; margin-top: -4.5px; border-radius: 50%; background: #1f9a66; pointer-events: none; }
+        .status-dot.off { background: #9aa7ba; }
+        .textarea-wrap { position: relative; }
+        .textarea-wrap textarea.input { height: auto; min-height: 80px; padding: 14px 16px 26px; line-height: 1.5; resize: vertical; }
+        .counter { position: absolute; right: 14px; bottom: 10px; color: #8493aa; font-size: 10px; }
+
+        .templates { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-top: 16px; }
+        .template { position: relative; display: block; padding: 16px 16px 18px; border: 1px solid #dde4ee; border-radius: 11px; background: white; cursor: pointer; transition: border-color 0.2s, background 0.2s; }
+        .template input { position: absolute; top: 16px; right: 16px; width: 17px; height: 17px; accent-color: #12b8ce; }
+        .template:has(input:checked) { border: 2px solid #12b8ce; background: #eefafc; padding: 15px 15px 17px; }
+        .template-head { display: flex; align-items: center; gap: 10px; padding-right: 22px; }
+        .template-badge { width: 30px; height: 30px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: white; font-size: 10px; font-weight: 800; }
+        .template strong { color: #14233e; font-size: 14px; }
+        .template small { display: block; margin-top: 10px; color: #6d7e99; font-size: 11px; line-height: 1.5; }
+
+        .toggle { display: flex; align-items: center; gap: 18px; margin-top: 22px; padding: 15px 20px; border: 1px solid #dde4ee; border-radius: 10px; background: #f7f9fc; cursor: pointer; }
+        .toggle input[type=checkbox] { position: absolute; opacity: 0; pointer-events: none; }
+        .switch { position: relative; width: 38px; height: 21px; flex-shrink: 0; border: 1px solid #cfdae8; border-radius: 999px; background: white; transition: 0.2s; }
+        .switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 15px; height: 15px; border-radius: 50%; background: #cfdae8; transition: 0.2s; }
+        .toggle:has(input:checked) .switch { border-color: #12b8ce; background: #12b8ce; }
+        .toggle:has(input:checked) .switch::after { background: white; transform: translateX(17px); }
+        .toggle strong { display: block; color: #14233e; font-size: 13px; }
+        .toggle small { display: block; margin-top: 4px; color: #6d7e99; font-size: 11px; }
+
+        .form-foot { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-top: 24px; padding-top: 16px; border-top: 1px solid #e8edf3; }
+        .form-foot p { color: #6d7e99; font-size: 11px; }
+        .form-foot .buttons { display: flex; gap: 12px; }
+        .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: 0 18px; border: 1px solid #d3dce8; border-radius: 8px; background: white; color: #14233e; font-size: 13px; font-weight: 800; text-decoration: none; cursor: pointer; }
+        .btn.primary { border-color: #12b8ce; background: #12b8ce; color: white; }
+        .btn.primary:hover { background: #0faabd; }
+
+        .role-strip { display: flex; align-items: center; gap: 14px; margin-top: 22px; padding: 14px 18px; border: 1px solid #dde4ee; border-radius: 11px; background: #f7f9fc; }
+        .role-avatar { width: 38px; height: 38px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: #1d3557; color: white; font-size: 11px; font-weight: 800; }
+        .role-strip strong { display: block; color: #14233e; font-size: 15px; }
+        .role-strip small { display: block; margin-top: 3px; color: #6d7e99; font-size: 11px; }
+        .role-strip .right { margin-left: auto; color: #6d7e99; font-size: 11px; }
+
+        table.matrix { width: 100%; margin-top: 16px; border-collapse: collapse; }
+        .matrix thead th { padding: 13px 10px; background: #f4f7fb; color: #5d6d87; font-size: 10px; font-weight: 800; text-align: center; text-transform: uppercase; }
+        .matrix thead th:first-child { text-align: left; padding-left: 18px; border-radius: 8px 0 0 8px; }
+        .matrix thead th:nth-child(2) { text-align: left; }
+        .matrix thead th:last-child { border-radius: 0 8px 8px 0; }
+        .matrix td { padding: 14px 10px; border-bottom: 1px solid #edf1f6; text-align: center; }
+        .matrix td:first-child { padding-left: 18px; text-align: left; color: #14233e; font-size: 13px; font-weight: 800; }
+        .matrix td.hint-cell { text-align: left; color: #6d7e99; font-size: 11px; }
+        .matrix input[type=checkbox] { width: 18px; height: 18px; accent-color: #12b8ce; cursor: pointer; }
+        .na { color: #c7d0dc; }
+        .note { margin-top: 18px; padding: 13px 18px; border: 1px solid #bfeaf0; border-radius: 10px; background: #eefafc; }
+        .note strong { display: block; color: #14233e; font-size: 12px; }
+        .note span { display: block; margin-top: 4px; color: #52637e; font-size: 11px; }
+
+        .overview { display: flex; align-items: center; gap: 18px; margin-top: 18px; padding: 20px 22px; border: 1px solid #dde4ee; border-radius: 11px; background: #f7f9fc; }
+        .overview .role-avatar { width: 44px; height: 44px; }
+        .overview h3 { color: #14233e; font-size: 18px; font-weight: 800; }
+        .overview p { margin-top: 8px; color: #52637e; font-size: 12px; }
+        .pill-active { background: #e3f5ec; color: #1f8a5c; }
+        .pill-inactive { background: #eef2f7; color: #5b6b85; }
+        .summary-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 14px; margin-top: 26px; }
+        .summary-head h3 { color: #14233e; font-size: 18px; font-weight: 800; }
+        .summary-head p { margin-top: 4px; color: #6d7e99; font-size: 12px; }
+        table.summary { width: 100%; margin-top: 14px; border-collapse: collapse; }
+        .summary thead th { padding: 13px 18px; background: #f4f7fb; color: #5d6d87; font-size: 10px; font-weight: 800; text-align: left; text-transform: uppercase; }
+        .summary thead th:first-child { border-radius: 8px 0 0 8px; }
+        .summary thead th:last-child { border-radius: 0 8px 8px 0; text-align: right; }
+        .summary td { padding: 14px 18px; border-bottom: 1px solid #edf1f6; color: #14233e; font-size: 12px; }
+        .summary td:first-child { font-weight: 800; }
+        .summary td:last-child { text-align: right; color: #6d7e99; }
+        .summary td.none { color: #9aa7ba; }
+
+        @@media (max-width: 1100px) {
+            .templates { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+
+        @@media (max-width: 760px) {
+            .grid-2, .templates { grid-template-columns: 1fr; }
+            .matrix, .summary { display: block; overflow-x: auto; }
+            .step-item span:last-child { display: none; }
+        }
+    </style>

@@ -1,0 +1,258 @@
+﻿@model RESK.WIL.Models.AdminCategoriesIndexViewModel
+
+@{
+    Layout = "~/Views/AdminProposals/_AdminLayout.cshtml";
+    ViewData["Title"] = "Categories";
+
+    string returnUrl = "/Admin/Categories" + Context.Request.QueryString;
+    var statuses = new[] { ("", "All statuses"), ("active", "Active"), ("inactive", "Inactive"), ("hidden", "Hidden from producers") };
+    bool filtered = !string.IsNullOrWhiteSpace(Model.Search) || !string.IsNullOrWhiteSpace(Model.Status);
+}
+
+@section Styles {
+    <style>
+        .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+        .stat { padding: 20px; border: 1px solid #d9e1ec; border-radius: 13px; background: white; min-width: 0; }
+        .stat-label { color: #5d6d87; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+        .stat-value { margin-top: 12px; color: #12213b; font-size: 32px; font-weight: 800; line-height: 1; }
+        .stat-name { margin-top: 12px; overflow: hidden; color: #12213b; font-size: 19px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+        .stat-small { margin-top: 6px; color: #6d7e99; font-size: 11px; }
+
+        .filters { margin-top: 22px; }
+        .filter-grid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 0.9fr) auto auto; gap: 18px; align-items: end; }
+        .filter-grid .primary-button { height: 42px; min-height: 42px; padding: 0 46px; }
+        .clear-link { align-self: center; margin-top: 22px; color: #00a9bd; font-size: 12px; font-weight: 800; text-decoration: none; }
+
+        .list-card { margin-top: 18px; }
+        table { width: 100%; margin-top: 18px; border-collapse: collapse; }
+        thead th { padding: 13px 18px; background: #f4f7fb; color: #5d6d87; font-size: 11px; font-weight: 800; text-align: left; text-transform: uppercase; }
+        thead th:first-child { border-radius: 8px 0 0 8px; }
+        thead th:last-child { border-radius: 0 8px 8px 0; }
+        tbody td { padding: 16px 18px; border-bottom: 1px solid #edf1f6; color: #52637e; font-size: 12px; vertical-align: middle; }
+        tbody tr:last-child td { border-bottom: none; }
+        tbody tr.inactive td { color: #8493aa; }
+
+        .cat-cell { display: flex; align-items: center; gap: 12px; }
+        .cat-dot { width: 10px; height: 10px; flex-shrink: 0; border-radius: 50%; }
+        .cat-cell strong { display: block; color: #14233e; font-size: 13px; }
+        .cat-cell small { display: block; margin-top: 3px; color: #8493aa; font-size: 10px; letter-spacing: 0.4px; }
+        .tag { display: inline-block; margin-left: 6px; padding: 2px 7px; border-radius: 999px; background: #eef2f7; color: #5b6b85; font-size: 9px; font-weight: 800; vertical-align: middle; }
+        .tag.docs { background: #fff4dc; color: #a06a00; }
+
+        .pill-active { background: #e3f5ec; color: #1f8a5c; }
+        .pill-inactive { background: #eef2f7; color: #5b6b85; }
+
+        .actions { display: flex; align-items: center; gap: 18px; }
+        .action-link { color: #00a9bd; font-size: 12px; font-weight: 800; text-decoration: none; }
+        .action-link:hover { text-decoration: underline; }
+        .more { position: relative; }
+        .more summary { list-style: none; cursor: pointer; padding: 2px 6px; color: #5d6d87; font-size: 16px; font-weight: 800; letter-spacing: 1px; border-radius: 6px; }
+        .more summary::-webkit-details-marker { display: none; }
+        .more summary:hover { background: #eef2f7; }
+        .more-menu { position: absolute; right: 0; top: calc(100% + 6px); z-index: 20; min-width: 200px; padding: 6px; border: 1px solid #dde4ee; border-radius: 9px; background: white; box-shadow: 0 14px 30px rgba(12,26,51,0.12); }
+        .more-menu a, .more-menu button { display: block; width: 100%; padding: 9px 11px; border: none; border-radius: 6px; background: none; color: #14233e; font-size: 12px; font-weight: 600; text-align: left; text-decoration: none; cursor: pointer; }
+        .more-menu a:hover, .more-menu button:hover { background: #f4f7fb; }
+        .more-menu form { margin: 0; }
+        .more-menu .danger { color: #c9444d; }
+        .more-menu hr { margin: 5px 4px; border: none; border-top: 1px solid #edf1f6; }
+
+        .empty-row { padding: 30px 14px; color: #8493aa; text-align: center; }
+        .footnote { margin-top: 14px; color: #6d7e99; font-size: 11px; }
+
+        @@media (max-width: 1150px) {
+            .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+
+        @@media (max-width: 800px) {
+            .filter-grid { grid-template-columns: 1fr; }
+            table { display: block; overflow-x: auto; }
+        }
+    </style>
+}
+
+<header class="page-header">
+    <div>
+        <h1>Categories</h1>
+        <p>Create and manage the programme categories available during proposal submission.</p>
+    </div>
+    <div class="header-actions">
+        <a href="/Admin/Categories/Create" class="primary-button">+ Add category</a>
+    </div>
+</header>
+
+<!-- ===== STATS ===== -->
+<section class="stats" aria-label="Category totals">
+    <div class="stat">
+        <div class="stat-label">Total categories</div>
+        <div class="stat-value">@Model.Total</div>
+    </div>
+    <div class="stat">
+        <div class="stat-label">Active</div>
+        <div class="stat-value">@Model.Active</div>
+    </div>
+    <div class="stat">
+        <div class="stat-label">Inactive</div>
+        <div class="stat-value">@Model.Inactive</div>
+    </div>
+    <div class="stat">
+        <div class="stat-label">Most used</div>
+        <div class="stat-name" title="@Model.MostUsedName">@Model.MostUsedName</div>
+        <div class="stat-small">@(Model.MostUsedCount == 0 ? "No proposals yet" : Model.MostUsedCount + (Model.MostUsedCount == 1 ? " proposal" : " proposals"))</div>
+    </div>
+</section>
+
+<!-- ===== FILTERS ===== -->
+<section class="card filters">
+    <form method="get" action="/Admin/Categories" class="filter-grid">
+        <div>
+            <label class="section-label" for="search">Search categories</label>
+            <input class="input" id="search" name="search" type="search" value="@Model.Search"
+                   placeholder="Search by name or description..." autocomplete="off" />
+        </div>
+
+        <div>
+            <label class="section-label" for="status">Status</label>
+            <select class="input" id="status" name="status">
+                @foreach (var (value, text) in statuses)
+                {
+                    if (value == (Model.Status ?? "")) { <option value="@value" selected>@text</option> }
+                    else { <option value="@value">@text</option> }
+                }
+            </select>
+        </div>
+
+        <button type="submit" class="primary-button">Apply</button>
+
+        @if (filtered)
+        {
+            <a href="/Admin/Categories" class="clear-link">Clear</a>
+        }
+    </form>
+</section>
+
+<!-- ===== LIST ===== -->
+<section class="card list-card">
+
+    <h2 class="card-title">Programme categories</h2>
+    <p class="card-subtitle">Categories control the options producers see when creating a proposal.</p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Category</th>
+                <th>Description</th>
+                <th>Proposals</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.Rows.Count == 0)
+            {
+                <tr><td colspan="5" class="empty-row">No categories match these filters.</td></tr>
+            }
+
+            @foreach (var row in Model.Rows)
+            {
+                <tr class="@(row.IsActive ? "" : "inactive")">
+                    <td>
+                        <div class="cat-cell">
+                            <span class="cat-dot" style="background:@row.ColourHex;" aria-hidden="true"></span>
+                            <div>
+                                <strong>
+                                    @row.Name
+                                    @if (row.IsActive && !row.ShowOnForm)
+                                    {
+                                        <span class="tag">Hidden</span>
+                                    }
+                                    @if (row.RequireSupportingDocuments)
+                                    {
+                                        <span class="tag docs">Extra docs</span>
+                                    }
+                                </strong>
+                                <small>@row.Code</small>
+                            </div>
+                        </div>
+                    </td>
+                    <td>@row.Description</td>
+                    <td>
+                        @if (row.ProposalCount > 0)
+                        {
+                            <a href="/Admin/Proposals?category=@Uri.EscapeDataString(row.Name)" class="action-link" style="font-weight:600;" title="View these proposals">@row.ProposalCount</a>
+                        }
+                        else
+                        {
+                            @:0
+                        }
+                    </td>
+                    <td>
+                        <span class="pill @(row.IsActive ? "pill-active" : "pill-inactive")">@(row.IsActive ? "Active" : "Inactive")</span>
+                    </td>
+                    <td>
+                        <div class="actions">
+                            <a href="/Admin/Categories/@row.Id/Edit" class="action-link">Edit</a>
+
+                            <details class="more">
+                                <summary aria-label="More actions for @row.Name">•••</summary>
+                                <div class="more-menu">
+                                    <a href="/Admin/Categories/@row.Id/Edit">Edit category</a>
+                                    @if (row.ProposalCount > 0)
+                                    {
+                                        <a href="/Admin/Proposals?category=@Uri.EscapeDataString(row.Name)">View proposals</a>
+                                    }
+
+                                    <form method="post" action="/Admin/Categories/@row.Id/Visibility">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="returnUrl" value="@returnUrl" />
+                                        <button type="submit">@(row.ShowOnForm ? "Hide from producer form" : "Show on producer form")</button>
+                                    </form>
+
+                                    <form method="post" action="/Admin/Categories/@row.Id/Status"
+                                          onsubmit="return confirm('@(row.IsActive ? "Deactivate this category? Producers will no longer be able to choose it." : "Activate this category again?")');">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="to" value="@(row.IsActive ? "inactive" : "active")" />
+                                        <input type="hidden" name="returnUrl" value="@returnUrl" />
+                                        <button type="submit">@(row.IsActive ? "Deactivate" : "Activate")</button>
+                                    </form>
+
+                                    @if (row.ProposalCount == 0)
+                                    {
+                                        <hr />
+                                        <form method="post" action="/Admin/Categories/@row.Id/Delete"
+                                              onsubmit="return confirm('Delete this category permanently?');">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="danger">Delete</button>
+                                        </form>
+                                    }
+                                </div>
+                            </details>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <p class="footnote">Categories with existing proposals should be deactivated instead of deleted.</p>
+
+</section>
+
+@section Scripts {
+    <script>
+        // Close any open "•••" menu when clicking elsewhere.
+        document.addEventListener("click", function (event) {
+            document.querySelectorAll("details.more[open]").forEach(function (menu) {
+                if (!menu.contains(event.target)) { menu.removeAttribute("open"); }
+            });
+        });
+
+        // Highlight "Categories" in the sidebar.
+        document.querySelectorAll(".sidebar nav a").forEach(function (link) {
+            if ((link.getAttribute("href") || "").toLowerCase().indexOf("/admin/categories") === 0) {
+                link.setAttribute("aria-current", "page");
+            } else {
+                link.removeAttribute("aria-current");
+            }
+        });
+    </script>
+}

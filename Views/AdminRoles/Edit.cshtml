@@ -1,0 +1,155 @@
+﻿@model RESK.WIL.Models.ReskRoleSaveForm
+
+@{
+    Layout = "~/Views/AdminProposals/_AdminLayout.cshtml";
+    ViewData["Title"] = "Edit role";
+
+    string roleId = ViewData["RoleId"] as string ?? "";
+    bool locked = (bool)(ViewData["IsAdministrator"] ?? false);
+    string areaLabel = ViewData["AreaLabel"] as string ?? "";
+    var modules = RESK.WIL.Services.ReskRoleStore.Modules;
+    var actions = RESK.WIL.Services.ReskRoleStore.Actions;
+    var perms = new HashSet<string>(Model.Perms ?? new List<string>());
+}
+
+@section Styles {
+    <style>
+        .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 24px; margin-top: 22px; }
+        .field { margin-top: 20px; }
+        textarea.input { height: auto; min-height: 70px; padding: 12px 14px; line-height: 1.5; resize: vertical; }
+        .field-error { display: block; margin-top: 12px; padding: 11px 15px; border-radius: 9px; background: #fde9ea; color: #a8323b; font-size: 12px; font-weight: 600; }
+        .field-error ul { list-style: none; }
+        .note { margin-top: 16px; padding: 11px 15px; border-radius: 9px; background: #eefafc; color: #0a8a9c; font-size: 12px; }
+        .block-title { margin-top: 30px; color: #14233e; font-size: 18px; font-weight: 800; }
+
+        .rows { display: flex; flex-direction: column; gap: 12px; margin-top: 18px; }
+        .perm-row { border: 1px solid #dde4ee; border-radius: 10px; background: #f7f9fc; }
+        .perm-row summary { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr) auto; align-items: center; gap: 14px; padding: 14px 20px; list-style: none; cursor: pointer; }
+        .perm-row summary::-webkit-details-marker { display: none; }
+        .perm-row summary strong { color: #14233e; font-size: 13px; }
+        .perm-row summary .summary-text { color: #52637e; font-size: 12px; }
+        .perm-row summary .edit-link { color: #00a9bd; font-size: 12px; font-weight: 800; }
+        .perm-row[open] { background: white; border-color: #9fe0ea; }
+        .perm-row[open] summary .edit-link::after { content: " \25B2"; font-size: 9px; }
+        .checks { display: flex; flex-wrap: wrap; gap: 10px 22px; padding: 4px 20px 18px; }
+        .checks label { display: inline-flex; align-items: center; gap: 8px; color: #14233e; font-size: 13px; cursor: pointer; }
+        .checks input { width: 17px; height: 17px; accent-color: #12b8ce; }
+        .checks p { width: 100%; color: #8493aa; font-size: 11px; }
+
+        @@media (max-width: 760px) {
+            .grid-2 { grid-template-columns: 1fr; }
+            .perm-row summary { grid-template-columns: 1fr auto; }
+            .perm-row summary .summary-text { grid-column: 1 / -1; grid-row: 2; }
+        }
+    </style>
+}
+
+<header class="page-header">
+    <div>
+        <h1>Edit role</h1>
+        <p>Change role information and permissions.</p>
+    </div>
+    <div class="header-actions">
+        <a href="/Admin/Roles?role=@roleId" class="secondary-button">Cancel</a>
+        @if (!locked)
+        {
+            <button type="submit" form="roleForm" class="primary-button">Save changes</button>
+        }
+    </div>
+</header>
+
+<section class="card">
+
+    <h2 class="card-title" style="font-size:20px;">Edit @Model.Name</h2>
+    <p class="card-subtitle">Signs in to: @areaLabel</p>
+
+    @Html.ValidationSummary(true, "", new { @class = "field-error" })
+
+    @if (locked)
+    {
+        <p class="note">The Administrator role is built in and always has full access. It can't be changed.</p>
+    }
+
+    <form id="roleForm" method="post" action="/Admin/Roles/@roleId/Edit">
+        @Html.AntiForgeryToken()
+
+        <div class="grid-2">
+            <div>
+                <label class="section-label" for="Name">Role name</label>
+                <input class="input" id="Name" name="Name" value="@Model.Name" maxlength="60" disabled="@locked" />
+            </div>
+            <div>
+                <label class="section-label" for="Status">Status</label>
+                <select class="input" id="Status" name="Status" disabled="@locked">
+                    @foreach (var s in new[] { "Active", "Inactive" })
+                    {
+                        if (s == Model.Status) { <option value="@s" selected>@s</option> }
+                        else { <option value="@s">@s</option> }
+                    }
+                </select>
+            </div>
+        </div>
+
+        <div class="field">
+            <label class="section-label" for="Description">Description</label>
+            <textarea class="input" id="Description" name="Description" maxlength="200" disabled="@locked">@Model.Description</textarea>
+        </div>
+
+        <h3 class="block-title">Permissions</h3>
+
+        <div class="rows">
+            @foreach (var m in modules)
+            {
+                <details class="perm-row" data-module="@m.Key">
+                    <summary>
+                        <strong>@m.Name</strong>
+                        <span class="summary-text"></span>
+                        <span class="edit-link">Edit</span>
+                    </summary>
+                    <div class="checks">
+                        <p>@m.Hint</p>
+                        @foreach (var a in actions.Where(x => m.Actions.Contains(x.Key)))
+                        {
+                            string key = m.Key + ":" + a.Key;
+                            <label>
+                                <input type="checkbox" name="Perms" value="@key" data-label="@a.Label"
+                                       checked="@(locked || perms.Contains(key))" disabled="@locked" />
+                                @a.Label
+                            </label>
+                        }
+                    </div>
+                </details>
+            }
+        </div>
+    </form>
+
+</section>
+
+@section Scripts {
+    <script>
+        (function () {
+            // Each row shows "View, Edit, Approve" or "No access" and updates as boxes are ticked.
+            document.querySelectorAll(".perm-row").forEach(function (row) {
+                var text = row.querySelector(".summary-text");
+                var boxes = row.querySelectorAll("input[type=checkbox]");
+
+                function update() {
+                    var labels = [];
+                    boxes.forEach(function (box) { if (box.checked) { labels.push(box.getAttribute("data-label")); } });
+                    text.textContent = labels.length ? labels.join(", ") : "No access";
+                }
+
+                boxes.forEach(function (box) { box.addEventListener("change", update); });
+                update();
+            });
+
+            document.querySelectorAll(".sidebar nav a").forEach(function (link) {
+                if ((link.getAttribute("href") || "").toLowerCase().indexOf("/admin/roles") === 0) {
+                    link.setAttribute("aria-current", "page");
+                } else {
+                    link.removeAttribute("aria-current");
+                }
+            });
+        })();
+    </script>
+}

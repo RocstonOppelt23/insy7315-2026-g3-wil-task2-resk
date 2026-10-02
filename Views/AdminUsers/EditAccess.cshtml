@@ -1,0 +1,183 @@
+﻿@model RESK.WIL.Models.ReskUserAccessViewModel
+
+@{
+    Layout = "~/Views/AdminProposals/_AdminLayout.cshtml";
+    ViewData["Title"] = "Edit user";
+
+    var f = Model.Form;
+    var statuses = new[] { "Active", "Suspended", "Banned" };
+    string previewJson = System.Text.Json.JsonSerializer.Serialize(Model.Previews);
+}
+
+@section Styles {
+    <style>
+        .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px 24px; margin-top: 24px; }
+        .field-error { display: block; margin-top: 6px; color: #c9444d; font-size: 11px; font-weight: 600; }
+        .hint { margin-top: 7px; color: #8493aa; font-size: 11px; line-height: 1.5; }
+        .warning { margin-top: 30px; padding: 20px 22px; border: 1px solid #f3dca0; border-radius: 11px; background: #fff8e6; }
+        .warning strong { display: block; color: #8a5d00; font-size: 13px; }
+        .warning span { display: block; margin-top: 8px; color: #9a6a00; font-size: 12px; }
+        .block-title { margin-top: 30px; color: #14233e; font-size: 18px; font-weight: 800; }
+        .block-sub { margin-top: 5px; color: #6d7e99; font-size: 12px; }
+        .preview { display: flex; flex-direction: column; gap: 10px; margin-top: 18px; list-style: none; }
+        .preview li { padding: 11px 18px; border-radius: 8px; background: #f7f9fc; color: #14233e; font-size: 12px; }
+        .preview li::before { content: "✓  "; color: #0a9fb2; font-weight: 800; }
+        .preview li.none { color: #8493aa; }
+        .preview li.none::before { content: ""; }
+
+        @@media (max-width: 800px) {
+            .grid-2 { grid-template-columns: 1fr; }
+        }
+    </style>
+}
+
+<header class="page-header">
+    <div>
+        <h1>Edit user</h1>
+        <p>Update account details, role and access status.</p>
+    </div>
+    <div class="header-actions">
+        <a href="/Admin/Users/@Model.UserId" class="secondary-button">Cancel</a>
+        <button type="submit" form="userForm" class="primary-button">Save changes</button>
+    </div>
+</header>
+
+<section class="card">
+
+    <h2 class="card-title" style="font-size:20px;">Edit @Model.DisplayName</h2>
+
+    <form id="userForm" method="post" action="/Admin/Users/@Model.UserId/Edit" novalidate>
+        @Html.AntiForgeryToken()
+
+        <div class="grid-2">
+            <div>
+                <label class="section-label" for="FullName">Full name</label>
+                <input class="input" id="FullName" name="FullName" value="@f.FullName" maxlength="100" />
+                @Html.ValidationMessage("FullName", new { @class = "field-error" })
+            </div>
+
+            <div>
+                <label class="section-label" for="Email">Email</label>
+                <input class="input" id="Email" name="Email" type="email" value="@f.Email" />
+                @Html.ValidationMessage("Email", new { @class = "field-error" })
+            </div>
+
+            <div id="role">
+                <label class="section-label" for="RoleId">Assigned role</label>
+                @if (Model.IsSelf)
+                {
+                    <input type="hidden" name="RoleId" value="@Model.CurrentRoleId" />
+                }
+                <select class="input" id="RoleId" name="@(Model.IsSelf ? "" : "RoleId")" disabled="@Model.IsSelf">
+                    @foreach (var group in Model.Roles.GroupBy(r => r.Area))
+                    {
+                        <optgroup label="@group.Key">
+                            @foreach (var r in group)
+                            {
+                                bool chosen = r.Id == f.RoleId;
+                                bool unavailable = !r.Active && r.Id != Model.CurrentRoleId;
+                                <option value="@r.Id" selected="@chosen" disabled="@unavailable">@(r.Name + (r.Active ? "" : " (inactive)"))</option>
+                            }
+                        </optgroup>
+                    }
+                </select>
+                @Html.ValidationMessage("RoleId", new { @class = "field-error" })
+                @if (Model.IsSelf)
+                {
+                    <p class="hint">You can't change your own role. Ask another administrator.</p>
+                }
+                else if (Model.IsPending)
+                {
+                    <p class="hint">This account is waiting for approval. The role is given when you approve it.</p>
+                }
+            </div>
+
+            <div>
+                <label class="section-label" for="AccountStatus">Account status</label>
+                @if (Model.IsPending)
+                {
+                    <input class="input" value="Pending approval" disabled />
+                    <p class="hint">Approve or reject this registration from the user's page.</p>
+                }
+                else
+                {
+                    if (Model.IsSelf)
+                    {
+                        <input type="hidden" name="AccountStatus" value="@Model.CurrentStatus" />
+                    }
+                    <select class="input" id="AccountStatus" name="@(Model.IsSelf ? "" : "AccountStatus")" disabled="@Model.IsSelf">
+                        @foreach (var s in statuses)
+                        {
+                            <option value="@s" selected="@(s == f.AccountStatus)">@s</option>
+                        }
+                    </select>
+                    @Html.ValidationMessage("AccountStatus", new { @class = "field-error" })
+                    if (!Model.IsSelf)
+                    {
+                        <p class="hint">
+                            Suspended and Banned sign the user out and block sign-in until you set Active again.
+                            For a suspension with an end date, use <a href="/Admin/Users/@Model.UserId/Restrict?mode=suspend" style="color:#00a9bd;font-weight:700;">Suspend temporarily</a>.
+                        </p>
+                    }
+                }
+            </div>
+
+            <div>
+                <label class="section-label" for="Phone">Phone number</label>
+                <input class="input" id="Phone" name="Phone" type="tel" value="@f.Phone" maxlength="30" />
+                @Html.ValidationMessage("Phone", new { @class = "field-error" })
+            </div>
+
+            <div>
+                <label class="section-label" for="Organisation">Organisation</label>
+                <input class="input" id="Organisation" name="Organisation" value="@f.Organisation" maxlength="150" />
+            </div>
+        </div>
+
+        <div class="warning" role="note">
+            <strong>Changing a role changes the user's permissions</strong>
+            <span>The change becomes active after saving, signs the user out so it takes effect, and is recorded in the user's activity.</span>
+        </div>
+
+        <h3 class="block-title">Role permissions preview</h3>
+        <p class="block-sub" id="previewFor"></p>
+        <ul class="preview" id="preview"></ul>
+    </form>
+
+</section>
+
+@section Scripts {
+    <script>
+        (function () {
+            var previews = @Html.Raw(previewJson);
+            var select = document.getElementById("RoleId");
+            var list = document.getElementById("preview");
+            var label = document.getElementById("previewFor");
+
+            function render() {
+                var lines = previews[select.value] || [];
+                var option = select.options[select.selectedIndex];
+                label.textContent = option ? "What the " + option.textContent.replace(" (inactive)", "") + " role can do." : "";
+                list.innerHTML = "";
+
+                if (lines.length === 0) {
+                    var none = document.createElement("li");
+                    none.className = "none";
+                    none.textContent = "No permissions selected for this role yet.";
+                    list.appendChild(none);
+                    return;
+                }
+
+                lines.forEach(function (line) {
+                    var item = document.createElement("li");
+                    if (line.indexOf("No permissions") === 0) { item.className = "none"; }
+                    item.textContent = line;
+                    list.appendChild(item);
+                });
+            }
+
+            select.addEventListener("change", render);
+            render();
+        })();
+    </script>
+}

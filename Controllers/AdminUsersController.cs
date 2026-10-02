@@ -254,7 +254,7 @@ namespace RESK.WIL.Controllers
                         ? DaysAgo(account.PasswordChangedAtUtc.Value)
                         : "Changes made before this screen existed are not recorded",
                 RequirePasswordChange = account.RequirePasswordChange,
-                Permissions = PermissionsFor(row.Role)
+                Permissions = AdminUserAccessController.PermissionRows(Root, user.Id, row.Role) ?? PermissionsFor(row.Role)
             };
 
             // Proposals tab
@@ -919,7 +919,7 @@ namespace RESK.WIL.Controllers
                 Email = user.Email ?? user.UserName ?? "",
                 Phone = string.IsNullOrWhiteSpace(user.PhoneNumber) ? "—" : user.PhoneNumber,
                 Role = role,
-                RoleLabel = role == null ? $"{account.RequestedRole ?? "Producer"} (requested)" : role == "Admin" ? "Proposal Manager" : role,
+                RoleLabel = role == null ? $"{account.RequestedRole ?? "Producer"} (requested)" : AdminUserAccessController.RoleLabel(Root, user.Id, role),
                 Organisation = string.IsNullOrWhiteSpace(profile.Organisation) ? "—" : profile.Organisation,
                 StatusKey = statusKey,
                 StatusLabel = statusKey switch

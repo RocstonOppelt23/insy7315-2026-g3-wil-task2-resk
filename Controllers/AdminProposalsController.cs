@@ -263,7 +263,7 @@ namespace RESK.WIL.Controllers
                 Row = await BuildRowAsync(proposal, review),
                 Reviewers = await LoadReviewersAsync(),
                 SelectedReviewerId = review.ReviewerUserId,
-                Deadline = (review.Deadline ?? SouthAfricaTime.ToLocal(DateTime.UtcNow).Date.AddDays(7)).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                Deadline = (review.Deadline ?? ReskSettingsStore.ReviewDeadline(Root)).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
                 Note = review.AssignmentNote
             };
 
@@ -388,12 +388,12 @@ namespace RESK.WIL.Controllers
 
             if (submitting)
             {
-                if (review.Recommendation == null || string.IsNullOrWhiteSpace(review.Comments))
+                if (review.Recommendation == null || ReskSettingsStore.CommentsMissing(Root, review.Recommendation, review.Comments))
                 {
                     review.ReviewSubmitted = false;
                     ProposalReviewStore.Save(Root, review);
 
-                    TempData["AdminError"] = "Choose a recommendation and write your review comments before submitting.";
+                    TempData["AdminError"] = review.Recommendation == null ? "Choose a recommendation before submitting." : "Write a reason in the comments before rejecting or requesting changes.";
                     return Redirect($"/Admin/Proposals/{id}/Review");
                 }
 

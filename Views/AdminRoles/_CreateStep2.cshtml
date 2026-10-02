@@ -1,0 +1,81 @@
+﻿@model RESK.WIL.Models.ReskRoleWizardForm
+
+@{
+    var modules = RESK.WIL.Services.ReskRoleStore.Modules;
+    var actions = RESK.WIL.Services.ReskRoleStore.Actions;
+    var perms = new HashSet<string>(Model.Perms ?? new List<string>());
+    string roleName = string.IsNullOrWhiteSpace(Model.Name) ? "New role" : Model.Name!;
+    string initials = RESK.WIL.Services.ReskRoleStore.Initials(roleName);
+}
+
+<div class="role-strip">
+    <span class="role-avatar">@initials</span>
+    <div>
+        <strong>@roleName</strong>
+        <small>These permissions apply only to this new role.</small>
+    </div>
+    <span class="right">@(Model.DraftId == null ? "Not created yet" : "Draft")</span>
+</div>
+
+<div class="section-head">
+    <h2 style="font-size:18px;">Choose permissions</h2>
+    <p>You can edit this role again from Roles &amp; Permissions after it has been reviewed and created.</p>
+</div>
+
+<table class="matrix">
+    <thead>
+        <tr>
+            <th>Module</th>
+            <th></th>
+            @foreach (var a in actions)
+            {
+                <th>@a.Label</th>
+            }
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var m in modules)
+        {
+            <tr>
+                <td>@m.Name</td>
+                <td class="hint-cell">@m.Hint</td>
+                @foreach (var a in actions)
+                {
+                    string key = m.Key + ":" + a.Key;
+                    <td>
+                        @if (m.Actions.Contains(a.Key))
+                        {
+                            <input type="checkbox" name="Perms" value="@key" checked="@perms.Contains(key)" aria-label="@m.Name @a.Label" />
+                        }
+                        else
+                        {
+                            <span class="na">—</span>
+                        }
+                    </td>
+                }
+            </tr>
+        }
+    </tbody>
+</table>
+
+<div class="note">
+    <strong>Admin control</strong>
+    <span>
+        @if (Model.Area == "Admin")
+        {
+            @:These permissions are checked on every admin page. After creation, an administrator can reopen this role and change any permission from the main Roles &amp; Permissions screen.
+        }
+        else
+        {
+            @:This role signs in to the @RESK.WIL.Services.ReskRoleStore.AreaLabel(Model.Area).ToLowerInvariant(). After creation, an administrator can change it from the main Roles &amp; Permissions screen.
+        }
+    </span>
+</div>
+
+<div class="form-foot">
+    <p>A role needs View to open a module. The other actions add to it.</p>
+    <div class="buttons">
+        <button type="submit" name="Go" value="draft" class="btn">Save draft</button>
+        <button type="submit" name="Go" value="next" class="btn primary">Review role</button>
+    </div>
+</div>

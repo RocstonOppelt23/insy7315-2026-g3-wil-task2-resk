@@ -1,0 +1,186 @@
+﻿@model RESK.WIL.Models.ReskAuditDetailsViewModel
+
+@{
+    Layout = "~/Views/AdminProposals/_AdminLayout.cshtml";
+    ViewData["Title"] = "Audit event details";
+
+    var item = Model.Event;
+    string none = "\u2014";
+
+    string initial = item.Module.Length > 0 ? item.Module.Substring(0, 1) : "A";
+    string who = string.Join(" \u2022 ", new[] { item.UserRole, item.UserEmail }.Where(x => !string.IsNullOrWhiteSpace(x)));
+
+    string summary = !string.IsNullOrWhiteSpace(item.Summary) ? item.Summary :
+        item.Changes.Count > 0 ? item.Changes.Count + " field(s) changed." :
+        "No further details were recorded for this action.";
+}
+
+@section Styles {
+    @await Html.PartialAsync("~/Views/AdminAudit/_AuditStyles.cshtml")
+}
+
+<header class="page-header">
+    <div>
+        <h1>Audit event details</h1>
+        <p>Review the full record of a system action.</p>
+    </div>
+    <div class="header-actions">
+        <a href="/Admin/Audit" class="secondary-button" id="backLink">Back to audit log</a>
+    </div>
+</header>
+
+<section class="card">
+
+    <div class="event-head">
+        <div class="event-avatar @(item.IsFailed ? "failed" : "")" aria-hidden="true">@initial</div>
+        <div class="event-title">
+            <h2>@item.Action</h2>
+            <p>Event ID: @item.Id</p>
+            <p>@Model.When</p>
+        </div>
+        <span class="mod @("mod-" + item.Module.ToLowerInvariant())">@item.Module module</span>
+    </div>
+
+    <!-- ===== WHO / WHAT / WHERE ===== -->
+    <h3 class="block-title">Event information</h3>
+
+    <div class="info-grid">
+        <div>
+            <span class="section-label">Performed by</span>
+            <div class="info-box">
+                <strong>@item.UserName</strong>
+                <span>@(who.Length > 0 ? who : "Not signed in")</span>
+            </div>
+        </div>
+        <div>
+            <span class="section-label">Target record</span>
+            <div class="info-box">
+                <strong>@(item.Record.Length > 0 ? item.Record : none)</strong>
+                <span>@(string.IsNullOrWhiteSpace(item.RecordId) ? none : item.RecordId)</span>
+            </div>
+        </div>
+        <div>
+            <span class="section-label">Source</span>
+            <div class="info-box">
+                <strong>@item.Source</strong>
+                <span>Session ID: @(item.SessionId ?? none)</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== WHAT CHANGED ===== -->
+    <h3 class="block-title">Change summary</h3>
+    <p class="block-sub">@summary</p>
+
+    @if (item.Changes.Count == 0)
+    {
+        <div class="no-changes">No field values were changed by this action.</div>
+    }
+    else
+    {
+        <div class="table-wrap">
+            <table class="changes">
+                <thead>
+                    <tr>
+                        <th scope="col">Field</th>
+                        <th scope="col">Previous value</th>
+                        <th scope="col">New value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var change in item.Changes)
+                    {
+                        <tr>
+                            <td><strong>@change.Field</strong></td>
+                            <td>
+                                @if (change.Before == "Allowed" || change.Before == "Denied")
+                                {
+                                    <span class="val @(change.Before == "Allowed" ? "val-yes" : "val-no")">@change.Before</span>
+                                }
+                                else
+                                {
+                                    <span class="was">@change.Before</span>
+                                }
+                            </td>
+                            <td>
+                                @if (change.After == "Allowed" || change.After == "Denied")
+                                {
+                                    <span class="val @(change.After == "Allowed" ? "val-yes" : "val-no")">@change.After</span>
+                                }
+                                else
+                                {
+                                    <span class="now">@change.After</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    <!-- ===== TECHNICAL ===== -->
+    <h3 class="block-title">Technical information</h3>
+
+    <dl class="tech">
+        <div>
+            <dt>IP address</dt>
+            <dd>@(item.Ip ?? none)</dd>
+        </div>
+        <div>
+            <dt>Device</dt>
+            <dd>@(item.Device ?? none)</dd>
+        </div>
+        <div>
+            <dt>Result</dt>
+            <dd class="@(item.IsFailed ? "bad" : "ok")">@item.Result</dd>
+        </div>
+        <div>
+            <dt>Retention</dt>
+            <dd>@RESK.WIL.Services.ReskAuditLog.RetentionYears years</dd>
+        </div>
+    </dl>
+
+    <p class="footnote">This audit record is read-only and cannot be modified or removed.</p>
+
+</section>
+
+<div class="neighbours">
+    @if (Model.NewerId != null)
+    {
+        <a href="@("/Admin/Audit/" + Model.NewerId)" class="view-link">&larr; Newer event</a>
+    }
+    else
+    {
+        <span></span>
+    }
+
+    @if (Model.OlderId != null)
+    {
+        <a href="@("/Admin/Audit/" + Model.OlderId)" class="view-link">Older event &rarr;</a>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            // Highlight "Audit log" in the sidebar.
+            document.querySelectorAll(".sidebar nav a").forEach(function (link) {
+                if ((link.textContent || "").trim().toLowerCase() === "audit log") {
+                    link.setAttribute("aria-current", "page");
+                } else {
+                    link.removeAttribute("aria-current");
+                }
+            });
+
+            // "Back" returns to the list with the same filters and page.
+            var back = document.getElementById("backLink");
+            var cameFrom = document.referrer || "";
+            var path = cameFrom.replace(/^https?:\/\/[^\/]+/i, "").split("?")[0].toLowerCase();
+
+            if (cameFrom.indexOf(window.location.origin) === 0 && (path === "/admin/audit" || path === "/admin/auditlog")) {
+                back.setAttribute("href", cameFrom);
+            }
+        })();
+    </script>
+}

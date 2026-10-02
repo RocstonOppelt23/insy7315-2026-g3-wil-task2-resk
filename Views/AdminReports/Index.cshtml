@@ -1,0 +1,457 @@
+﻿@model RESK.WIL.Models.ReskReportsViewModel
+@using System.Globalization
+@using System.Text
+
+@{
+    Layout = "~/Views/AdminProposals/_AdminLayout.cshtml";
+    ViewData["Title"] = "Reports";
+
+    string rangeQuery = Model.Range == "custom"
+        ? "?range=custom&from=" + Model.From + "&to=" + Model.To
+        : "?range=" + Model.Range;
+    string exportQuery = Model.Range == "custom"
+        ? "?Range=custom&From=" + Model.From + "&To=" + Model.To
+        : "?Range=" + Model.Range;
+
+    var presets = new[] { ("month", "This month"), ("lastmonth", "Last month"), ("30", "Last 30 days"), ("90", "Last 90 days"), ("year", "This year"), ("all", "All time") };
+
+    // ---------- Monthly chart (server-drawn SVG) ----------
+    const string SubmittedColour = "#0a9fb2";
+    const string ApprovedColour = "#3b5bdb";
+    int chartW = 960, chartH = 250, left = 36, right = 8, top = 14, bottom = 30;
+    int plotW = chartW - left - right, plotH = chartH - top - bottom;
+    int maxValue = Math.Max(1, Model.Monthly.Count == 0 ? 1 : Model.Monthly.Max(m => Math.Max(m.Submitted, m.Approved)));
+    int step = maxValue <= 4 ? 1 : maxValue <= 10 ? 2 : maxValue <= 25 ? 5 : maxValue <= 50 ? 10 : (int)Math.Ceiling(maxValue / 5.0 / 10.0) * 10;
+    int axisMax = (int)Math.Ceiling(maxValue / (double)step) * step;
+    double groupW = plotW / (double)Math.Max(1, Model.Monthly.Count);
+    double barW = Math.Min(22, (groupW - 14) / 2);
+    var svg = new StringBuilder();
+    var inv = CultureInfo.InvariantCulture;
+
+    string N(double v) => v.ToString("0.##", inv);
+    string Bar(double x, double h, string colour, string tip)
+    {
+        double baseY = top + plotH;
+        if (h <= 0) { return ""; }
+        double y = baseY - h;
+        double r = Math.Min(4, Math.Min(barW / 2, h));
+        string d = $"M{N(x)},{N(baseY)} V{N(y + r)} Q{N(x)},{N(y)} {N(x + r)},{N(y)} H{N(x + barW - r)} Q{N(x + barW)},{N(y)} {N(x + barW)},{N(y + r)} V{N(baseY)} Z";
+        return $"<path d=\"{d}\" fill=\"{colour}\"/>";
+    }
+
+    for (int g = 0; g <= axisMax; g += step)
+    {
+        double y = top + plotH - plotH * g / (double)axisMax;
+        svg.Append($"<line x1=\"{left}\" x2=\"{chartW - right}\" y1=\"{N(y)}\" y2=\"{N(y)}\" stroke=\"{(g == 0 ? "#cfd8e3" : "#edf1f6")}\" stroke-width=\"1\"/>");
+        svg.Append($"<text x=\"{left - 8}\" y=\"{N(y + 4)}\" text-anchor=\"end\" font-size=\"11\" fill=\"#8493aa\">{g}</text>");
+    }
+
+    for (int i = 0; i < Model.Monthly.Count; i++)
+    {
+        var m = Model.Monthly[i];
+        double gx = left + i * groupW;
+        double x1 = gx + groupW / 2 - barW - 1;
+        double x2 = gx + groupW / 2 + 1;
+        double h1 = plotH * m.Submitted / (double)axisMax;
+        double h2 = plotH * m.Approved / (double)axisMax;
+        string tip = System.Net.WebUtility.HtmlEncode($"{m.FullLabel}|Submitted: {m.Submitted}|Approved: {m.Approved}");
+
+        svg.Append(Bar(x1, h1, SubmittedColour, tip));
+        svg.Append(Bar(x2, h2, ApprovedColour, tip));
+        svg.Append($"<rect class=\"hit\" x=\"{N(gx)}\" y=\"{top}\" width=\"{N(groupW)}\" height=\"{plotH}\" fill=\"transparent\" data-tip=\"{tip}\"/>");
+        svg.Append($"<text x=\"{N(gx + groupW / 2)}\" y=\"{chartH - 10}\" text-anchor=\"middle\" font-size=\"11\" fill=\"#6d7e99\">{m.Label}</text>");
+    }
+
+    int maxStatus = Math.Max(1, Model.Statuses.Count == 0 ? 1 : Model.Statuses.Max(s => s.Count));
+    int maxCategory = Math.Max(1, Model.Categories.Count == 0 ? 1 : Model.Categories.Max(s => s.Count));
+}
+
+@section Styles {
+    <style>
+        .range-card { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; padding: 16px 20px; }
+        .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+        .chip { display: inline-flex; align-items: center; height: 34px; padding: 0 14px; border: 1px solid #dde4ee; border-radius: 999px; background: white; color: #52637e; font-size: 12px; font-weight: 700; text-decoration: none; }
+        .chip:hover { border-color: #12b8ce; color: #0a8a9c; }
+        .chip.active { border-color: #12b8ce; background: #eaf9fb; color: #0a8a9c; }
+        .custom-range { display: flex; align-items: center; gap: 8px; margin: 0; }
+        .custom-range .input { width: 150px; height: 34px; }
+        .custom-range span { color: #8493aa; font-size: 12px; }
+        .small-button { height: 34px; padding: 0 16px; border: none; border-radius: 8px; background: #14233e; color: white; font-size: 12px; font-weight: 800; cursor: pointer; }
+        .period-note { width: 100%; color: #6d7e99; font-size: 12px; }
+        .period-note strong { color: #14233e; }
+
+        .kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-top: 18px; }
+        .kpi { padding: 20px; border: 1px solid #d9e1ec; border-radius: 13px; background: white; min-width: 0; }
+        .kpi-label { color: #5d6d87; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+        .kpi-value { margin-top: 12px; color: #12213b; font-size: 32px; font-weight: 800; line-height: 1; }
+        .kpi-value small { font-size: 14px; font-weight: 700; color: #6d7e99; }
+        .kpi-note { margin-top: 8px; color: #6d7e99; font-size: 11px; }
+        .kpi-note.up { color: #1f8a5c; }
+
+        .chart-card { margin-top: 18px; }
+        .card-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 14px; }
+        .legend { display: flex; gap: 18px; color: #52637e; font-size: 12px; }
+        .legend span { display: inline-flex; align-items: center; gap: 7px; }
+        .legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+        .chart-wrap { position: relative; margin-top: 16px; }
+        .chart-wrap svg { display: block; width: 100%; height: auto; }
+        .chart-wrap .hit { cursor: default; }
+        .chart-wrap .hit:hover { fill: rgba(20,35,62,0.04); }
+        .tooltip { position: absolute; z-index: 5; min-width: 150px; padding: 10px 12px; border: 1px solid #dde4ee; border-radius: 8px; background: white; box-shadow: 0 10px 24px rgba(12,26,51,0.12); color: #14233e; font-size: 12px; pointer-events: none; }
+        .tooltip strong { display: block; margin-bottom: 6px; }
+        .tooltip div { display: flex; align-items: center; gap: 7px; margin-top: 3px; color: #52637e; }
+        .tooltip i { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }
+        details.table-view { margin-top: 12px; }
+        details.table-view summary { color: #00a9bd; font-size: 12px; font-weight: 800; cursor: pointer; }
+
+        .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin-top: 18px; align-items: start; }
+        .grid-2 .card + .card { margin-top: 0; }
+        .bars { display: flex; flex-direction: column; gap: 14px; margin-top: 18px; }
+        .bar-row { display: grid; grid-template-columns: 140px minmax(0, 1fr) 70px; align-items: center; gap: 12px; font-size: 12px; color: #14233e; }
+        .bar-row .name { display: flex; align-items: center; gap: 8px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+        .bar-row .dot { width: 9px; height: 9px; flex-shrink: 0; border-radius: 50%; }
+        .track { height: 10px; border-radius: 999px; background: #eef2f7; overflow: hidden; }
+        .fill { height: 100%; border-radius: 999px; background: #0a9fb2; }
+        .bar-row .num { color: #52637e; text-align: right; white-space: nowrap; }
+        .bar-row .num strong { color: #14233e; }
+        .muted { color: #8493aa; font-size: 12px; }
+
+        table { width: 100%; margin-top: 14px; border-collapse: collapse; }
+        thead th { padding: 11px 12px; background: #f4f7fb; color: #5d6d87; font-size: 10px; font-weight: 800; text-align: left; text-transform: uppercase; }
+        thead th:first-child { border-radius: 8px 0 0 8px; }
+        thead th:last-child { border-radius: 0 8px 8px 0; }
+        tbody td { padding: 12px; border-bottom: 1px solid #edf1f6; color: #52637e; font-size: 12px; }
+        tbody tr:last-child td { border-bottom: none; }
+        td.num, th.num { text-align: right; }
+        td strong { color: #14233e; }
+        .link { color: #00a9bd; font-weight: 800; text-decoration: none; }
+        .link:hover { text-decoration: underline; }
+        .days { display: inline-block; min-width: 46px; padding: 3px 8px; border-radius: 999px; background: #eef2f7; color: #52637e; font-size: 11px; font-weight: 800; text-align: center; }
+        .days.late { background: #fde7e8; color: #c9444d; }
+        .pill-assign { background: #fdf1d6; color: #b07200; }
+        .pill-review { background: #fff4dc; color: #c77c00; }
+
+        .quick { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+        .quick a { display: flex; align-items: center; justify-content: space-between; padding: 13px 16px; border: 1px solid #dde4ee; border-radius: 9px; color: #14233e; font-size: 13px; font-weight: 800; text-decoration: none; }
+        .quick a:hover { border-color: #12b8ce; }
+        .quick a span:last-child { color: #8493aa; font-weight: 600; }
+        .history { margin-top: 14px; }
+        .history-item { display: flex; align-items: center; gap: 14px; padding: 12px 0; border-bottom: 1px solid #edf1f6; }
+        .history-item:last-child { border-bottom: none; }
+        .history-item div { flex: 1; min-width: 0; }
+        .history-item strong { display: block; overflow: hidden; color: #14233e; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+        .history-item span { display: block; margin-top: 3px; color: #6d7e99; font-size: 11px; }
+
+        @@media (max-width: 1100px) {
+            .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .grid-2 { grid-template-columns: 1fr; }
+        }
+
+        @@media (max-width: 640px) {
+            .kpis { grid-template-columns: 1fr; }
+            .bar-row { grid-template-columns: 100px minmax(0, 1fr) 60px; }
+            .custom-range { flex-wrap: wrap; }
+        }
+    </style>
+}
+
+<header class="page-header">
+    <div>
+        <h1>Reports</h1>
+        <p>Track proposal activity, review performance and export data for the station.</p>
+    </div>
+    <div class="header-actions">
+        <a href="/Admin/Reports/Summary@(rangeQuery)" target="_blank" rel="noopener" class="secondary-button">Print summary</a>
+        <a href="/Admin/Reports/Export@(exportQuery)" class="primary-button">Export CSV</a>
+    </div>
+</header>
+
+<!-- ===== PERIOD ===== -->
+<section class="card range-card">
+    <div class="chips" role="group" aria-label="Report period">
+        @foreach (var (key, text) in presets)
+        {
+            <a href="/Admin/Reports?range=@key" class="chip @(Model.Range == key ? "active" : "")">@text</a>
+        }
+    </div>
+
+    <form method="get" action="/Admin/Reports" class="custom-range">
+        <input type="hidden" name="range" value="custom" />
+        <input class="input" type="date" name="from" value="@Model.From" aria-label="From date" />
+        <span>to</span>
+        <input class="input" type="date" name="to" value="@Model.To" aria-label="To date" />
+        <button type="submit" class="small-button">Apply</button>
+    </form>
+
+    <p class="period-note">Showing proposals submitted <strong>@Model.PeriodLabel</strong>. Drafts are private to producers and are not included.</p>
+</section>
+
+<!-- ===== KPIs ===== -->
+<section class="kpis" aria-label="Key figures">
+    <div class="kpi">
+        <div class="kpi-label">Proposals submitted</div>
+        <div class="kpi-value">@Model.Submitted</div>
+        <div class="kpi-note @(Model.SubmittedChangeUp ? "up" : "")">@(Model.SubmittedChange ?? "In the selected period")</div>
+    </div>
+    <div class="kpi">
+        <div class="kpi-label">Approval rate</div>
+        <div class="kpi-value">@Model.ApprovalRate</div>
+        <div class="kpi-note">@Model.Approved approved • @Model.Rejected not approved • @Model.Changes changes</div>
+    </div>
+    <div class="kpi">
+        <div class="kpi-label">Average review time</div>
+        <div class="kpi-value">@Model.AverageReviewDays <small>@(Model.AverageReviewDays == "—" ? "" : "days")</small></div>
+        <div class="kpi-note">From submission to decision</div>
+    </div>
+    <div class="kpi">
+        <div class="kpi-label">Open right now</div>
+        <div class="kpi-value">@Model.OpenNow</div>
+        <div class="kpi-note">@Model.NeedsAssignment @(Model.NeedsAssignment == 1 ? "needs" : "need") a reviewer</div>
+    </div>
+</section>
+
+<!-- ===== MONTHLY CHART ===== -->
+<section class="card chart-card">
+    <div class="card-head">
+        <div>
+            <h2 class="card-title">Submissions and approvals</h2>
+            <p class="card-subtitle">Last 12 months. Approvals are counted in the month the decision was made.</p>
+        </div>
+        <div class="legend" aria-hidden="true">
+            <span><i style="background:#0a9fb2;"></i>Submitted</span>
+            <span><i style="background:#3b5bdb;"></i>Approved</span>
+        </div>
+    </div>
+
+    <div class="chart-wrap" id="monthlyChart">
+        <svg viewBox="0 0 @chartW @chartH" role="img" aria-label="Bar chart of proposals submitted and approved per month for the last 12 months">
+            @Html.Raw(svg.ToString())
+        </svg>
+        <div class="tooltip" id="chartTip" hidden></div>
+    </div>
+
+    <details class="table-view">
+        <summary>Show as table</summary>
+        <table>
+            <thead><tr><th>Month</th><th class="num">Submitted</th><th class="num">Approved</th></tr></thead>
+            <tbody>
+                @foreach (var m in Model.Monthly)
+                {
+                    <tr><td>@m.FullLabel</td><td class="num">@m.Submitted</td><td class="num">@m.Approved</td></tr>
+                }
+            </tbody>
+        </table>
+    </details>
+</section>
+
+<!-- ===== BREAKDOWNS ===== -->
+<div class="grid-2">
+    <section class="card">
+        <h2 class="card-title">Proposals by status</h2>
+        <p class="card-subtitle">Where this period's submissions are now.</p>
+
+        <div class="bars">
+            @foreach (var s in Model.Statuses)
+            {
+                <div class="bar-row">
+                    <span class="name">@s.Label</span>
+                    <div class="track"><div class="fill" style="width:@((100.0 * s.Count / maxStatus).ToString("0.#", CultureInfo.InvariantCulture))%;"></div></div>
+                    <span class="num"><strong>@s.Count</strong> · @s.Percent.ToString("0", CultureInfo.InvariantCulture)%</span>
+                </div>
+            }
+        </div>
+    </section>
+
+    <section class="card">
+        <h2 class="card-title">Proposals by category</h2>
+        <p class="card-subtitle">Which programme categories producers are using.</p>
+
+        @if (Model.Categories.Count == 0)
+        {
+            <p class="muted" style="margin-top:18px;">No proposals were submitted in this period.</p>
+        }
+        else
+        {
+            <div class="bars">
+                @foreach (var c in Model.Categories)
+                {
+                    <div class="bar-row">
+                        <span class="name" title="@c.Label"><i class="dot" style="background:@c.Colour;"></i>@c.Label</span>
+                        <div class="track"><div class="fill" style="width:@((100.0 * c.Count / maxCategory).ToString("0.#", CultureInfo.InvariantCulture))%;"></div></div>
+                        <span class="num"><strong>@c.Count</strong> · @c.Percent.ToString("0", CultureInfo.InvariantCulture)%</span>
+                    </div>
+                }
+            </div>
+        }
+    </section>
+</div>
+
+<!-- ===== REVIEWERS + WAITING ===== -->
+<div class="grid-2">
+    <section class="card">
+        <h2 class="card-title">Reviewer workload</h2>
+        <p class="card-subtitle">Open reviews now, and decisions made in this period.</p>
+
+        @if (Model.Reviewers.Count == 0)
+        {
+            <p class="muted" style="margin-top:18px;">No reviewers have been assigned yet.</p>
+        }
+        else
+        {
+            <table>
+                <thead>
+                    <tr><th>Reviewer</th><th class="num">Open</th><th class="num">Decided</th><th class="num">Approved</th><th class="num">Avg days</th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var r in Model.Reviewers)
+                    {
+                        <tr>
+                            <td><strong>@r.Name</strong></td>
+                            <td class="num">@r.Open</td>
+                            <td class="num">@r.Completed</td>
+                            <td class="num">@r.Approved</td>
+                            <td class="num">@r.AverageDays</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </section>
+
+    <section class="card">
+        <h2 class="card-title">Waiting the longest</h2>
+        <p class="card-subtitle">Open proposals, oldest submission first.</p>
+
+        @if (Model.Waiting.Count == 0)
+        {
+            <p class="muted" style="margin-top:18px;">Nothing is waiting — every proposal has a decision.</p>
+        }
+        else
+        {
+            <table>
+                <thead><tr><th>Proposal</th><th>Reviewer</th><th class="num">Waiting</th></tr></thead>
+                <tbody>
+                    @foreach (var w in Model.Waiting)
+                    {
+                        <tr>
+                            <td><a href="/Admin/Proposals/@w.Id" class="link">@w.Title</a><br /><span class="muted">@w.Reference</span></td>
+                            <td>
+                                @if (w.StatusKey == "assign")
+                                {
+                                    <a href="/Admin/Proposals/@w.Id/Assign" class="pill pill-assign" style="text-decoration:none;">Assign reviewer</a>
+                                }
+                                else
+                                {
+                                    @w.Reviewer
+                                }
+                            </td>
+                            <td class="num"><span class="days @(w.Days > 14 ? "late" : "")">@w.Days @(w.Days == 1 ? "day" : "days")</span></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </section>
+</div>
+
+<!-- ===== PRODUCERS + EXPORTS ===== -->
+<div class="grid-2">
+    <section class="card">
+        <h2 class="card-title">Most active producers</h2>
+        <p class="card-subtitle">Most submissions in this period.</p>
+
+        @if (Model.TopProducers.Count == 0)
+        {
+            <p class="muted" style="margin-top:18px;">No proposals were submitted in this period.</p>
+        }
+        else
+        {
+            <table>
+                <thead><tr><th>Producer</th><th class="num">Submitted</th><th class="num">Approved</th></tr></thead>
+                <tbody>
+                    @foreach (var p in Model.TopProducers)
+                    {
+                        <tr><td><strong>@p.Name</strong></td><td class="num">@p.Submitted</td><td class="num">@p.Approved</td></tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </section>
+
+    <section class="card">
+        <h2 class="card-title">Exports</h2>
+        <p class="card-subtitle">Download data or print a summary for station meetings.</p>
+
+        <div class="quick">
+            <a href="/Admin/Reports/Export@(exportQuery)"><span>Export proposals (CSV)</span><span>›</span></a>
+            <a href="/Admin/Reports/Summary@(rangeQuery)" target="_blank" rel="noopener"><span>Print or save summary as PDF</span><span>›</span></a>
+            <a href="/Admin/Users/Export"><span>Export users (CSV)</span><span>›</span></a>
+        </div>
+
+        <h3 style="margin-top:22px;color:#14233e;font-size:14px;font-weight:800;">Recent exports</h3>
+        @if (Model.RecentExports.Count == 0)
+        {
+            <p class="muted" style="margin-top:10px;">No CSV exports yet.</p>
+        }
+        else
+        {
+            <div class="history">
+                @foreach (var e in Model.RecentExports)
+                {
+                    <div class="history-item">
+                        <div>
+                            <strong title="@e.FileName">@e.FileName</strong>
+                            <span>@e.When • @e.By • @e.Rows rows, @e.Columns columns</span>
+                        </div>
+                        <a href="/Admin/Reports/Export@(e.Query)" class="link" style="font-size:12px;">Run again</a>
+                    </div>
+                }
+            </div>
+        }
+    </section>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            // Chart tooltip
+            var wrap = document.getElementById("monthlyChart");
+            var tip = document.getElementById("chartTip");
+            if (wrap && tip) {
+                wrap.querySelectorAll(".hit").forEach(function (hit) {
+                    hit.addEventListener("mousemove", function (event) {
+                        var parts = hit.getAttribute("data-tip").split("|");
+                        tip.innerHTML = "";
+                        var title = document.createElement("strong");
+                        title.textContent = parts[0];
+                        tip.appendChild(title);
+                        [["#0a9fb2", parts[1]], ["#3b5bdb", parts[2]]].forEach(function (line) {
+                            var row = document.createElement("div");
+                            var swatch = document.createElement("i");
+                            swatch.style.background = line[0];
+                            row.appendChild(swatch);
+                            row.appendChild(document.createTextNode(line[1]));
+                            tip.appendChild(row);
+                        });
+                        var box = wrap.getBoundingClientRect();
+                        var x = event.clientX - box.left + 14;
+                        if (x + 170 > box.width) { x = event.clientX - box.left - 180; }
+                        tip.style.left = x + "px";
+                        tip.style.top = Math.max(0, event.clientY - box.top - 30) + "px";
+                        tip.hidden = false;
+                    });
+                    hit.addEventListener("mouseleave", function () { tip.hidden = true; });
+                });
+            }
+
+            // Highlight "Reports" in the sidebar.
+            document.querySelectorAll(".sidebar nav a").forEach(function (link) {
+                if ((link.getAttribute("href") || "").toLowerCase().indexOf("/admin/reports") === 0) {
+                    link.setAttribute("aria-current", "page");
+                } else {
+                    link.removeAttribute("aria-current");
+                }
+            });
+        })();
+    </script>
+}

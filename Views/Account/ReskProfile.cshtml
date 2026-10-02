@@ -1,0 +1,156 @@
+﻿@model RESK.WIL.Models.ReskProfileViewModel
+
+@{
+    Layout = Model.InAdminArea ? "~/Views/AdminProposals/_AdminLayout.cshtml" : "~/Views/Account/_ReskPlain.cshtml";
+    ViewData["Title"] = "My profile";
+    ViewData["BoxClass"] = "wide";
+}
+
+@section Styles {
+    <style>
+        .profile-card { max-width: 620px; }
+        .who { display: flex; align-items: center; gap: 20px; }
+        .avatar-big { width: 92px; height: 92px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 50%; background: #142a4b; color: #12c4da; font-size: 28px; font-weight: 800; }
+        .avatar-big img { width: 100%; height: 100%; display: block; object-fit: cover; }
+        .who strong { display: block; color: #14233e; font-size: 17px; }
+        .who span { display: block; margin-top: 5px; color: #6d7e99; font-size: 12px; }
+        .who .role-tag { display: inline-block; margin-top: 9px; padding: 4px 12px; border-radius: 999px; background: #e6f7f9; color: #0a8a9c; font-size: 11px; font-weight: 800; }
+        .picker { margin-top: 28px; }
+        .picker input[type=file] { width: 100%; padding: 12px; border: 1.5px dashed #b9e6ee; border-radius: 10px; background: #f7fcfd; color: #52637e; font-size: 13px; }
+        .hint { margin-top: 10px; color: #6d7e99; font-size: 12px; line-height: 1.6; }
+        .buttons { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px; }
+        .note { margin-top: 20px; padding: 12px 16px; border-radius: 10px; font-size: 12px; font-weight: 600; line-height: 1.5; }
+        .note.good { border: 1px solid #b9e6d0; background: #eefaf4; color: #1f7a52; }
+        .note.bad { border: 1px solid #f0c2c5; background: #fff7f7; color: #b84048; }
+        .note.info { border: 1px solid #c9ecf1; background: #eefafc; color: #0a7f90; }
+        .plain-title { margin-bottom: 24px; text-align: center; }
+        .primary-button:disabled { opacity: 0.5; cursor: not-allowed; }
+    </style>
+}
+
+@if (Model.InAdminArea)
+{
+    <header class="page-header">
+        <div>
+            <h1>My profile</h1>
+            <p>Change the picture shown next to your name.</p>
+        </div>
+    </header>
+}
+else
+{
+    <h1 class="plain-title">My profile</h1>
+}
+
+<section class="@(Model.InAdminArea ? "card profile-card" : "profile-card")">
+
+    <div class="who">
+        <div class="avatar-big" id="avatarPreview">
+            @if (Model.PhotoUrl != null)
+            {
+                <img src="@Model.PhotoUrl" alt="Your profile picture" />
+            }
+            else
+            {
+                @Model.Initials
+            }
+        </div>
+        <div>
+            <strong>@Model.Name</strong>
+            <span>@Model.Email</span>
+            <span class="role-tag">@Model.RoleName</span>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(Model.Message))
+    {
+        <div class="note good" role="status">@Model.Message</div>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(Model.Error))
+    {
+        <div class="note bad" role="alert" id="serverError">@Model.Error</div>
+    }
+
+    @if (Model.IsAdministrator)
+    {
+        <div class="note info">The Administrator account belongs to one person and its profile is fixed, so the picture can't be changed here.</div>
+    }
+    else
+    {
+        <form method="post" action="/Account/MyProfile" enctype="multipart/form-data" id="photoForm">
+            @Html.AntiForgeryToken()
+
+            <div class="picker">
+                <label class="section-label" for="photo">Profile picture</label>
+                <input type="file" id="photo" name="photo" accept=".jpg,.jpeg,.png,image/jpeg,image/png" />
+                <p class="hint">JPG or PNG, up to 5 MB. A square picture looks best.</p>
+                <div class="note bad" id="photoError" role="alert" hidden></div>
+            </div>
+
+            <div class="buttons">
+                <button type="submit" class="primary-button" id="savePhoto" disabled>Save picture</button>
+                @if (Model.PhotoUrl != null)
+                {
+                    <button type="submit" name="removePhoto" value="true" class="secondary-button">Remove picture</button>
+                }
+                @if (!Model.InAdminArea)
+                {
+                    <a href="@(Model.IsProducer ? "/Producer" : "/")" class="secondary-button">Back</a>
+                }
+            </div>
+        </form>
+
+        @if (Model.IsProducer)
+        {
+            <p class="hint">Your name, contact details and password are on your <a href="/Producer/Settings">Settings</a> page.</p>
+        }
+    }
+
+</section>
+
+@section Scripts {
+    <script>
+        (function () {
+            // No sidebar item belongs to this page.
+            document.querySelectorAll(".sidebar nav a").forEach(function (link) { link.removeAttribute("aria-current"); });
+
+            var input = document.getElementById("photo");
+            var save = document.getElementById("savePhoto");
+            var error = document.getElementById("photoError");
+            var preview = document.getElementById("avatarPreview");
+
+            if (!input) { return; }
+
+            // Show the chosen picture straight away and check it before uploading.
+            input.addEventListener("change", function () {
+                var file = input.files && input.files[0];
+                error.hidden = true;
+                save.disabled = true;
+
+                if (!file) { return; }
+
+                if (!/\.(jpe?g|png)$/i.test(file.name)) {
+                    error.textContent = "Upload a JPG or PNG picture.";
+                    error.hidden = false;
+                    input.value = "";
+                    return;
+                }
+
+                if (file.size > 5000000) {
+                    error.textContent = "The picture must be 5 MB or smaller.";
+                    error.hidden = false;
+                    input.value = "";
+                    return;
+                }
+
+                var image = document.createElement("img");
+                image.alt = "Preview of the new picture";
+                image.src = URL.createObjectURL(file);
+                preview.textContent = "";
+                preview.appendChild(image);
+                save.disabled = false;
+            });
+        })();
+    </script>
+}
