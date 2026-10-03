@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using RESK.WIL.Data;
 using RESK.WIL.Models;
+using RESK.WIL.Services;
 
 namespace RESK.WIL.Controllers
 {
@@ -978,7 +979,12 @@ namespace RESK.WIL.Controllers
 
             DateTime now = DateTime.UtcNow;
 
-            proposal.Status = ProposalStatuses.InReview;
+            if (!ProposalWorkflow.TryMove(proposal, ProposalStatuses.InReview, out string moveError))
+            {
+                TempData["SubmitError"] = moveError;
+                return RedirectToAction(nameof(Review));
+            }
+
             proposal.CompletedSteps = 5;
             proposal.SubmittedAtUtc = now;
             proposal.UpdatedAtUtc = now;

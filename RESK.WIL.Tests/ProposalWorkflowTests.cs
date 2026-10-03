@@ -9,6 +9,56 @@ namespace RESK.WIL.Tests
 {
     public class ProposalWorkflowTests
     {
+        private static ProducerProposal NewProducer(string status) =>
+            new ProducerProposal { Status = status };
+
+        [Theory]
+        [InlineData(ProposalStatuses.Draft, ProposalStatuses.InReview)]
+        [InlineData(ProposalStatuses.InReview, ProposalStatuses.Approved)]
+        [InlineData(ProposalStatuses.InReview, ProposalStatuses.Rejected)]
+        [InlineData(ProposalStatuses.InReview, ProposalStatuses.ChangesRequested)]
+        [InlineData(ProposalStatuses.ChangesRequested, ProposalStatuses.InReview)]
+        public void Allowed_producer_moves_succeed(string from, string to)
+        {
+            var p = NewProducer(from);
+            var before = p.UpdatedAtUtc;
+            bool ok = ProposalWorkflow.TryMove(p, to, out string error);
+
+            Assert.True(ok);
+            Assert.Equal(to, p.Status);
+            Assert.Equal(string.Empty, error);
+            Assert.True(p.UpdatedAtUtc >= before);
+        }
+
+        [Theory]
+        [InlineData(ProposalStatuses.Draft, ProposalStatuses.Approved)]
+        [InlineData(ProposalStatuses.Draft, ProposalStatuses.Rejected)]
+        [InlineData(ProposalStatuses.Approved, ProposalStatuses.InReview)]
+        [InlineData(ProposalStatuses.Rejected, ProposalStatuses.InReview)]
+        [InlineData(ProposalStatuses.Approved, ProposalStatuses.Rejected)]
+        public void Blocked_producer_moves_fail_and_leave_status_unchanged(string from, string to)
+        {
+            var p = NewProducer(from);
+            var original = p.Status;
+
+            bool ok = ProposalWorkflow.TryMove(p, to, out string error);
+
+            Assert.False(ok);
+            Assert.NotEmpty(error);
+            Assert.Equal(original, p.Status);
+        }
+
+        [Fact]
+        public void Successful_producer_move_updates_UpdatedAtUtc()
+        {
+            var p = NewProducer(ProposalStatuses.Draft);
+            var before = p.UpdatedAtUtc;
+            System.Threading.Thread.Sleep(10);
+
+            bool ok = ProposalWorkflow.TryMove(p, ProposalStatuses.InReview, out _);
+            Assert.True(ok);
+            Assert.True(p.UpdatedAtUtc > before);
+        }
         private static Proposal NewProposal(string status) =>
             new Proposal { ProposalStatus = status };
 
