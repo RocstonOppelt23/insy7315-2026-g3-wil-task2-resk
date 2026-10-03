@@ -1,10 +1,10 @@
 using System.ComponentModel.DataAnnotations;
-using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RESK.WIL.Data;
 using RESK.WIL.Models;
+using RESK.WIL.Services;
 
 namespace RESK.WIL.Controllers.API
 {
@@ -14,10 +14,24 @@ namespace RESK.WIL.Controllers.API
     public class ApiProposalController : ControllerBase
     {
         private readonly ApplicationDbContext _db;
+        private readonly AccessControlService _access;
 
-        public ApiProposalController(ApplicationDbContext db)
+        public ApiProposalController(
+            ApplicationDbContext db,
+            AccessControlService access)
         {
             _db = db;
+            _access = access;
+        }
+
+        // GET /api/proposals/types
+        [HttpGet("types")]
+        [AllowAnonymous]
+        public ActionResult<List<string>> GetProposalTypes()
+        {
+            // Kuan-Chi's code: these are CTTV's fixed proposal form categories,
+            // not database-managed categories.
+            return Ok(ProposalTypes.All.ToList());
         }
 
         // GET /api/proposals
@@ -25,12 +39,22 @@ namespace RESK.WIL.Controllers.API
         public async Task<ActionResult<List<ProposalResponse>>> GetMine(
             CancellationToken cancellationToken)
         {
-            if (!TryGetUserId(out int userId))
+            var currentUser = await _access.GetCurrentUserAsync(
+                User,
+                cancellationToken);
+
+            if (currentUser is null)
                 return Unauthorized();
 
-            var proposals = await _db.Proposals
-                .AsNoTracking()
-                .Where(p => p.ProducerId == userId)
+            if (!await _access.CanUseProposalsAsync(currentUser, cancellationToken))
+                return Forbid();
+
+            // In normal mode this endpoint is "my proposals".
+            // When ApiTesting:BypassServiceLogic is true, ApplyProposalScope
+            // returns the original query so Swagger/Postman can inspect all rows.
+            var proposals = await _access.ApplyProposalScope(
+                    _db.Proposals.AsNoTracking(),
+                    currentUser)
                 .OrderByDescending(p => p.UpdatedAtUtc)
                 .Select(p => ToSummaryResponse(p))
                 .ToListAsync(cancellationToken);
@@ -44,14 +68,22 @@ namespace RESK.WIL.Controllers.API
             int id,
             CancellationToken cancellationToken)
         {
-            if (!TryGetUserId(out int userId))
+            var currentUser = await _access.GetCurrentUserAsync(
+                User,
+                cancellationToken);
+
+            if (currentUser is null)
                 return Unauthorized();
 
-            var proposal = await _db.Proposals
-                .AsNoTracking()
-                .SingleOrDefaultAsync(
-                    p => p.Id == id && p.ProducerId == userId,
-                    cancellationToken);
+            if (!await _access.CanUseProposalsAsync(currentUser, cancellationToken))
+                return Forbid();
+
+            // Direct proposal details stay owner-only in normal mode.
+            // Local testing mode bypasses the scope through AccessControlService.
+            var proposal = await _access.ApplyProposalScope(
+                    _db.Proposals.AsNoTracking(),
+                    currentUser)
+                .SingleOrDefaultAsync(p => p.Id == id, cancellationToken);
 
             if (proposal is null)
                 return NotFound();
@@ -59,24 +91,40 @@ namespace RESK.WIL.Controllers.API
             return Ok(ToDetailsResponse(proposal));
         }
 
-        // POST /api/proposals
-        [HttpPost]
+        // POST /api/proposals/create
+        [HttpPost("create")]
         public async Task<ActionResult<ProposalDetailsResponse>> CreateDraft(
             [FromBody] SaveProposalRequest request,
             CancellationToken cancellationToken)
         {
-            if (!TryGetUserId(out int userId))
+            var currentUser = await _access.GetCurrentUserAsync(
+                User,
+                cancellationToken);
+
+            if (currentUser is null)
                 return Unauthorized();
 
+            if (!await _access.CanCreateProposalAsync(currentUser, cancellationToken))
+                return Forbid();
+
+            if (currentUser.Id == 0)
+            {
+                return BadRequest(
+                    "Create one test user before testing proposal creation.");
+            }
+
+            // Draft creation is still protected by the proposal feature switch
+            // and the user's ProposalsCreate permission unless local API testing
+            // mode is enabled in appsettings.Development.json.
             var now = DateTime.UtcNow;
 
             var proposal = new Proposal
             {
-                ProducerId = userId,
+                ProducerId = currentUser.Id,
                 ProposalStatus = "Draft",
                 CreatedAtUtc = now,
                 UpdatedAtUtc = now,
-                LastChangerId = userId,
+                LastChangerId = currentUser.Id,
                 LastAction = "Created draft"
             };
 
@@ -91,19 +139,27 @@ namespace RESK.WIL.Controllers.API
                 ToDetailsResponse(proposal));
         }
 
-        // PUT /api/proposals/7
-        [HttpPut("{id:int}")]
+        // PUT /api/proposals/7/update
+        [HttpPut("{id:int}/update")]
         public async Task<ActionResult<ProposalDetailsResponse>> UpdateDraft(
             int id,
             [FromBody] SaveProposalRequest request,
             CancellationToken cancellationToken)
         {
-            if (!TryGetUserId(out int userId))
+            var currentUser = await _access.GetCurrentUserAsync(
+                User,
+                cancellationToken);
+
+            if (currentUser is null)
                 return Unauthorized();
 
-            var proposal = await _db.Proposals.SingleOrDefaultAsync(
-                p => p.Id == id && p.ProducerId == userId,
-                cancellationToken);
+            if (!await _access.CanEditProposalAsync(currentUser, cancellationToken))
+                return Forbid();
+
+            var proposal = await _access.ApplyProposalScope(
+                    _db.Proposals,
+                    currentUser)
+                .SingleOrDefaultAsync(p => p.Id == id, cancellationToken);
 
             if (proposal is null)
                 return NotFound();
@@ -112,7 +168,7 @@ namespace RESK.WIL.Controllers.API
                 return Conflict("Only drafts can be edited through this endpoint.");
 
             ApplyFields(proposal, request);
-            proposal.LastChangerId = userId;
+            proposal.LastChangerId = currentUser.Id == 0 ? null : currentUser.Id;
             proposal.LastAction = "Updated draft";
             proposal.UpdatedAtUtc = DateTime.UtcNow;
 
@@ -126,12 +182,20 @@ namespace RESK.WIL.Controllers.API
             int id,
             CancellationToken cancellationToken)
         {
-            if (!TryGetUserId(out int userId))
+            var currentUser = await _access.GetCurrentUserAsync(
+                User,
+                cancellationToken);
+
+            if (currentUser is null)
                 return Unauthorized();
 
-            var proposal = await _db.Proposals.SingleOrDefaultAsync(
-                p => p.Id == id && p.ProducerId == userId,
-                cancellationToken);
+            if (!await _access.CanCreateProposalAsync(currentUser, cancellationToken))
+                return Forbid();
+
+            var proposal = await _access.ApplyProposalScope(
+                    _db.Proposals,
+                    currentUser)
+                .SingleOrDefaultAsync(p => p.Id == id, cancellationToken);
 
             if (proposal is null)
                 return NotFound();
@@ -161,21 +225,23 @@ namespace RESK.WIL.Controllers.API
                 return ValidationProblem(ModelState);
             }
 
-            var now = DateTime.UtcNow;
-            proposal.ProposalStatus = "Pending";
-            proposal.SubmittedAtUtc ??= now;
-            proposal.UpdatedAtUtc = now;
-            proposal.LastChangerId = userId;
+            // Rocston's code integrated: ProposalWorkflow validates state changes.
+            // Changed here so Kuan-Chi's submit endpoint uses the same workflow rules
+            // as the review API, instead of setting ProposalStatus directly.
+            if (!ProposalWorkflow.TryMove(
+                    proposal,
+                    ProposalWorkflow.Pending,
+                    out string workflowError))
+            {
+                return Conflict(workflowError);
+            }
+
+            proposal.LastChangerId = currentUser.Id == 0 ? null : currentUser.Id;
             proposal.LastAction = "Submitted";
 
             await _db.SaveChangesAsync(cancellationToken);
             return Ok(ToDetailsResponse(proposal));
         }
-
-        private bool TryGetUserId(out int userId) =>
-            int.TryParse(
-                User.FindFirstValue(ClaimTypes.NameIdentifier),
-                out userId);
 
         private static void ApplyFields(
             Proposal proposal,
@@ -308,4 +374,5 @@ namespace RESK.WIL.Controllers.API
         public string LicenceDuration { get; set; } = string.Empty;
         public bool IsTdlaRead { get; set; }
     }
+    //----------Constructor----------//
 }

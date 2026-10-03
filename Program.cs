@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using RESK.WIL.Data;
 using RESK.WIL.Models;
+using RESK.WIL.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,16 +14,46 @@ builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 builder.Services.AddDefaultIdentity<User>(options => options.SignIn.RequireConfirmedAccount = true)
     .AddEntityFrameworkStores<ApplicationDbContext>();
+
+bool bypassServiceLogic = builder.Configuration.GetValue<bool>(
+    "ApiTesting:BypassServiceLogic");
+
 builder.Services.AddAuthorization(options =>
 {
+    options.AddPolicy("ApiAccess", policy =>
+    {
+        if (bypassServiceLogic)
+            policy.RequireAssertion(_ => true);
+        else
+            policy.RequireAuthenticatedUser();
+    });
+
     options.AddPolicy("ManageProposals", policy =>
-        policy.RequireAuthenticatedUser());
+    {
+        if (bypassServiceLogic)
+            policy.RequireAssertion(_ => true);
+        else
+            policy.RequireAuthenticatedUser();
+    });
+
     options.AddPolicy("ManageUsers", policy =>
-        policy.RequireAuthenticatedUser());
+    {
+        if (bypassServiceLogic)
+            policy.RequireAssertion(_ => true);
+        else
+            policy.RequireAuthenticatedUser();
+    });
+
     options.AddPolicy("ManageSystemSettings", policy =>
-        policy.RequireAuthenticatedUser());
+    {
+        if (bypassServiceLogic)
+            policy.RequireAssertion(_ => true);
+        else
+            policy.RequireAuthenticatedUser();
+    });
 });
 builder.Services.AddControllersWithViews();
+builder.Services.AddScoped<AccessControlService>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 

@@ -24,4 +24,10 @@
     <Folder Include="Data\Migrations\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="RESK.WIL.Tests\**\*.cs" />
+    <Content Remove="RESK.WIL.Tests\**\*" />
+    <None Remove="RESK.WIL.Tests\**\*" />
+  </ItemGroup>
+
 </Project>

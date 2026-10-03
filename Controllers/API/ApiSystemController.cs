@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RESK.WIL.Data;
 using RESK.WIL.Models;
+using RESK.WIL.Services;
 
 namespace RESK.WIL.Controllers.API
 {
@@ -11,10 +12,14 @@ namespace RESK.WIL.Controllers.API
     public class ApiSystemController : ControllerBase
     {
         private readonly ApplicationDbContext _db;
+        private readonly AccessControlService _access;
 
-        public ApiSystemController(ApplicationDbContext db)
+        public ApiSystemController(
+            ApplicationDbContext db,
+            AccessControlService access)
         {
             _db = db;
+            _access = access;
         }
 
         // GET /api/system
@@ -22,6 +27,9 @@ namespace RESK.WIL.Controllers.API
         public async Task<ActionResult<SystemResponse>> Get(
             CancellationToken cancellationToken)
         {
+            // the front end can check whether a feature is enabled
+            // before showing menu items. Protected API endpoints still enforce
+            // these switches again on the server.
             var settings = await GetSettings(cancellationToken);
 
             return Ok(ToResponse(settings));
@@ -34,6 +42,18 @@ namespace RESK.WIL.Controllers.API
             [FromBody] UpdateSystemRequest request,
             CancellationToken cancellationToken)
         {
+            var currentUser = await _access.GetCurrentUserAsync(
+                User,
+                cancellationToken);
+
+            if (currentUser is null)
+                return Unauthorized();
+
+            if (!_access.CanManageSystemSettings(currentUser))
+                return Forbid();
+
+            // These feature switches are the first layer checked by
+            // AccessControlService before role permissions and scopes.
             var settings = await GetSettings(cancellationToken);
 
             settings.UsersEnabled = request.UsersEnabled;
@@ -90,4 +110,6 @@ namespace RESK.WIL.Controllers.API
         bool AuditEnabled,
         bool RolesEnabled,
         bool SettingsEnabled);
+
+    //----------Constructor----------//
 }

@@ -1,22 +1,26 @@
-using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RESK.WIL.Data;
 using RESK.WIL.Models;
+using RESK.WIL.Services;
 
 namespace RESK.WIL.Controllers.API
 {
     [ApiController]
     [Route("api/search")]
-    [Authorize]
+    [Authorize(Policy = "ApiAccess")]
     public class ApiSearchController : ControllerBase
     {
         private readonly ApplicationDbContext _db;
+        private readonly AccessControlService _access;
 
-        public ApiSearchController(ApplicationDbContext db)
+        public ApiSearchController(
+            ApplicationDbContext db,
+            AccessControlService access)
         {
             _db = db;
+            _access = access;
         }
 
         // GET /api/search/proposals?query=music&searchType=Title
@@ -25,12 +29,14 @@ namespace RESK.WIL.Controllers.API
             [FromQuery] RESK.WIL.Models.ProposalSearchRequest request,
             CancellationToken cancellationToken)
         {
-            var currentUser = await GetCurrentUser(cancellationToken);
+            var currentUser = await _access.GetCurrentUserAsync(
+                User,
+                cancellationToken);
 
             if (currentUser is null)
                 return Unauthorized();
 
-            if (currentUser.AccountStatus != UserAccountStatus.Active)
+            if (!await _access.CanUseProposalsAsync(currentUser, cancellationToken))
                 return Forbid();
 
             int page = Math.Max(request.Page, 1);
@@ -40,7 +46,12 @@ namespace RESK.WIL.Controllers.API
                 .AsNoTracking()
                 .Include(p => p.Producer);
 
-            query = ApplyProposalAccessScope(query, currentUser);
+            // Server-side security order:
+            // system feature + role permission first, role scope second,
+            // user filters/sorting last. Do not move this logic to the front end.
+            // When ApiTesting:BypassServiceLogic is true, this returns the
+            // original query so API tools can test filters without login.
+            query = _access.ApplyProposalScope(query, currentUser);
             query = ApplyProposalFilters(query, request);
 
             int totalCount = await query.CountAsync(cancellationToken);
@@ -77,17 +88,15 @@ namespace RESK.WIL.Controllers.API
             [FromQuery] UserSearchRequest request,
             CancellationToken cancellationToken)
         {
-            var currentUser = await GetCurrentUser(cancellationToken);
+            var currentUser = await _access.GetCurrentUserAsync(
+                User,
+                cancellationToken);
 
             if (currentUser is null)
                 return Unauthorized();
 
-            if (currentUser.AccountStatus != UserAccountStatus.Active ||
-                currentUser.Role is null ||
-                !currentUser.Role.UsersView)
-            {
+            if (!await _access.CanUseUsersAsync(currentUser, cancellationToken))
                 return Forbid();
-            }
 
             int page = Math.Max(request.Page, 1);
             int pageSize = Math.Clamp(request.PageSize, 1, 100);
@@ -97,7 +106,12 @@ namespace RESK.WIL.Controllers.API
                 .Include(u => u.Role)
                 .Include(u => u.Proposals);
 
-            query = ApplyUserAccessScope(query, currentUser);
+            // User search deliberately returns only public/admin-safe summary
+            // fields. Personal details such as phone, address, password hash,
+            // MFA data and ID number are not projected into UserSearch.
+            // When ApiTesting:BypassServiceLogic is true, this returns the
+            // original query so API tools can test filters without login.
+            query = _access.ApplyUserScope(query, currentUser);
             query = ApplyUserFilters(query, request);
 
             int totalCount = await query.CountAsync(cancellationToken);
@@ -124,43 +138,6 @@ namespace RESK.WIL.Controllers.API
                 Page = page,
                 PageSize = pageSize
             });
-        }
-
-        private async Task<User?> GetCurrentUser(CancellationToken cancellationToken)
-        {
-            if (!int.TryParse(
-                    User.FindFirstValue(ClaimTypes.NameIdentifier),
-                    out int userId))
-            {
-                return null;
-            }
-
-            return await _db.Users
-                .Include(u => u.Role)
-                .SingleOrDefaultAsync(u => u.Id == userId, cancellationToken);
-        }
-
-        private static IQueryable<Proposal> ApplyProposalAccessScope(
-            IQueryable<Proposal> query,
-            User currentUser)
-        {
-            if (currentUser.Role is null)
-                return query.Where(p => p.ProducerId == currentUser.Id);
-
-            if (currentUser.Role.ProposalsScope == AccessScope.All)
-                return query;
-
-            return query.Where(p => p.ProducerId == currentUser.Id);
-        }
-
-        private static IQueryable<User> ApplyUserAccessScope(
-            IQueryable<User> query,
-            User currentUser)
-        {
-            if (currentUser.Role?.UsersScope == AccessScope.All)
-                return query;
-
-            return query.Where(u => u.Id == currentUser.Id);
         }
 
         private static IQueryable<Proposal> ApplyProposalFilters(
@@ -287,7 +264,7 @@ namespace RESK.WIL.Controllers.API
                     : query.OrderBy(u => u.Name)
             };
         }
-
+        // sorting research results by descending order if the sortDirection is "desc" or "z-a"
         private static bool IsDescending(string? sortDirection) =>
             sortDirection?.Trim().Equals(
                 "desc",
@@ -296,4 +273,6 @@ namespace RESK.WIL.Controllers.API
                 "z-a",
                 StringComparison.OrdinalIgnoreCase) == true;
     }
+
+    //----------Constructor----------//
 }

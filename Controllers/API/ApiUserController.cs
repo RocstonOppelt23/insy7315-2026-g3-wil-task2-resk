@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RESK.WIL.Data;
 using RESK.WIL.Models;
+using RESK.WIL.Services;
 
 namespace RESK.WIL.Controllers.API
 {
@@ -16,13 +17,16 @@ namespace RESK.WIL.Controllers.API
     {
         private readonly ApplicationDbContext _db;
         private readonly IPasswordHasher<User> _passwordHasher;
+        private readonly AccessControlService _access;
 
         public ApiUserController(
             ApplicationDbContext db,
-            IPasswordHasher<User> passwordHasher)
+            IPasswordHasher<User> passwordHasher,
+            AccessControlService access)
         {
             _db = db;
             _passwordHasher = passwordHasher;
+            _access = access;
         }
 
         // GET /api/users
@@ -30,9 +34,26 @@ namespace RESK.WIL.Controllers.API
         public async Task<ActionResult<List<UserResponse>>> GetUsers(
             CancellationToken cancellationToken)
         {
-            var users = await _db.Users
-                .AsNoTracking()
-                .Include(u => u.Role)
+            var currentUser = await _access.GetCurrentUserAsync(
+                User,
+                cancellationToken);
+
+            if (currentUser is null)
+                return Unauthorized();
+
+            if (!await _access.CanUseUsersAsync(currentUser, cancellationToken))
+                return Forbid();
+
+            // Apply the custom role scope before projecting users.
+            // Without this, a user with UsersScope.Own or SelectedRoles could
+            // still list every account by calling the API directly.
+            // When ApiTesting:BypassServiceLogic is true, the service returns
+            // the original query so Swagger/Postman can test the endpoint shape.
+            var scopedUsers = _access.ApplyUserScope(
+                _db.Users.AsNoTracking().Include(u => u.Role),
+                currentUser);
+
+            var users = await scopedUsers
                 .Select(u => new UserResponse(
                     u.Id, u.Name, u.LastName, u.Email ?? string.Empty,
                     u.AccountStatus, u.RoleId, u.Role != null ? u.Role.Title : null,
@@ -48,9 +69,20 @@ namespace RESK.WIL.Controllers.API
             int id,
             CancellationToken cancellationToken)
         {
-            var user = await _db.Users
-                .AsNoTracking()
-                .Include(u => u.Role)
+            var currentUser = await _access.GetCurrentUserAsync(
+                User,
+                cancellationToken);
+
+            if (currentUser is null)
+                return Unauthorized();
+
+            if (!await _access.CanUseUsersAsync(currentUser, cancellationToken))
+                return Forbid();
+
+            // Detail lookup uses the same server-side scope as the list endpoint.
+            var user = await _access.ApplyUserScope(
+                    _db.Users.AsNoTracking().Include(u => u.Role),
+                    currentUser)
                 .Where(u => u.Id == id)
                 .Select(u => new UserResponse(
                     u.Id, u.Name, u.LastName, u.Email ?? string.Empty,
@@ -67,6 +99,16 @@ namespace RESK.WIL.Controllers.API
             [FromBody] CreateUserRequest request,
             CancellationToken cancellationToken)
         {
+            var currentUser = await _access.GetCurrentUserAsync(
+                User,
+                cancellationToken);
+
+            if (currentUser is null)
+                return Unauthorized();
+
+            if (!await _access.CanManageUsersAsync(currentUser, cancellationToken))
+                return Forbid();
+
             string email = request.Email.Trim();
 
             if (await _db.Users.AnyAsync(
@@ -76,9 +118,8 @@ namespace RESK.WIL.Controllers.API
             }
 
             var now = DateTime.UtcNow;
-            string? roleError = await ValidateRole(
-                request.RoleId,
-                cancellationToken);
+            int? roleId = NormalizeRoleId(request.RoleId);
+            string? roleError = await ValidateRole(roleId, cancellationToken);
 
             if (roleError is not null)
                 return BadRequest(roleError);
@@ -93,7 +134,7 @@ namespace RESK.WIL.Controllers.API
                 NormalizedUserName = email.ToUpperInvariant(),
                 Phone = request.Phone.Trim(),
                 PhysicalAddress = request.PhysicalAddress.Trim(),
-                RoleId = request.RoleId,
+                RoleId = roleId,
                 AccountStatus = UserAccountStatus.Pending,
                 CreatedAtUtc = now,
                 UpdatedAtUtc = now,
@@ -119,6 +160,16 @@ namespace RESK.WIL.Controllers.API
             [FromBody] UpdateUserRequest request,
             CancellationToken cancellationToken)
         {
+            var currentUser = await _access.GetCurrentUserAsync(
+                User,
+                cancellationToken);
+
+            if (currentUser is null)
+                return Unauthorized();
+
+            if (!await _access.CanManageUsersAsync(currentUser, cancellationToken))
+                return Forbid();
+
             var user = await _db.Users.FindAsync(
                 new object[] { id }, cancellationToken);
 
@@ -126,9 +177,8 @@ namespace RESK.WIL.Controllers.API
                 return NotFound();
 
             string email = request.Email.Trim();
-            string? roleError = await ValidateRole(
-                request.RoleId,
-                cancellationToken);
+            int? roleId = NormalizeRoleId(request.RoleId);
+            string? roleError = await ValidateRole(roleId, cancellationToken);
 
             if (roleError is not null)
                 return BadRequest(roleError);
@@ -148,7 +198,7 @@ namespace RESK.WIL.Controllers.API
             user.NormalizedUserName = email.ToUpperInvariant();
             user.Phone = request.Phone.Trim();
             user.PhysicalAddress = request.PhysicalAddress.Trim();
-            user.RoleId = request.RoleId;
+            user.RoleId = roleId;
             user.UpdatedAtUtc = DateTime.UtcNow;
 
             await _db.SaveChangesAsync(cancellationToken);
@@ -162,6 +212,16 @@ namespace RESK.WIL.Controllers.API
             [FromBody] ChangeUserStatusRequest request,
             CancellationToken cancellationToken)
         {
+            var currentUser = await _access.GetCurrentUserAsync(
+                User,
+                cancellationToken);
+
+            if (currentUser is null)
+                return Unauthorized();
+
+            if (!await _access.CanManageUsersAsync(currentUser, cancellationToken))
+                return Forbid();
+
             if (!request.AccountStatus.HasValue ||
                 !Enum.IsDefined(request.AccountStatus.Value))
             {
@@ -192,6 +252,17 @@ namespace RESK.WIL.Controllers.API
                 user.Role?.Title,
                 user.CreatedAtUtc,
                 user.UpdatedAtUtc);
+
+        private int? NormalizeRoleId(int? roleId)
+        {
+            // Swagger's generated example uses 0 for nullable integers.
+            // In local API testing mode, treat 0 as no role so sample requests
+            // can be tested without manually editing every body first.
+            if (_access.BypassServiceLogic && roleId == 0)
+                return null;
+
+            return roleId;
+        }
 
         private async Task<string?> ValidateRole(
             int? roleId,
@@ -267,4 +338,5 @@ namespace RESK.WIL.Controllers.API
         [Required]
         public UserAccountStatus? AccountStatus { get; set; }
     }
+    //----------Constructor----------//
 }

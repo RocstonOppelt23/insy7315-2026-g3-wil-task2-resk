@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Collections.Generic;
+using RESK.WIL.Services;
 
 namespace RESK.WIL.Models
 {
@@ -145,7 +146,7 @@ namespace RESK.WIL.Models
         {
             string type = ProposalType?.Trim().ToUpperInvariant() ?? "";
 
-            if (type is not ("IPPF" or "MVSF" or "CPAF" or "PAF"))
+            if (!ProposalTypes.IsValid(type))
             {
                 yield return Required(nameof(ProposalType));
                 yield break;
