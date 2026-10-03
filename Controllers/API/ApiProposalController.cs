@@ -190,7 +190,7 @@ namespace RESK.WIL.Controllers.API
 
         private bool TryGetUserId(out int userId) =>
             int.TryParse(
-                User.FindFirstValue(ClaimTypes.NameIdentifier),
+                User.FindFirstValue(AppUserClaimsPrincipalFactory.AppUserIdClaimType),
                 out userId);
 
         private static void ApplyFields(
