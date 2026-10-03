@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RESK.WIL.Data;
 using RESK.WIL.Services;
+using RESK.WIL.Security;
 
 namespace RESK.WIL.Controllers.API
 {
@@ -65,7 +66,7 @@ namespace RESK.WIL.Controllers.API
             int id, string to, string action, CancellationToken ct)
         {
             if (!int.TryParse(
-                    User.FindFirstValue(ClaimTypes.NameIdentifier),
+                    User.FindFirstValue(AppUserClaimsPrincipalFactory.AppUserIdClaimType),
                     out int userId))
                 return Unauthorized();
 

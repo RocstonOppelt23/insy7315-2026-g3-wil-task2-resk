@@ -16,6 +16,10 @@ namespace RESK.WIL.Data
         public DbSet<UserRole> UserRoles => Set<UserRole>();
         public DbSet<RoleScopeTarget> RoleScopeTargets
             => Set<RoleScopeTarget>();
+        public DbSet<SystemFeatureSettings> SystemFeatureSettings => Set<SystemFeatureSettings>();
+        public DbSet<MfaCode> MfaCodes => Set<MfaCode>();
+        public DbSet<ProposalComment> ProposalComments => Set<ProposalComment>();
+        public DbSet<ProposalReview> ProposalReviews => Set<ProposalReview>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

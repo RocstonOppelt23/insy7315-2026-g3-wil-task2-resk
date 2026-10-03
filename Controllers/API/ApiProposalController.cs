@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using RESK.WIL.Data;
 using RESK.WIL.Models;
 using RESK.WIL.Services;
+using RESK.WIL.Security;
 
 namespace RESK.WIL.Controllers.API
 {

@@ -356,7 +356,7 @@ namespace RESK.WIL.Data.Migrations
 
                     b.HasIndex("ProducerId");
 
-                    b.ToTable("Proposals");
+                    b.ToTable("Proposals", (string)null);
                 });
 
             modelBuilder.Entity("RESK.WIL.Models.Role", b =>
@@ -463,7 +463,7 @@ namespace RESK.WIL.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Roles");
+                    b.ToTable("Roles", (string)null);
                 });
 
             modelBuilder.Entity("RESK.WIL.Models.RoleScopeTarget", b =>
@@ -490,7 +490,7 @@ namespace RESK.WIL.Data.Migrations
                     b.HasIndex("RoleId", "Area", "TargetRoleId")
                         .IsUnique();
 
-                    b.ToTable("RoleScopeTargets");
+                    b.ToTable("RoleScopeTargets", (string)null);
                 });
 
             modelBuilder.Entity("RESK.WIL.Models.User", b =>
@@ -582,7 +582,7 @@ namespace RESK.WIL.Data.Migrations
                     b.HasIndex("Email")
                         .IsUnique();
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", (string)null);
                 });
 
             modelBuilder.Entity("RESK.WIL.Models.UserRole", b =>
@@ -603,7 +603,7 @@ namespace RESK.WIL.Data.Migrations
 
                     b.HasIndex("RoleId");
 
-                    b.ToTable("UserRoles");
+                    b.ToTable("UserRoles", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
