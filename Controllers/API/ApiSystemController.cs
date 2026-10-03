@@ -17,16 +17,7 @@ namespace RESK.WIL.Controllers
         {
             _db = db;
         }
-        public class ApplicationDbContext : DbContext
-        {
-            public ApplicationDbContext(
-                DbContextOptions<ApplicationDbContext> options) : base(options)
-            {
-            }
 
-            public DbSet<SystemFeatureSettings> SystemFeatureSettings
-                => Set<SystemFeatureSettings>();
-        }
         // GET /api/system
         [HttpGet]
         public async Task<ActionResult<SystemResponse>> Get(

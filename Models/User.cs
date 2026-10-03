@@ -15,6 +15,7 @@ namespace RESK.WIL.Models
 
         public string Name { get; set; } = string.Empty;
         public string LastName { get; set; } = string.Empty;
+        [MaxLength(256)]
         public string Email { get; set; } = string.Empty;
         public string PasswordHash { get; set; } = string.Empty;
 

@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using RESK.WIL.Data;
 using RESK.WIL.Models;
 using RESK.WIL.Services;
+using RESK.WIL.Security;
 
 namespace RESK.WIL.Controllers.API
 {
@@ -189,7 +190,7 @@ namespace RESK.WIL.Controllers.API
 
         private bool TryGetUserId(out int userId) =>
             int.TryParse(
-                User.FindFirstValue(ClaimTypes.NameIdentifier),
+                User.FindFirstValue(AppUserClaimsPrincipalFactory.AppUserIdClaimType),
                 out userId);
 
         private static void ApplyFields(

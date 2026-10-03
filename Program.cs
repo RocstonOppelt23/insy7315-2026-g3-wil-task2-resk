@@ -2,6 +2,8 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using RESK.WIL.Data;
+using RESK.WIL.Security;
+using RESK.WIL.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -65,6 +67,8 @@ builder.Services
     })
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
+
+builder.Services.AddScoped<IUserClaimsPrincipalFactory<IdentityUser>, AppUserClaimsPrincipalFactory>();
 
 
 // =====================================================
@@ -197,6 +201,17 @@ builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("ManageProposals", policy =>
         policy.RequireRole("Producer", "Admin"));
+    options.AddPolicy("ManageUsers", policy => policy.RequireRole("Admin"));
+    options.AddPolicy("ManageSystemSettings", policy => policy.RequireRole("Admin"));
+});
+
+builder.Services.AddSingleton<IBlobStorageService>(sp =>
+{
+    var config = sp.GetRequiredService<IConfiguration>();
+    var blobConnection = config.GetConnectionString("BlobStorage")
+        ?? throw new InvalidOperationException("Connection string 'BlobStorage' not found.");
+    var containerName = config["BlobStorage:ContainerName"] ?? "proposal-attachments";
+    return new BlobStorageService(blobConnection, containerName);
 });
 
 var app = builder.Build();
