@@ -42,5 +42,43 @@ namespace RESK.WIL.Services
             error = string.Empty;
             return true;
         }
+
+
+        // =====================================================
+        // PRODUCER PROPOSALS (used by the producer and admin screens)
+        // Draft -> InReview -> Approved / Rejected / ChangesRequested
+        // ChangesRequested -> InReview (producer resubmits)
+        // =====================================================
+
+        private static readonly Dictionary<string, string[]> ProducerAllowed = new()
+        {
+            [ProposalStatuses.Draft] = new[] { ProposalStatuses.InReview },
+            [ProposalStatuses.ChangesRequested] = new[] { ProposalStatuses.InReview },
+            [ProposalStatuses.InReview] = new[]
+            {
+                ProposalStatuses.Approved,
+                ProposalStatuses.Rejected,
+                ProposalStatuses.ChangesRequested
+            },
+            [ProposalStatuses.Approved] = Array.Empty<string>(),
+            [ProposalStatuses.Rejected] = Array.Empty<string>()
+        };
+
+        public static bool CanMoveProducer(string from, string to) =>
+            ProducerAllowed.TryGetValue(from, out var next) && next.Contains(to);
+
+        public static bool TryMove(ProducerProposal proposal, string to, out string error)
+        {
+            if (!CanMoveProducer(proposal.Status, to))
+            {
+                error = $"A proposal cannot move from {ProposalStatuses.Label(proposal.Status)} to {ProposalStatuses.Label(to)}.";
+                return false;
+            }
+
+            proposal.Status = to;
+            proposal.UpdatedAtUtc = DateTime.UtcNow;
+            error = string.Empty;
+            return true;
+        }
     }
 }

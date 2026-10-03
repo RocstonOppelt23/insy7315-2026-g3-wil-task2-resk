@@ -462,13 +462,18 @@ namespace RESK.WIL.Controllers
 
             DateTime now = DateTime.UtcNow;
 
-            proposal.Status = review.Recommendation switch
+            string target = review.Recommendation switch
             {
                 ProposalReviewStore.Approve => ProposalStatuses.Approved,
                 ProposalReviewStore.Reject => ProposalStatuses.Rejected,
                 _ => ProposalStatuses.ChangesRequested
             };
-            proposal.UpdatedAtUtc = now;
+
+            if (!ProposalWorkflow.TryMove(proposal, target, out string moveError))
+            {
+                TempData["AdminMessage"] = moveError;
+                return Redirect($"/Admin/Proposals/{id}");
+            }
 
             await _db.SaveChangesAsync();
 
