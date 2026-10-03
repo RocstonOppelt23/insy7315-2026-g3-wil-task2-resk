@@ -1,0 +1,464 @@
+﻿@model RESK.WIL.Models.ProposalProducerDetailsViewModel
+
+@{
+    Layout = "_ProposalLayout";
+    ViewData["Title"] = "Producer details";
+    ViewBag.CurrentStep = 1;
+}
+
+<style>
+    .form-heading {
+        margin-bottom: 28px;
+        padding-bottom: 18px;
+        border-bottom: 1px solid #e1e7ef;
+    }
+
+    .form-heading h2 {
+        margin: 0 0 6px;
+        font-size: 20px;
+        color: #14233c;
+    }
+
+    .form-heading p {
+        margin: 0;
+        color: #7a8aa2;
+        font-size: 14px;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 23px 30px;
+    }
+
+    .form-group {
+        position: relative;
+    }
+
+    .form-group.full {
+        grid-column: 1 / -1;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+
+        color: #53647e;
+
+        font-size: 13px;
+        font-weight: 650;
+    }
+
+    .required {
+        color: #18b7ca;
+    }
+
+    .form-control {
+        width: 100%;
+
+        padding: 14px 15px;
+
+        border: 1px solid #d6e0eb;
+        border-radius: 10px;
+
+        background: #f9fbfd;
+
+        color: #14233c;
+
+        font-family: inherit;
+        font-size: 14px;
+
+        outline: none;
+
+        transition:
+            border-color .18s ease,
+            box-shadow .18s ease,
+            background .18s ease,
+            transform .18s ease;
+    }
+
+    .form-control:hover {
+        border-color: #bcc9d8;
+        background: white;
+    }
+
+    .form-control:focus {
+        border-color: #18b7ca;
+        background: white;
+
+        box-shadow:
+            0 0 0 4px rgba(24, 183, 202, .10);
+
+        transform: translateY(-1px);
+    }
+
+    .field-validation-error {
+        display: block;
+
+        margin-top: 6px;
+
+        color: #d44b4b;
+
+        font-size: 12px;
+
+        animation: validationEnter .2s ease;
+    }
+
+    @@keyframes validationEnter {
+        from {
+            opacity: 0;
+            transform: translateY(-3px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .validation-summary-errors {
+        margin-bottom: 24px;
+
+        padding: 14px 16px;
+
+        background: #fff5f5;
+
+        border: 1px solid #ffd8d8;
+        border-radius: 10px;
+
+        color: #b84040;
+
+        font-size: 13px;
+    }
+
+    .validation-summary-errors ul {
+        margin: 0;
+        padding-left: 18px;
+    }
+
+    .form-footer {
+        margin-top: 35px;
+        padding-top: 20px;
+
+        border-top: 1px solid #e1e7ef;
+
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+
+        gap: 20px;
+    }
+
+    .save-message {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        color: #8291a7;
+
+        font-size: 12px;
+    }
+
+    .save-dot {
+        width: 7px;
+        height: 7px;
+
+        border-radius: 50%;
+
+        background: #18b7ca;
+    }
+
+    .continue-button {
+        min-width: 125px;
+    }
+
+    .continue-button.loading {
+        opacity: .75;
+        pointer-events: none;
+    }
+
+    @@media (max-width: 750px) {
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .form-group.full {
+            grid-column: auto;
+        }
+
+        .form-footer {
+            align-items: stretch;
+            flex-direction: column;
+        }
+
+        .continue-button {
+            width: 100%;
+        }
+    }
+</style>
+
+
+<header class="page-header">
+
+    <h1>
+        Producer details
+    </h1>
+
+    <p>
+        Tell Cape Town TV who is submitting this proposal.
+    </p>
+
+</header>
+
+
+<section class="proposal-card">
+
+    <div class="form-heading">
+
+        <h2>
+            Producer information
+        </h2>
+
+        <p>
+            Provide the primary contact information for this proposal.
+        </p>
+
+    </div>
+
+
+    <form asp-controller="Proposal"
+          asp-action="ProducerDetails"
+          method="post"
+          id="producerForm">
+
+        @Html.AntiForgeryToken()
+
+
+        <div asp-validation-summary="ModelOnly"></div>
+
+
+        <div class="form-grid">
+
+
+            <div class="form-group">
+
+                <label asp-for="FirstName">
+                    First name
+                    <span class="required">*</span>
+                </label>
+
+                <input asp-for="FirstName"
+                       class="form-control"
+                       placeholder="Enter first name"
+                       autocomplete="given-name" />
+
+                <span asp-validation-for="FirstName"></span>
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label asp-for="LastName">
+                    Last name
+                    <span class="required">*</span>
+                </label>
+
+                <input asp-for="LastName"
+                       class="form-control"
+                       placeholder="Enter last name"
+                       autocomplete="family-name" />
+
+                <span asp-validation-for="LastName"></span>
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label asp-for="Email">
+                    Email address
+                    <span class="required">*</span>
+                </label>
+
+                <input asp-for="Email"
+                       class="form-control"
+                       placeholder="name@example.com"
+                       autocomplete="email" />
+
+                <span asp-validation-for="Email"></span>
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label asp-for="MobileNumber">
+                    Mobile number
+                    <span class="required">*</span>
+                </label>
+
+                <input asp-for="MobileNumber"
+                       class="form-control"
+                       placeholder="+27"
+                       autocomplete="tel" />
+
+                <span asp-validation-for="MobileNumber"></span>
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label asp-for="Organisation">
+                    Organisation
+                </label>
+
+                <input asp-for="Organisation"
+                       class="form-control"
+                       placeholder="Optional" />
+
+                <span asp-validation-for="Organisation"></span>
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label asp-for="PreferredContactMethod">
+                    Preferred contact method
+                    <span class="required">*</span>
+                </label>
+
+                <select asp-for="PreferredContactMethod"
+                        class="form-control">
+
+                    <option value="Email">
+                        Email
+                    </option>
+
+                    <option value="Phone">
+                        Phone
+                    </option>
+
+                    <option value="WhatsApp">
+                        WhatsApp
+                    </option>
+
+                </select>
+
+                <span asp-validation-for="PreferredContactMethod"></span>
+
+            </div>
+
+
+            <div class="form-group full">
+
+                <label asp-for="PhysicalAddress">
+                    Physical address
+                    <span class="required">*</span>
+                </label>
+
+                <input asp-for="PhysicalAddress"
+                       class="form-control"
+                       placeholder="Enter your physical address"
+                       autocomplete="street-address" />
+
+                <span asp-validation-for="PhysicalAddress"></span>
+
+            </div>
+
+
+        </div>
+
+
+        <div class="form-footer">
+
+            <div class="save-message">
+
+                <span class="save-dot"></span>
+
+                Your progress will be saved when you continue.
+
+            </div>
+
+
+            <button type="submit"
+                    class="btn btn-primary continue-button"
+                    id="continueButton">
+
+                Continue →
+
+            </button>
+
+        </div>
+
+    </form>
+
+</section>
+
+
+<script>
+
+    const producerForm =
+        document.getElementById("producerForm");
+
+    const continueButton =
+        document.getElementById("continueButton");
+
+
+    producerForm.addEventListener(
+        "submit",
+        function () {
+
+            if (!producerForm.checkValidity()) {
+                return;
+            }
+
+            continueButton.classList.add("loading");
+
+            continueButton.innerHTML =
+                "Saving...";
+
+        }
+    );
+
+
+    document
+        .querySelectorAll(".form-control")
+        .forEach(function (input) {
+
+            input.addEventListener(
+                "focus",
+                function () {
+
+                    const group =
+                        input.closest(".form-group");
+
+                    if (group) {
+                        group.style.transform =
+                            "translateY(-1px)";
+                    }
+
+                }
+            );
+
+
+            input.addEventListener(
+                "blur",
+                function () {
+
+                    const group =
+                        input.closest(".form-group");
+
+                    if (group) {
+                        group.style.transform =
+                            "translateY(0)";
+                    }
+
+                }
+            );
+
+        });
+
+</script>

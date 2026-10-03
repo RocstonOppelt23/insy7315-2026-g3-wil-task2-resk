@@ -832,6 +832,7 @@
             }
         }
     </style>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico?v=resk2" />
 </head>
 
 <body>
@@ -876,23 +877,23 @@
                 Users
             </a>
 
-            <a class="nav-link" href="#">
+            <a href="/Admin/Categories" class="nav-link">
                 Categories
             </a>
 
-            <a class="nav-link" href="#">
+            <a href="/Admin/Reports" class="nav-link">
                 Reports
             </a>
 
-            <a class="nav-link" href="#">
+            <a href="/Admin/Roles" class="nav-link">
                 Roles &amp; permissions
             </a>
 
-            <a class="nav-link" href="#">
+            <a href="/Admin/Audit" class="nav-link">
                 Audit log
             </a>
 
-            <a class="nav-link" href="#">
+            <a href="/Admin/Settings" class="nav-link">
                 System settings
             </a>
 
@@ -1555,5 +1556,159 @@
     }
 </script>
 
+
+<script id="resk-nav-fix">
+    // Makes every admin sidebar item go to the right page, however the link is written.
+    (function () {
+        var routes = {
+            "dashboard": "/Admin",
+            "proposals": "/Admin/Proposals",
+            "users": "/Admin/Users",
+            "categories": "/Admin/Categories",
+            "roles & permissions": "/Admin/Roles",
+            "audit log": "/Admin/Audit",
+            "system settings": "/Admin/Settings",
+            "reports": "/Admin/Reports"
+        };
+
+        document.querySelectorAll(".sidebar a, .sidebar button, aside a, aside button, nav a").forEach(function (el) {
+            var key = (el.textContent || "").replace(/\s+/g, " ").trim().toLowerCase();
+            var url = routes[key];
+            if (!url) { return; }
+
+            if (el.tagName === "A") {
+                el.setAttribute("href", url);
+                el.removeAttribute("onclick");
+                el.removeAttribute("target");
+            } else {
+                el.style.cursor = "pointer";
+                el.addEventListener("click", function (event) {
+                    event.preventDefault();
+                    window.location.href = url;
+                });
+            }
+        });
+    })();
+</script>
+<script src="/Admin/Roles/MyAccess.js"></script>
+<script id="resk-motion">
+    (function () {
+        var calm = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+        function ease(t) { return 1 - Math.pow(1 - t, 3); }
+
+        function play(draw, time) {
+            var start = null;
+            draw(0);
+            function frame(now) {
+                if (start === null) { start = now; }
+                var t = Math.min(1, (now - start) / time);
+                draw(t);
+                if (t < 1) { window.requestAnimationFrame(frame); }
+            }
+            window.requestAnimationFrame(frame);
+        }
+
+        // Line charts: every point rises from the bottom line to its place, left to right.
+        function lineCharts() {
+            document.querySelectorAll("svg").forEach(function (svg) {
+                var lines = [], dots = [], base = 0, minX = Infinity, maxX = -Infinity;
+
+                svg.querySelectorAll("polyline").forEach(function (line) {
+                    var points = (line.getAttribute("points") || "").trim().split(/\s+/).map(function (pair) {
+                        var xy = pair.split(",");
+                        return [parseFloat(xy[0]), parseFloat(xy[1])];
+                    }).filter(function (p) { return !isNaN(p[0]) && !isNaN(p[1]); });
+                    if (points.length) { lines.push({ node: line, points: points }); }
+                });
+
+                if (!lines.length) { return; }
+
+                svg.querySelectorAll("circle").forEach(function (dot) {
+                    var x = parseFloat(dot.getAttribute("cx")), y = parseFloat(dot.getAttribute("cy"));
+                    if (!isNaN(x) && !isNaN(y)) { dots.push({ node: dot, x: x, y: y }); }
+                });
+
+                lines.forEach(function (line) { line.points.forEach(function (p) { base = Math.max(base, p[1]); minX = Math.min(minX, p[0]); maxX = Math.max(maxX, p[0]); }); });
+                dots.forEach(function (dot) { base = Math.max(base, dot.y); });
+
+                function at(x, y, t) {
+                    var wait = maxX > minX ? 0.4 * (x - minX) / (maxX - minX) : 0;
+                    var local = Math.max(0, Math.min(1, (t - wait) / 0.6));
+                    return (base + (y - base) * ease(local)).toFixed(2);
+                }
+
+                play(function (t) {
+                    lines.forEach(function (line) {
+                        line.node.setAttribute("points", line.points.map(function (p) { return p[0] + "," + at(p[0], p[1], t); }).join(" "));
+                    });
+                    dots.forEach(function (dot) { dot.node.setAttribute("cy", at(dot.x, dot.y, t)); });
+                }, 1100);
+            });
+        }
+
+        // Bar charts: bars grow up from the bottom line, one after the other.
+        function barCharts() {
+            document.querySelectorAll(".chart-wrap svg path").forEach(function (bar, index) {
+                bar.style.transformBox = "fill-box";
+                bar.style.transformOrigin = "50% 100%";
+                bar.style.transform = "scaleY(0)";
+                window.requestAnimationFrame(function () {
+                    window.requestAnimationFrame(function () {
+                        bar.style.transition = "transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) " + (index * 0.04) + "s";
+                        bar.style.transform = "scaleY(1)";
+                    });
+                });
+            });
+        }
+
+        // Progress bars: fill from empty to their value.
+        function fills() {
+            document.querySelectorAll(".track .fill").forEach(function (fill, index) {
+                var width = fill.style.width;
+                if (!width) { return; }
+                fill.style.width = "0";
+                window.requestAnimationFrame(function () {
+                    window.requestAnimationFrame(function () {
+                        fill.style.transition = "width 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) " + (index * 0.05) + "s";
+                        fill.style.width = width;
+                    });
+                });
+            });
+        }
+
+        if (!calm) { lineCharts(); barCharts(); fills(); }
+
+        // Profile picture and "My profile" link (every role except the Administrator).
+        if (window.fetch) {
+            window.fetch("/Account/Me.json", { credentials: "same-origin" })
+                .then(function (reply) { return reply.ok && (reply.headers.get("content-type") || "").indexOf("json") >= 0 ? reply.json() : null; })
+                .then(function (me) {
+                    if (!me) { return; }
+                    var spot = document.querySelector(".admin-initials");
+                    var menu = document.querySelector(".account-menu");
+
+                    if (me.photo && spot) {
+                        var picture = document.createElement("img");
+                        picture.src = me.photo;
+                        picture.alt = "";
+                        picture.style.cssText = "width:34px;height:34px;display:block;border-radius:50%;object-fit:cover;";
+                        spot.textContent = "";
+                        spot.appendChild(picture);
+                    }
+
+                    if (me.canEdit && menu && !menu.querySelector("[data-profile]")) {
+                        var link = document.createElement("a");
+                        link.href = "/Account/MyProfile";
+                        link.textContent = "My profile";
+                        link.setAttribute("data-profile", "1");
+                        link.style.cssText = "display:block;padding:10px 11px;border-radius:7px;color:#ffffff;font-size:12px;font-weight:600;text-decoration:none;";
+                        menu.insertBefore(link, menu.firstChild);
+                    }
+                })
+                .catch(function () { });
+        }
+    })();
+</script>
 </body>
 </html>

@@ -1,0 +1,100 @@
+﻿@model RESK.WIL.Models.AdminCategoryForm
+
+@{
+    var colours = RESK.WIL.Services.ReskCategoryStore.Colours;
+    string currentHex = RESK.WIL.Services.ReskCategoryStore.Hex(Model.IconColour);
+    bool active = Model.Status != "Inactive";
+}
+
+<div class="field-grid two">
+    <div>
+        <label class="section-label" for="Name">Category name *</label>
+        <input class="input" id="Name" name="Name" value="@Model.Name" maxlength="60" placeholder="Example: Education" autocomplete="off" />
+        @Html.ValidationMessage("Name", new { @class = "field-error" })
+    </div>
+
+    <div>
+        <label class="section-label" for="Status">Status</label>
+        <div class="select-wrap">
+            <select class="input" id="Status" name="Status">
+                @if (active)
+                {
+                    <option value="Active" selected>Active</option>
+                    <option value="Inactive">Inactive</option>
+                }
+                else
+                {
+                    <option value="Active">Active</option>
+                    <option value="Inactive" selected>Inactive</option>
+                }
+            </select>
+            <span class="status-dot @(active ? "" : "off")" id="statusDot" aria-hidden="true"></span>
+        </div>
+    </div>
+</div>
+
+<div class="field">
+    <label class="section-label" for="Description">Description *</label>
+    <div class="textarea-wrap">
+        <textarea class="input" id="Description" name="Description" maxlength="250"
+                  placeholder="Describe the type of programme content that belongs in this category.">@Model.Description</textarea>
+        <span class="counter" id="descCounter">@((Model.Description ?? "").Length)/250</span>
+    </div>
+    @Html.ValidationMessage("Description", new { @class = "field-error" })
+</div>
+
+<div class="field-grid three">
+    <div>
+        <label class="section-label" for="Code">Category code</label>
+        <input class="input" id="Code" name="Code" value="@Model.Code" maxlength="10" placeholder="Example: EDU"
+               autocomplete="off" style="text-transform:uppercase;" />
+        @Html.ValidationMessage("Code", new { @class = "field-error" })
+        <p class="hint">Optional. Left empty, one is made from the name.</p>
+    </div>
+
+    <div>
+        <label class="section-label" for="DisplayOrder">Display order</label>
+        <input class="input" id="DisplayOrder" name="DisplayOrder" type="number" min="1" max="999" value="@Model.DisplayOrder" />
+        @Html.ValidationMessage("DisplayOrder", new { @class = "field-error" })
+        <p class="hint">Lower numbers appear first for producers.</p>
+    </div>
+
+    <div>
+        <label class="section-label" for="IconColour">Icon colour</label>
+        <div class="select-wrap colour">
+            <span class="swatch" id="colourSwatch" style="background:@currentHex;" aria-hidden="true"></span>
+            <select class="input" id="IconColour" name="IconColour">
+                @foreach (var pair in colours)
+                {
+                    if (pair.Key == Model.IconColour) { <option value="@pair.Key" data-hex="@pair.Value" selected>@pair.Key</option> }
+                    else { <option value="@pair.Key" data-hex="@pair.Value">@pair.Key</option> }
+                }
+            </select>
+        </div>
+    </div>
+</div>
+
+<h3 class="block-title">Visibility and submission rules</h3>
+<p class="block-subtitle">Choose how this category should appear to producers.</p>
+
+<div class="toggles">
+    <label class="toggle">
+        <input type="checkbox" name="ShowOnForm" value="true" checked="@Model.ShowOnForm" />
+        <input type="hidden" name="ShowOnForm" value="false" />
+        <span class="switch" aria-hidden="true"></span>
+        <span>
+            <strong>Show this category on the producer proposal form</strong>
+            <small>Producers can select it when creating a new programme proposal.</small>
+        </span>
+    </label>
+
+    <label class="toggle">
+        <input type="checkbox" name="RequireSupportingDocuments" value="true" checked="@Model.RequireSupportingDocuments" />
+        <input type="hidden" name="RequireSupportingDocuments" value="false" />
+        <span class="switch" aria-hidden="true"></span>
+        <span>
+            <strong>Require additional supporting documents</strong>
+            <small>Enable this when proposals in the category need extra documentation.</small>
+        </span>
+    </label>
+</div>

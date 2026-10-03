@@ -1,0 +1,32 @@
+﻿@model RESK.WIL.Models.ReskNoticeViewModel
+
+@{
+    Layout = "~/Views/Account/_ReskPlain.cshtml";
+    ViewData["Title"] = Model.Title;
+
+    var contact = new List<string>();
+    if (!string.IsNullOrWhiteSpace(Model.SupportEmail)) { contact.Add(Model.SupportEmail); }
+    if (!string.IsNullOrWhiteSpace(Model.ContactNumber)) { contact.Add(Model.ContactNumber); }
+}
+
+@section Styles {
+    <style>
+        .icon { width: 54px; height: 54px; margin: 0 auto 18px; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 24px; font-weight: 800; }
+        .icon.teal { background: #e6f7f9; color: #0a8a9c; }
+        .icon.amber { background: #fff4dc; color: #c77c00; }
+        .icon.red { background: #fde7e8; color: #c9444d; }
+        .contact { margin-top: 18px; padding-top: 18px; border-top: 1px solid #edf1f6; font-size: 12px; }
+        .primary-button { margin-top: 26px; }
+    </style>
+}
+
+<div class="icon @Model.Tone" aria-hidden="true">!</div>
+<h1>@Model.Title</h1>
+<p>@Model.Message</p>
+
+@if (contact.Count > 0)
+{
+    <p class="contact">Need help? Contact @Model.Organisation: @string.Join(" or ", contact)</p>
+}
+
+<a href="/Account/Login" class="primary-button">Back to sign in</a>

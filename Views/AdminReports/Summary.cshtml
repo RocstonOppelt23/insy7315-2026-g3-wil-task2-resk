@@ -1,0 +1,176 @@
+﻿@model RESK.WIL.Models.ReskReportsViewModel
+@using System.Globalization
+
+@{
+    Layout = null;
+    string generatedBy = ViewData["GeneratedBy"] as string ?? "Admin";
+    string generatedAt = ViewData["GeneratedAt"] as string ?? "";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Proposal summary report - R.E.S.K</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Inter, "Segoe UI", Arial, sans-serif; background: #eef2f7; color: #14233e; font-size: 12px; }
+        .toolbar { position: sticky; top: 0; z-index: 2; display: flex; justify-content: center; gap: 12px; padding: 14px; background: #0c1a33; }
+        .toolbar button, .toolbar a { min-height: 38px; padding: 0 20px; border: none; border-radius: 8px; background: #12b8ce; color: white; font-size: 13px; font-weight: 800; text-decoration: none; display: inline-flex; align-items: center; cursor: pointer; }
+        .toolbar a { background: transparent; border: 1px solid rgba(255,255,255,0.3); }
+        .sheet { width: 210mm; min-height: 297mm; margin: 24px auto; padding: 18mm 16mm; background: white; box-shadow: 0 10px 30px rgba(12,26,51,0.12); }
+        .top { display: flex; align-items: center; justify-content: space-between; padding-bottom: 14px; border-bottom: 2px solid #12b8ce; }
+        .brand { display: flex; align-items: center; gap: 12px; }
+        .logo { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border: 2px solid #12b8ce; border-radius: 10px; color: #0a9fb2; font-size: 20px; font-weight: 800; }
+        .brand strong { display: block; font-size: 18px; letter-spacing: 1px; }
+        .brand span { display: block; color: #6d7e99; font-size: 9px; }
+        .meta { color: #52637e; font-size: 10px; text-align: right; line-height: 1.6; }
+        h1 { margin-top: 18px; font-size: 22px; }
+        .period { margin-top: 4px; color: #52637e; font-size: 12px; }
+        h2 { margin-top: 22px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: #0a8a9c; }
+        .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 10px; }
+        .kpi { padding: 10px 12px; border: 1px solid #dde4ee; border-radius: 8px; }
+        .kpi span { display: block; color: #6d7e99; font-size: 9px; font-weight: 800; text-transform: uppercase; }
+        .kpi strong { display: block; margin-top: 6px; font-size: 20px; }
+        .kpi small { display: block; margin-top: 3px; color: #6d7e99; font-size: 9px; }
+        .two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        table { width: 100%; margin-top: 8px; border-collapse: collapse; }
+        th { padding: 6px 8px; background: #f4f7fb; color: #52637e; font-size: 9px; font-weight: 800; text-align: left; text-transform: uppercase; }
+        td { padding: 6px 8px; border-bottom: 1px solid #edf1f6; font-size: 10px; vertical-align: top; }
+        .num { text-align: right; }
+        .muted { color: #8493aa; }
+        .footer { margin-top: 24px; padding-top: 10px; border-top: 1px solid #dde4ee; color: #8493aa; font-size: 9px; }
+
+        @@media print {
+            body { background: white; }
+            .toolbar { display: none; }
+            .sheet { width: auto; min-height: 0; margin: 0; padding: 0; box-shadow: none; }
+            tr { page-break-inside: avoid; }
+            @@page { size: A4; margin: 14mm; }
+        }
+    </style>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico?v=resk2" />
+</head>
+<body>
+    <div class="toolbar">
+        <button type="button" onclick="window.print()">Print / Save as PDF</button>
+        <a href="/Admin/Reports">Back to reports</a>
+    </div>
+
+    <main class="sheet">
+        <div class="top">
+            <div class="brand">
+                <div class="logo">R</div>
+                <div><strong>R.E.S.K</strong><span>SOFTWARE STUDIO</span></div>
+            </div>
+            <div class="meta">
+                Generated @generatedAt<br />
+                by @generatedBy
+            </div>
+        </div>
+
+        <h1>Proposal summary report</h1>
+        <p class="period">Proposals submitted @Model.PeriodLabel. Drafts are not included.</p>
+
+        <h2>Key figures</h2>
+        <div class="kpis">
+            <div class="kpi"><span>Submitted</span><strong>@Model.Submitted</strong><small>@(Model.SubmittedChange ?? "")</small></div>
+            <div class="kpi"><span>Approval rate</span><strong>@Model.ApprovalRate</strong><small>@Model.Approved approved, @Model.Rejected not approved</small></div>
+            <div class="kpi"><span>Avg review time</span><strong>@Model.AverageReviewDays</strong><small>@(Model.AverageReviewDays == "—" ? "" : "days to decision")</small></div>
+            <div class="kpi"><span>Open now</span><strong>@Model.OpenNow</strong><small>@Model.NeedsAssignment need a reviewer</small></div>
+        </div>
+
+        <div class="two">
+            <div>
+                <h2>By status</h2>
+                <table>
+                    <thead><tr><th>Status</th><th class="num">Count</th><th class="num">%</th></tr></thead>
+                    <tbody>
+                        @foreach (var s in Model.Statuses)
+                        {
+                            <tr><td>@s.Label</td><td class="num">@s.Count</td><td class="num">@s.Percent.ToString("0", CultureInfo.InvariantCulture)%</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <div>
+                <h2>By category</h2>
+                <table>
+                    <thead><tr><th>Category</th><th class="num">Count</th><th class="num">%</th></tr></thead>
+                    <tbody>
+                        @if (Model.Categories.Count == 0)
+                        {
+                            <tr><td colspan="3" class="muted">No submissions in this period.</td></tr>
+                        }
+                        @foreach (var c in Model.Categories)
+                        {
+                            <tr><td>@c.Label</td><td class="num">@c.Count</td><td class="num">@c.Percent.ToString("0", CultureInfo.InvariantCulture)%</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="two">
+            <div>
+                <h2>Reviewers</h2>
+                <table>
+                    <thead><tr><th>Reviewer</th><th class="num">Open</th><th class="num">Decided</th><th class="num">Avg days</th></tr></thead>
+                    <tbody>
+                        @if (Model.Reviewers.Count == 0)
+                        {
+                            <tr><td colspan="4" class="muted">No reviewers assigned yet.</td></tr>
+                        }
+                        @foreach (var r in Model.Reviewers)
+                        {
+                            <tr><td>@r.Name</td><td class="num">@r.Open</td><td class="num">@r.Completed</td><td class="num">@r.AverageDays</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <div>
+                <h2>Most active producers</h2>
+                <table>
+                    <thead><tr><th>Producer</th><th class="num">Submitted</th><th class="num">Approved</th></tr></thead>
+                    <tbody>
+                        @if (Model.TopProducers.Count == 0)
+                        {
+                            <tr><td colspan="3" class="muted">No submissions in this period.</td></tr>
+                        }
+                        @foreach (var p in Model.TopProducers)
+                        {
+                            <tr><td>@p.Name</td><td class="num">@p.Submitted</td><td class="num">@p.Approved</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <h2>Proposals in this period (@Model.Proposals.Count)</h2>
+        <table>
+            <thead><tr><th>ID</th><th>Programme</th><th>Producer</th><th>Category</th><th>Submitted</th><th>Status</th><th>Reviewer</th></tr></thead>
+            <tbody>
+                @if (Model.Proposals.Count == 0)
+                {
+                    <tr><td colspan="7" class="muted">No proposals were submitted in this period.</td></tr>
+                }
+                @foreach (var p in Model.Proposals)
+                {
+                    <tr>
+                        <td>@p.Reference</td>
+                        <td>@p.Title</td>
+                        <td>@p.Producer</td>
+                        <td>@p.Category</td>
+                        <td>@p.Submitted</td>
+                        <td>@p.Status</td>
+                        <td>@p.Reviewer</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <p class="footer">R.E.S.K proposal management • Confidential: for station management use only.</p>
+    </main>
+</body>
+</html>

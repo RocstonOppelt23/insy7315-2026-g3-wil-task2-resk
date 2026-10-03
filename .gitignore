@@ -480,3 +480,6 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# Uploaded files, profile photos and review data (private)
+App_Data/

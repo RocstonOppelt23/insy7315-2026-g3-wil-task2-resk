@@ -1,0 +1,90 @@
+﻿@model RESK.WIL.Models.ReskSettingsViewModel
+
+@{
+    var s = Model.Settings;
+    var targets = RESK.WIL.Services.ReskSettingsStore.ReviewTargets;
+    var escalations = RESK.WIL.Services.ReskSettingsStore.EscalationDays;
+    var status = s.Notify("status");
+    bool notifying = status.InApp || status.Email;
+}
+
+<h2 class="card-title">Workflow settings</h2>
+<p class="card-subtitle">Define the default proposal review process and automatic status rules.</p>
+
+<div style="margin-top:24px;">
+    <label class="section-label" for="DefaultWorkflow">Default workflow</label>
+    <input class="input" id="DefaultWorkflow" value="Submit &rarr; Initial review &rarr; Management decision &rarr; Approved / Rejected" readonly />
+</div>
+
+<h3 class="block-title">Review rules</h3>
+
+<div class="toggles">
+    <div class="toggle">
+        <label class="toggle-main">
+            <input type="checkbox" name="RequireAssignment" value="true" checked="@s.RequireAssignment" />
+            <span class="switch"></span>
+            <span>
+                <strong>Require reviewer assignment before review begins</strong>
+                <small>A proposal can only be reviewed and decided once a reviewer has been assigned.</small>
+            </span>
+        </label>
+    </div>
+
+    <div class="toggle">
+        <label class="toggle-main">
+            <input type="checkbox" name="RequireComments" value="true" checked="@s.RequireComments" />
+            <span class="switch"></span>
+            <span>
+                <strong>Require comments when rejecting or requesting changes</strong>
+                <small>A reason must be provided before the status can be updated.</small>
+            </span>
+        </label>
+    </div>
+</div>
+
+<h3 class="block-title">Timing and escalation</h3>
+
+<div class="grid-3">
+    <div>
+        <label class="section-label" for="TargetReviewDays">Target review time</label>
+        <select class="input" id="TargetReviewDays" name="TargetReviewDays">
+            @foreach (var days in targets)
+            {
+                <option value="@days" selected="@(days == s.TargetReviewDays)">@days working days</option>
+            }
+        </select>
+    </div>
+    <div>
+        <label class="section-label" for="EscalateAfterDays">Escalate after</label>
+        <select class="input" id="EscalateAfterDays" name="EscalateAfterDays">
+            @foreach (var days in escalations)
+            {
+                <option value="@days" selected="@(days == s.EscalateAfterDays)">@days working days</option>
+            }
+        </select>
+    </div>
+    <div>
+        <label class="section-label" for="FinalDecisionRole">Final decision role</label>
+        <select class="input" id="FinalDecisionRole" name="FinalDecisionRole">
+            @foreach (var role in Model.DecisionRoles)
+            {
+                <option value="@role.Id" selected="@(role.Id == s.FinalDecisionRole)">@role.Name</option>
+            }
+        </select>
+    </div>
+</div>
+
+<p class="foot-note">
+    The target review time is the default deadline when a reviewer is assigned. The Administrator can always record the final decision.
+    Right now: @Model.InReview in review, @Model.PastTarget past the target time, @Model.NeedEscalation due for escalation.
+</p>
+
+<div class="info-box @(notifying ? "" : "off")">
+    <strong>Status notifications @(notifying ? "enabled" : "switched off")</strong>
+    <span>
+        @(notifying
+            ? "Producers are notified whenever a proposal moves to a new workflow stage."
+            : "Producers are not notified when a proposal moves to a new stage.")
+        Change this on the <a href="/Admin/Settings?tab=notifications">Notifications</a> tab.
+    </span>
+</div>

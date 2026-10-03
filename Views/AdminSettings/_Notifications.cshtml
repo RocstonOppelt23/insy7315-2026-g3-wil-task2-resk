@@ -1,0 +1,62 @@
+﻿@model RESK.WIL.Models.ReskSettingsViewModel
+
+@{
+    var s = Model.Settings;
+    var events = RESK.WIL.Services.ReskSettingsStore.Events;
+}
+
+<h2 class="card-title">Notification settings</h2>
+<p class="card-subtitle">Choose which system events trigger email and in-app notifications.</p>
+
+<table class="events">
+    <thead>
+        <tr>
+            <th scope="col">Event</th>
+            <th scope="col" class="col">In-app</th>
+            <th scope="col" class="col">Email</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var e in events)
+        {
+            var rule = s.Notify(e.Key);
+
+            <tr>
+                <td>
+                    <strong>@e.Title</strong>
+                    <small>@e.Hint</small>
+                </td>
+                <td class="col">
+                    <label class="switch-only">
+                        <input type="checkbox" name="InApp" value="@e.Key" checked="@rule.InApp" aria-label="@(e.Title + ": in-app notification")" />
+                        <span class="switch"></span>
+                    </label>
+                </td>
+                <td class="col">
+                    <label class="switch-only">
+                        <input type="checkbox" name="Email" value="@e.Key" checked="@rule.Email" aria-label="@(e.Title + ": email notification")" />
+                        <span class="switch"></span>
+                    </label>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<h3 class="block-title">Delivery preferences</h3>
+
+<div class="grid-3">
+    <div>
+        <label class="section-label" for="DailySummaryTime">Daily summary time</label>
+        <input class="input" id="DailySummaryTime" name="DailySummaryTime" type="time" value="@s.DailySummaryTime" />
+    </div>
+    <div>
+        <label class="section-label" for="EmailSenderName">Email sender name</label>
+        <input class="input" id="EmailSenderName" name="EmailSenderName" value="@s.EmailSenderName" maxlength="60" />
+    </div>
+</div>
+
+<p class="foot-note">
+    Notifications are not delivered yet: the system has no mail server or notification centre connected.
+    Your choices are saved and will apply as soon as those are added.
+</p>

@@ -1,0 +1,103 @@
+﻿@model RESK.WIL.Models.ReskRoleWizardForm
+
+@{
+    var areas = RESK.WIL.Services.ReskRoleStore.Areas;
+
+    var templates = new[]
+    {
+        ("custom", "C", "Custom role", "Start with no permissions and select each access level manually.", "#12b8ce"),
+        ("manager", "PM", "Proposal manager", "Manage proposals, categories, reports and workflow decisions.", "#1d3557"),
+        ("reviewer", "RV", "Reviewer", "View and review assigned proposals with limited editing.", "#5b6b85"),
+        ("viewer", "VW", "Read-only viewer", "View authorised information without creating or editing data.", "#8a97ad")
+    };
+}
+
+<div class="section-head">
+    <h2>Role information</h2>
+    <p>Enter a clear name and description so administrators understand its purpose.</p>
+</div>
+
+<div class="grid-2">
+    <div>
+        <label class="section-label" for="Name">Role name *</label>
+        <input class="input" id="Name" name="Name" value="@Model.Name" maxlength="60" placeholder="Example: Content Reviewer" autocomplete="off" />
+        @Html.ValidationMessage("Name", new { @class = "field-error" })
+    </div>
+    <div>
+        <label class="section-label" for="Status">Role status</label>
+        <div class="select-wrap">
+            <select class="input" id="Status">
+                @if (Model.AssignNow)
+                {
+                    <option value="Active" selected>Active</option>
+                    <option value="Inactive">Inactive</option>
+                }
+                else
+                {
+                    <option value="Active">Active</option>
+                    <option value="Inactive" selected>Inactive</option>
+                }
+            </select>
+            <span class="status-dot @(Model.AssignNow ? "" : "off")" id="statusDot" aria-hidden="true"></span>
+        </div>
+    </div>
+</div>
+
+<div class="field">
+    <label class="section-label" for="Description">Description *</label>
+    <div class="textarea-wrap">
+        <textarea class="input" id="Description" name="Description" maxlength="200"
+                  placeholder="Describe what this role is responsible for and which users should receive it.">@Model.Description</textarea>
+        <span class="counter" id="descCounter">@((Model.Description ?? "").Length)/200</span>
+    </div>
+    @Html.ValidationMessage("Description", new { @class = "field-error" })
+</div>
+
+<div class="section-head">
+    <h2 style="font-size:18px;">Start from a permission template</h2>
+    <p>Choose a starting point, then customise individual permissions.</p>
+</div>
+
+<div class="templates" role="radiogroup" aria-label="Permission template">
+    @foreach (var (key, badge, title, text, colour) in templates)
+    {
+        <label class="template">
+            <input type="radio" name="Template" value="@key" checked="@(Model.Template == key)" data-area="@RESK.WIL.Services.ReskRoleStore.TemplateArea(key)" />
+            <span class="template-head">
+                <span class="template-badge" style="background:@colour;">@badge</span>
+                <strong>@title</strong>
+            </span>
+            <small>@text</small>
+        </label>
+    }
+</div>
+
+<div class="field">
+    <label class="section-label" for="Area">Signs in to</label>
+    <select class="input" id="Area" name="Area" style="max-width:420px;">
+        @foreach (var a in areas)
+        {
+            if (a.Key == Model.Area) { <option value="@a.Key" selected>@a.Label</option> }
+            else { <option value="@a.Key">@a.Label</option> }
+        }
+    </select>
+    <p class="hint" id="areaHint">@areas.First(a => a.Key == Model.Area).Hint</p>
+</div>
+
+<label class="toggle">
+    <input type="checkbox" id="AssignNow" name="AssignNow" value="true" checked="@Model.AssignNow" />
+    <input type="hidden" name="AssignNow" value="false" />
+    <span class="switch" aria-hidden="true"></span>
+    <span>
+        <strong>Allow administrators to assign this role immediately</strong>
+        <small>Turn this off to save the role as inactive until permission setup is complete.</small>
+    </span>
+</label>
+
+<div class="form-foot">
+    <p>Required fields are marked with an asterisk.</p>
+    <div class="buttons">
+        <button type="submit" name="Go" value="draft" class="btn">Save draft</button>
+        <button type="submit" name="Go" value="next" class="btn primary">Next: permissions</button>
+    </div>
+</div>

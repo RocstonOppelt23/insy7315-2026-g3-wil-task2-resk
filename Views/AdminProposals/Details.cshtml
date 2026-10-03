@@ -1,0 +1,202 @@
+﻿@model RESK.WIL.Models.AdminProposalDetailsViewModel
+
+@{
+    Layout = "~/Views/AdminProposals/_AdminLayout.cshtml";
+    ViewData["Title"] = "Proposal details";
+
+    var row = Model.Row;
+    bool inReview = row.StatusKey == "assign" || row.StatusKey == "review";
+    string statusText = row.StatusKey == "assign" ? "Awaiting review" : row.StatusLabel;
+}
+
+@section Styles {
+    <style>
+        .proposal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+        .details-grid { display: grid; grid-template-columns: minmax(0, 1.75fr) minmax(250px, 1fr); gap: 36px; align-items: start; margin-top: 34px; }
+        .group-title { color: #14233e; font-size: 17px; font-weight: 800; }
+        .field-list { margin-top: 8px; }
+        .field { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 16px; padding: 15px 0; border-bottom: 1px solid #e8edf3; }
+        .field dt { color: #5d6d87; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+        .field dd { color: #14233e; font-size: 13px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+        .group + .group { margin-top: 30px; }
+        .muted { margin-top: 12px; color: #8493aa; font-size: 12px; }
+
+        .workflow { padding: 22px 24px; border: 1px solid #dde4ee; border-radius: 11px; background: #f7f9fc; }
+        .workflow h3 { color: #14233e; font-size: 16px; font-weight: 800; }
+        .steps { margin-top: 20px; list-style: none; }
+        .step { display: flex; gap: 14px; padding: 9px 0; }
+        .step-dot { width: 19px; height: 19px; flex-shrink: 0; margin-top: 1px; border-radius: 50%; background: #dfe5ed; }
+        .step.reached .step-dot { background: #12b8ce; }
+        .step strong { display: block; color: #14233e; font-size: 13px; font-weight: 600; }
+        .step span { display: block; margin-top: 3px; color: #6d7e99; font-size: 11px; }
+        .assigned-note { margin-top: 16px; padding-top: 14px; border-top: 1px solid #e3e9f0; color: #52637e; font-size: 12px; line-height: 1.6; }
+
+        .attachments { margin-top: 36px; }
+        .file { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 12px; padding: 16px 20px; border: 1px solid #dde4ee; border-radius: 9px; background: #f7f9fc; font-size: 13px; color: #14233e; }
+        .file small { display: block; margin-top: 3px; color: #6d7e99; font-size: 11px; }
+        .file a, .showreel { color: #00a9bd; font-size: 12px; font-weight: 800; text-decoration: none; }
+        .file a:hover, .showreel:hover { text-decoration: underline; }
+
+        .review-box { margin-top: 36px; padding: 20px 22px; border: 1px solid #dde4ee; border-radius: 11px; }
+        .review-box p { margin-top: 10px; color: #14233e; font-size: 13px; line-height: 1.6; white-space: pre-wrap; }
+
+        @@media (max-width: 1000px) {
+            .details-grid { grid-template-columns: 1fr; }
+            .field { grid-template-columns: 1fr; gap: 4px; }
+        }
+    </style>
+}
+
+<header class="page-header">
+    <div>
+        <h1>Proposal details</h1>
+        <p>Review the full proposal record and workflow status.</p>
+    </div>
+    <div class="header-actions">
+        <a href="/Admin/Proposals" class="secondary-button">Back</a>
+
+        @if (row.StatusKey == "assign")
+        {
+            <a href="/Admin/Proposals/@row.Id/Assign" class="primary-button">Assign reviewer</a>
+        }
+        else if (row.StatusKey == "review")
+        {
+            <a href="/Admin/Proposals/@row.Id/Assign" class="secondary-button">Reassign</a>
+            <a href="/Admin/Proposals/@row.Id/Review" class="primary-button">Review proposal</a>
+        }
+    </div>
+</header>
+
+<section class="card">
+
+    <!-- ===== TITLE ===== -->
+    <div class="summary-box proposal-head">
+        <div>
+            <h2>@row.Title</h2>
+            <p>@row.Reference • @row.Category • Submitted by @row.Producer</p>
+        </div>
+        <span class="pill @row.StatusCss">@statusText</span>
+    </div>
+
+    <div class="details-grid">
+
+        <!-- ===== ANSWERS ===== -->
+        <div>
+            <div class="group">
+                <h3 class="group-title">Proposal summary</h3>
+
+                @if (Model.Summary.Count == 0)
+                {
+                    <p class="muted">No programme details were saved.</p>
+                }
+                else
+                {
+                    <dl class="field-list">
+                        @foreach (var field in Model.Summary)
+                        {
+                            <div class="field">
+                                <dt>@field.Label</dt>
+                                <dd>@field.Value</dd>
+                            </div>
+                        }
+                    </dl>
+                }
+            </div>
+
+            @if (Model.ProducerFields.Count > 0)
+            {
+                <div class="group">
+                    <h3 class="group-title">Producer details</h3>
+                    <dl class="field-list">
+                        @foreach (var field in Model.ProducerFields)
+                        {
+                            <div class="field">
+                                <dt>@field.Label</dt>
+                                <dd>@field.Value</dd>
+                            </div>
+                        }
+                    </dl>
+                </div>
+            }
+        </div>
+
+        <!-- ===== WORKFLOW ===== -->
+        <aside class="workflow">
+            <h3>Workflow</h3>
+
+            <ol class="steps">
+                @foreach (var step in Model.Steps)
+                {
+                    <li class="step @(step.Reached ? "reached" : "")">
+                        <span class="step-dot" aria-hidden="true"></span>
+                        <div>
+                            <strong>@step.Title</strong>
+                            @if (!string.IsNullOrWhiteSpace(step.Detail))
+                            {
+                                <span>@step.Detail</span>
+                            }
+                        </div>
+                    </li>
+                }
+            </ol>
+
+            @if (Model.Review.HasReviewer)
+            {
+                <div class="assigned-note">
+                    <div>Reviewer: <strong>@Model.Review.ReviewerName</strong></div>
+                    @if (Model.Review.Deadline.HasValue)
+                    {
+                        <div>Deadline: @(Model.Review.Deadline.Value.ToString("d MMMM yyyy", System.Globalization.CultureInfo.InvariantCulture))</div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Model.Review.AssignmentNote))
+                    {
+                        <div>Note: @Model.Review.AssignmentNote</div>
+                    }
+                </div>
+            }
+        </aside>
+
+    </div>
+
+    <!-- ===== REVIEW OUTCOME ===== -->
+    @if (!inReview && !string.IsNullOrWhiteSpace(Model.Review.Comments))
+    {
+        <div class="review-box">
+            <h3 class="group-title">Reviewer comments</h3>
+            <p>@Model.Review.Comments</p>
+        </div>
+    }
+
+    <!-- ===== ATTACHMENTS ===== -->
+    <div class="attachments">
+        <h3 class="group-title">Attachments</h3>
+
+        @if (Model.Attachments.Count == 0 && Model.ShowreelUrl == null)
+        {
+            <p class="muted">No files were uploaded.</p>
+        }
+
+        @foreach (var attachment in Model.Attachments)
+        {
+            <div class="file">
+                <div>
+                    @attachment.FileName
+                    <small>@attachment.Label</small>
+                </div>
+                <a href="/Admin/Proposals/@row.Id/Download/@attachment.Key" download>Download</a>
+            </div>
+        }
+
+        @if (Model.ShowreelUrl != null)
+        {
+            <div class="file">
+                <div>
+                    Pilot / showreel link
+                    <small>@Model.ShowreelUrl</small>
+                </div>
+                <a href="@Model.ShowreelUrl" class="showreel" target="_blank" rel="noopener noreferrer">Open</a>
+            </div>
+        }
+    </div>
+
+</section>

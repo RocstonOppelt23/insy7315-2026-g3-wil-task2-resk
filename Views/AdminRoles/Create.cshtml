@@ -1,0 +1,153 @@
+﻿@model RESK.WIL.Models.ReskRoleWizardForm
+
+@{
+    Layout = "~/Views/AdminProposals/_AdminLayout.cshtml";
+    ViewData["Title"] = "Create role";
+
+    var perms = new HashSet<string>(Model.Perms ?? new List<string>());
+    int step = Model.Step;
+    string roleName = string.IsNullOrWhiteSpace(Model.Name) ? "New role" : Model.Name!;
+}
+
+@section Styles {
+    @await Html.PartialAsync("~/Views/AdminRoles/_CreateStyles.cshtml")
+}
+
+<header class="page-header">
+    <div>
+        @if (step == 1)
+        {
+            <h1>Create new role</h1>
+            <p>Define the role details and select the permissions users with this role will receive.</p>
+        }
+        else if (step == 2)
+        {
+            <h1>Create role</h1>
+            <p>Step 2 of 3 — Set permissions for @roleName.</p>
+        }
+        else
+        {
+            <h1>Review role</h1>
+            <p>Step 3 of 3 — Confirm the role details and permissions before creating it.</p>
+        }
+    </div>
+    <div class="header-actions">
+        @if (step == 1)
+        {
+            <a href="/Admin/Roles" class="secondary-button">Cancel</a>
+        }
+        else if (step == 2)
+        {
+            <button type="submit" form="wizard" name="Go" value="back" class="secondary-button">Back</button>
+            <button type="submit" form="wizard" name="Go" value="next" class="primary-button">Review role</button>
+        }
+        else
+        {
+            <button type="submit" form="wizard" name="Go" value="back" class="secondary-button">Back to edit</button>
+            <button type="submit" form="wizard" name="Go" value="create" class="primary-button">Create role</button>
+        }
+    </div>
+</header>
+
+<section class="card">
+
+    <!-- ===== STEPPER ===== -->
+    <div class="steps" aria-label="Progress">
+        <div class="step-item @(step == 1 ? "current" : "done")"><span class="step-num">@(step > 1 ? "✓" : "1")</span><span>Role details</span></div>
+        <div class="step-line @(step > 1 ? "done" : "")"></div>
+        <div class="step-item @(step == 2 ? "current" : step > 2 ? "done" : "")"><span class="step-num">@(step > 2 ? "✓" : "2")</span><span>Permissions</span></div>
+        <div class="step-line @(step > 2 ? "done" : "")"></div>
+        <div class="step-item @(step == 3 ? "current" : "")"><span class="step-num">3</span><span>Review</span></div>
+    </div>
+
+    <form id="wizard" method="post" action="/Admin/Roles/Create" novalidate>
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="Step" value="@step" />
+        <input type="hidden" name="DraftId" value="@Model.DraftId" />
+        <input type="hidden" name="AppliedTemplate" value="@Model.AppliedTemplate" />
+
+        @if (step == 1)
+        {
+            @* Pressing Enter in a text box means "Next", not "Save draft". *@
+            <button type="submit" name="Go" value="next" hidden tabindex="-1" aria-hidden="true"></button>
+        }
+
+        @if (step != 1)
+        {
+            <input type="hidden" name="Name" value="@Model.Name" />
+            <input type="hidden" name="Description" value="@Model.Description" />
+            <input type="hidden" name="Area" value="@Model.Area" />
+            <input type="hidden" name="Template" value="@Model.Template" />
+            <input type="hidden" name="AssignNow" value="@(Model.AssignNow ? "true" : "false")" />
+        }
+
+        @if (step != 2)
+        {
+            foreach (var p in perms)
+            {
+                <input type="hidden" name="Perms" value="@p" />
+            }
+        }
+
+        @if (step == 1)
+        {
+            @await Html.PartialAsync("~/Views/AdminRoles/_CreateStep1.cshtml", Model)
+        }
+        else if (step == 2)
+        {
+            @await Html.PartialAsync("~/Views/AdminRoles/_CreateStep2.cshtml", Model)
+        }
+        else
+        {
+            @await Html.PartialAsync("~/Views/AdminRoles/_CreateStep3.cshtml", Model)
+        }
+    </form>
+
+</section>
+
+@section Scripts {
+    <script>
+        (function () {
+            var status = document.getElementById("Status");
+            var assign = document.getElementById("AssignNow");
+            var dot = document.getElementById("statusDot");
+
+            if (status && assign) {
+                var sync = function () { dot.classList.toggle("off", !assign.checked); };
+                status.addEventListener("change", function () { assign.checked = status.value === "Active"; sync(); });
+                assign.addEventListener("change", function () { status.value = assign.checked ? "Active" : "Inactive"; sync(); });
+            }
+
+            var description = document.getElementById("Description");
+            var counter = document.getElementById("descCounter");
+            if (description && counter) {
+                description.addEventListener("input", function () { counter.textContent = description.value.length + "/200"; });
+            }
+
+            var hints = {
+                "Admin": "Signs in to the admin screens. The permissions below decide which admin pages and actions they can use.",
+                "Reviewer": "Signs in to the reviewer screens to review assigned proposals.",
+                "Producer": "Signs in to the producer screens to create and submit proposals."
+            };
+            var area = document.getElementById("Area");
+            var areaHint = document.getElementById("areaHint");
+            if (area && areaHint) {
+                area.addEventListener("change", function () { areaHint.textContent = hints[area.value] || ""; });
+                document.querySelectorAll("input[name='Template']").forEach(function (radio) {
+                    radio.addEventListener("change", function () {
+                        area.value = radio.getAttribute("data-area");
+                        areaHint.textContent = hints[area.value] || "";
+                    });
+                });
+            }
+
+            document.querySelectorAll(".sidebar nav a").forEach(function (link) {
+                if ((link.getAttribute("href") || "").toLowerCase().indexOf("/admin/roles") === 0) {
+                    link.setAttribute("aria-current", "page");
+                } else {
+                    link.removeAttribute("aria-current");
+                }
+            });
+        })();
+    </script>
+}
