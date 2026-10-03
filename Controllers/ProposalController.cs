@@ -1,80 +1,152 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Text.Json;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RESK.WIL.Models;
 
 namespace RESK.WIL.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = "Producer")]
     public class ProposalController : Controller
     {
-        public IActionResult Index()
+        private const string ProducerDetailsKey =
+            "Proposal.ProducerDetails";
+
+
+        // =========================================================
+        // STEP 1 - PRODUCER DETAILS
+        // =========================================================
+
+        [HttpGet]
+        public IActionResult ProducerDetails()
         {
-            return View();
+            string? savedJson =
+                HttpContext.Session.GetString(
+                    ProducerDetailsKey
+                );
+
+            if (!string.IsNullOrWhiteSpace(savedJson))
+            {
+                try
+                {
+                    ProposalProducerDetailsViewModel? savedModel =
+                        JsonSerializer.Deserialize
+                        <ProposalProducerDetailsViewModel>(
+                            savedJson
+                        );
+
+                    if (savedModel != null)
+                    {
+                        return View(savedModel);
+                    }
+                }
+                catch (JsonException)
+                {
+                    HttpContext.Session.Remove(
+                        ProducerDetailsKey
+                    );
+                }
+            }
+
+            return View(
+                new ProposalProducerDetailsViewModel()
+            );
         }
 
-        [Authorize(Roles = "Producer")]
-        public IActionResult Create()
-        {
-            return View();
-        }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Producer")]
-        public IActionResult Create(Proposal proposal)
+        public IActionResult ProducerDetails(
+            ProposalProducerDetailsViewModel model)
         {
             if (!ModelState.IsValid)
             {
-                return View(proposal);
+                return View(model);
             }
 
-            proposal.Title =
-            SecurityHelper.Sanitize(proposal.Title);
+            HttpContext.Session.SetString(
+                ProducerDetailsKey,
+                JsonSerializer.Serialize(model)
+            );
 
-            proposal.Description =
-            SecurityHelper.Sanitize(proposal.Description);
-
-            proposal.Category =
-            SecurityHelper.Sanitize(proposal.Category);
-
-            TempData["Success"] =
-            "Proposal submitted successfully.";
-
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(
+                nameof(ProgrammeDetails)
+            );
         }
 
-        [Authorize(Roles = "Reviewer")]
+
+        // =========================================================
+        // STEP 2 - PROGRAMME DETAILS
+        // =========================================================
+
+        [HttpGet]
+        public IActionResult ProgrammeDetails()
+        {
+            if (!HasProducerDetails())
+            {
+                return RedirectToAction(
+                    nameof(ProducerDetails)
+                );
+            }
+
+            return View();
+        }
+
+
+        // =========================================================
+        // STEP 3 - PRODUCTION DETAILS
+        // =========================================================
+
+        [HttpGet]
+        public IActionResult ProductionDetails()
+        {
+            return View();
+        }
+
+
+        // =========================================================
+        // STEP 4 - ATTACHMENTS
+        // =========================================================
+
+        [HttpGet]
+        public IActionResult Attachments()
+        {
+            return View();
+        }
+
+
+        // =========================================================
+        // STEP 5 - REVIEW
+        // =========================================================
+
+        [HttpGet]
         public IActionResult Review()
         {
             return View();
         }
 
-        [Authorize(Roles = "Admin")]
-        public IActionResult Dashboard()
+
+        // =========================================================
+        // SUBMITTED
+        // =========================================================
+
+        [HttpGet]
+        public IActionResult Submitted()
         {
             return View();
         }
 
-        [HttpPost]
-        [Authorize(Roles = "Reviewer")]
-        [ValidateAntiForgeryToken]
-        public IActionResult Approve(int id)
+
+        // =========================================================
+        // HELPERS
+        // =========================================================
+
+        private bool HasProducerDetails()
         {
-            TempData["Success"] =
-            "Proposal approved successfully.";
-
-            return RedirectToAction(nameof(Index));
-        }
-
-        [HttpPost]
-        [Authorize(Roles = "Reviewer")]
-        [ValidateAntiForgeryToken]
-        public IActionResult Reject(int id)
-        {
-            TempData["Success"] =
-            "Proposal rejected successfully.";
-
-            return RedirectToAction(nameof(Index));
+            return !string.IsNullOrWhiteSpace(
+                HttpContext.Session.GetString(
+                    ProducerDetailsKey
+                )
+            );
         }
     }
 }

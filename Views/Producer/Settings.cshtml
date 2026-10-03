@@ -1,0 +1,699 @@
+﻿@model RESK.WIL.Models.ProducerSettingsViewModel
+
+@{
+    Layout = null;
+    ViewData["Title"] = "Settings";
+
+    var form = Model.Form;
+    var hasPhoto = Model.PhotoUrl != null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Settings - R.E.S.K</title>
+
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { min-height: 100%; }
+        body { font-family: Inter, "Segoe UI", Arial, sans-serif; background: #f4f7fb; color: #13223c; }
+        button, input, select, a { font-family: inherit; }
+
+        /* ===== PAGE FADE (only the main area fades, the sidebar stays still) ===== */
+        .main { animation: pageFadeIn 0.4s ease-out both; }
+        body.page-leaving .main { animation: pageFadeOut 0.18s ease-in both; }
+        @@keyframes pageFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+        @@keyframes pageFadeOut { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(-4px); } }
+        @@media (prefers-reduced-motion: reduce) { .main, body.page-leaving .main { animation: none; } }
+
+        /* ===== SIDEBAR ===== */
+        .sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 260px; display: flex; flex-direction: column; background: #0c1a33; color: white; padding: 36px 20px 38px; z-index: 100; }
+        .brand { display: flex; align-items: center; gap: 15px; padding-left: 13px; margin-bottom: 42px; }
+        .brand-icon { width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; border: 2px solid #00b9d0; border-radius: 17px; color: #00bfd7; font-size: 28px; font-weight: 700; }
+        .brand-name { color: white; font-size: 24px; font-weight: 800; letter-spacing: 1.5px; }
+        .brand-subtitle { margin-top: 5px; color: #d3dae7; font-size: 9px; }
+        .nav-label { margin: 0 12px 8px; color: #72809a; font-size: 10px; font-weight: 800; }
+        .sidebar-nav { display: flex; flex-direction: column; gap: 8px; }
+        .sidebar-link { display: flex; align-items: center; min-height: 43px; padding: 0 32px; border-radius: 10px; color: #b9c2d1; font-size: 14px; font-weight: 500; text-decoration: none; transition: 0.2s; }
+        .sidebar-link:hover { color: white; background: rgba(255,255,255,0.05); transform: translateX(2px); }
+        .sidebar-link.active { background: #142a4b; color: white; font-weight: 700; }
+
+        /* ===== PRODUCER ACCOUNT ===== */
+        .producer-account { position: relative; margin-top: auto; padding: 0 8px; }
+        .producer-profile { width: 100%; display: flex; align-items: center; gap: 11px; padding: 12px 10px; border: none; border-radius: 11px; background: #142a4b; color: white; cursor: pointer; text-align: left; }
+        .producer-profile:hover { background: #193456; }
+        .producer-avatar { width: 34px; height: 34px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 50%; background: #0bb6ca; color: white; font-size: 11px; font-weight: 800; }
+        .producer-profile-text { min-width: 0; flex: 1; }
+        .producer-name { overflow: hidden; color: white; font-size: 13px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+        .producer-role { margin-top: 4px; color: #b5c0d1; font-size: 10px; }
+        .profile-menu { position: absolute; left: 8px; right: 8px; bottom: calc(100% + 9px); padding: 7px; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; background: #142a4b; box-shadow: 0 18px 35px rgba(0,0,0,0.25); opacity: 0; visibility: hidden; transform: translateY(8px); transition: 0.2s; }
+        .producer-account.open .profile-menu { opacity: 1; visibility: visible; transform: translateY(0); }
+        .profile-menu-link, .logout-button { width: 100%; display: block; padding: 10px 11px; border: none; border-radius: 7px; background: transparent; color: #d6deea; font-size: 12px; font-weight: 600; text-align: left; text-decoration: none; cursor: pointer; }
+        .profile-menu-link:hover, .logout-button:hover { background: rgba(255,255,255,0.06); color: white; }
+        .logout-button { color: #ff9e9e; }
+        .menu-divider { height: 1px; margin: 5px 4px; background: rgba(255,255,255,0.08); }
+
+        /* ===== MAIN + HEADER ===== */
+        .main { min-height: 100vh; margin-left: 260px; padding: 28px 52px 38px; }
+        .page { width: 100%; max-width: 1070px; margin: 0 auto; }
+        .page-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; margin-bottom: 24px; }
+        .page-header h1 { color: #14233e; font-size: 31px; line-height: 1.2; font-weight: 800; }
+        .page-header p { margin-top: 8px; color: #697a96; font-size: 14px; }
+        .header-actions { display: flex; flex-shrink: 0; gap: 16px; }
+        .header-actions[hidden] { display: none; }
+
+        .primary-button, .secondary-button { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 24px; border-radius: 8px; font-size: 14px; font-weight: 800; text-decoration: none; white-space: nowrap; cursor: pointer; transition: background 0.2s, border-color 0.2s; }
+        .primary-button { border: none; background: #12b8ce; color: white; }
+        .primary-button:hover { background: #0faabd; }
+        .secondary-button { min-width: 118px; border: 1px solid #d3dce8; background: white; color: #14233e; }
+        .secondary-button:hover { border-color: #b9c6d8; background: #f8fafc; }
+        .small-button { min-height: 38px; padding: 0 18px; font-size: 12px; }
+
+        /* ===== MESSAGES ===== */
+        .notice { margin-bottom: 18px; padding: 12px 16px; border-radius: 10px; font-size: 12px; font-weight: 600; }
+        .notice-success { border: 1px solid #b9e6d0; background: #eefaf4; color: #1f7a52; }
+        .notice-error { border: 1px solid #f0c2c5; background: #fff7f7; color: #b84048; }
+
+        /* ===== TABS ===== */
+        .tabs { display: flex; gap: 8px; margin-bottom: 22px; padding: 11px 13px; border: 1px solid #d9e1ec; border-radius: 13px; background: white; overflow-x: auto; }
+        .tab { flex: 1; min-width: 110px; max-width: 195px; height: 34px; border: none; border-radius: 8px; background: transparent; color: #61728d; font-size: 13px; font-weight: 500; cursor: pointer; transition: background 0.2s, color 0.2s; }
+        .tab:hover { color: #14233e; }
+        .tab.active { background: #eaf9fb; color: #0a9fb2; font-weight: 800; }
+
+        /* ===== PANELS ===== */
+        .panel { padding: 30px 27px 34px; border: 1px solid #d9e1ec; border-radius: 13px; background: white; }
+        .panel[hidden] { display: none; }
+        .panel-title { color: #14233e; font-size: 21px; font-weight: 800; }
+        .panel-subtitle { margin-top: 8px; color: #6d7e99; font-size: 12px; }
+        .section-title { margin-top: 36px; color: #14233e; font-size: 18px; font-weight: 800; }
+
+        /* ===== PHOTO ===== */
+        .photo-row { display: flex; align-items: center; gap: 20px; margin-top: 22px; padding-left: 8px; }
+        .profile-photo { width: 84px; height: 84px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 50%; background: #12b8ce; color: white; font-size: 24px; font-weight: 800; }
+        .profile-photo img { width: 100%; height: 100%; display: block; object-fit: cover; }
+        .photo-buttons { display: flex; align-items: center; gap: 14px; }
+        .link-button { border: none; background: none; color: #c9444d; font-size: 12px; font-weight: 700; cursor: pointer; }
+        .link-button[hidden] { display: none; }
+        .photo-hint { margin-top: 10px; color: #6d7e99; font-size: 11px; }
+        .photo-hint.selected { color: #0a9fb2; font-weight: 700; }
+
+        /* ===== FIELDS ===== */
+        .field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px 24px; margin-top: 32px; }
+        .field label, .field-label { display: block; margin-bottom: 10px; color: #5d6d87; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+        .input { width: 100%; height: 44px; padding: 0 15px; border: 1px solid #d3dce8; border-radius: 8px; outline: none; background: white; color: #14233e; font-size: 14px; }
+        .input:focus { border-color: #12b8ce; box-shadow: 0 0 0 3px rgba(18,184,206,0.12); }
+        .input.input-error { border-color: #d64d58; }
+        select.input { cursor: pointer; }
+        .readonly-box { display: flex; align-items: center; justify-content: space-between; gap: 10px; height: 44px; padding: 0 12px 0 15px; border: 1px solid #dde4ee; border-radius: 8px; background: #f4f7fb; color: #6d7e99; font-size: 14px; }
+        .readonly-box small { color: #8493aa; font-size: 10px; }
+        .field-error { display: block; margin-top: 6px; color: #c9444d; font-size: 11px; font-weight: 600; }
+
+        /* ===== POSITION REQUEST ===== */
+        .position-row { display: grid; grid-template-columns: minmax(0, 1fr) auto 176px; gap: 16px; align-items: stretch; margin-top: 20px; }
+        .position-row .input { height: 48px; }
+        .position-row .secondary-button { height: 48px; }
+        .current-request { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 6px 10px; border: 1px solid #f3dca0; border-radius: 8px; background: #fff8e6; text-align: center; }
+        .current-request strong { color: #8a5d00; font-size: 11px; }
+        .current-request span { margin-top: 4px; color: #9a6a00; font-size: 11px; }
+
+        /* ===== CHECKBOXES ===== */
+        .check-list { display: flex; flex-direction: column; gap: 14px; margin-top: 26px; }
+        .check { display: flex; align-items: flex-start; gap: 14px; padding: 16px 18px; border: 1px solid #dde4ee; border-radius: 10px; background: #f7f9fc; cursor: pointer; }
+        .check input { width: 18px; height: 18px; margin-top: 1px; flex-shrink: 0; accent-color: #12b8ce; }
+        .check strong { display: block; color: #14233e; font-size: 13px; }
+        .check span { display: block; margin-top: 4px; color: #6d7e99; font-size: 12px; }
+
+        /* ===== SECURITY + ACCOUNT ===== */
+        .stack { display: grid; gap: 20px; max-width: 480px; margin-top: 28px; }
+        .info-list { margin-top: 26px; }
+        .info-row { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 16px; padding: 14px 0; border-top: 1px solid #edf1f6; font-size: 13px; }
+        .info-row:first-child { border-top: none; }
+        .info-row dt { color: #5d6d87; font-weight: 700; }
+        .info-row dd { color: #14233e; overflow-wrap: anywhere; }
+        .danger-button { margin-top: 26px; border: 1px solid #f0c2c5; background: #fff7f7; color: #b84048; }
+        .danger-button:hover { background: #ffeeee; }
+
+        /* ===== RESPONSIVE ===== */
+        @@media (max-width: 900px) {
+            .position-row { grid-template-columns: 1fr; }
+        }
+
+        @@media (max-width: 800px) {
+            .sidebar { position: relative; width: 100%; }
+            .main { margin-left: 0; padding: 25px 20px; }
+            .producer-account { margin-top: 30px; }
+            .page-header { flex-direction: column; align-items: stretch; }
+            .field-grid { grid-template-columns: 1fr; }
+            .info-row { grid-template-columns: 1fr; gap: 4px; }
+        }
+
+        @@media (max-width: 560px) {
+            .page-header h1 { font-size: 25px; }
+            .panel { padding: 24px 18px; }
+            .photo-row { flex-direction: column; align-items: flex-start; }
+        }
+    </style>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico?v=resk2" />
+</head>
+
+<body>
+
+    <!-- ===================== SIDEBAR ===================== -->
+    <aside class="sidebar">
+
+        <div class="brand">
+            <div class="brand-icon">R</div>
+            <div>
+                <div class="brand-name">R.E.S.K</div>
+                <div class="brand-subtitle">SOFTWARE STUDIO</div>
+            </div>
+        </div>
+
+        <div class="nav-label">PROPOSAL WORKSPACE</div>
+
+        <nav class="sidebar-nav">
+            <a href="/Producer/Index" class="sidebar-link">Dashboard</a>
+            <a href="/Producer/Guidelines" class="sidebar-link">New proposal</a>
+            <a href="/Producer/MyProposals" class="sidebar-link">My proposals</a>
+            <a href="/Producer/Drafts" class="sidebar-link">Drafts</a>
+            <a href="/Producer/Guidelines" class="sidebar-link">Guidelines</a>
+            <a href="/Producer/Settings" class="sidebar-link active" aria-current="page">Settings</a>
+        </nav>
+
+        <div class="producer-account" id="producerAccount">
+
+            <div class="profile-menu">
+                <a href="/Producer/Settings" class="profile-menu-link">Account settings</a>
+                <div class="menu-divider"></div>
+                <form asp-controller="ProducerAccount" asp-action="Logout" method="post">
+                    <button type="submit" class="logout-button">Log out</button>
+                </form>
+            </div>
+
+            <button type="button" class="producer-profile" id="producerProfileButton" aria-expanded="false">
+                <div class="producer-avatar">@await Component.InvokeAsync("ProducerAvatar", new { part = "avatar" })</div>
+                <div class="producer-profile-text">
+                    <div class="producer-name">@await Component.InvokeAsync("ProducerAvatar", new { part = "name" })</div>
+                    <div class="producer-role">@Model.ProducerCategory</div>
+                </div>
+            </button>
+
+        </div>
+
+    </aside>
+
+    <!-- ===================== MAIN ===================== -->
+    <main class="main">
+        <div class="page">
+
+            <!-- HEADER -->
+            <header class="page-header">
+                <div>
+                    <h1>Settings</h1>
+                    <p>Manage your profile, language, notifications and account preferences.</p>
+                </div>
+
+                <!-- Only shown on the Profile, Language and Notifications tabs -->
+                <div class="header-actions" id="saveActions">
+                    <button type="button" class="secondary-button" id="cancelButton">Cancel</button>
+                    <button type="submit" class="primary-button" form="settingsForm">Save changes</button>
+                </div>
+            </header>
+
+            @if (!string.IsNullOrWhiteSpace(Model.Message))
+            {
+                <div class="notice notice-success" role="status">@Model.Message</div>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+            {
+                <div class="notice notice-error" role="alert">@Model.ErrorMessage</div>
+            }
+
+            <!-- TABS -->
+            <div class="tabs" role="tablist" aria-label="Settings sections">
+                <button type="button" class="tab" role="tab" data-tab="profile">Profile</button>
+                <button type="button" class="tab" role="tab" data-tab="language">Language</button>
+                <button type="button" class="tab" role="tab" data-tab="notifications">Notifications</button>
+                <button type="button" class="tab" role="tab" data-tab="security">Security</button>
+                <button type="button" class="tab" role="tab" data-tab="account">Account</button>
+            </div>
+
+
+            <!-- ============ PROFILE, LANGUAGE AND NOTIFICATIONS (one form) ============ -->
+            <form id="settingsForm"
+                  asp-controller="ProducerSettings"
+                  asp-action="Settings"
+                  method="post"
+                  enctype="multipart/form-data"
+                  novalidate>
+
+                <input type="hidden" name="ActiveTab" id="activeTabInput" value="@Model.ActiveTab" />
+                <input type="hidden" name="RemovePhoto" id="removePhotoInput" value="false" />
+
+                <!-- ===== PROFILE ===== -->
+                <section class="panel" data-panel="profile" role="tabpanel">
+
+                    <h2 class="panel-title">Profile information</h2>
+                    <p class="panel-subtitle">Update the information used for your producer account and proposals.</p>
+
+                    <div class="photo-row">
+
+                        <div class="profile-photo" id="photoPreview"
+                             data-initials="@Model.Initials"
+                             data-saved-url="@Model.PhotoUrl">
+                            @if (hasPhoto)
+                            {
+                                <img src="@Model.PhotoUrl" alt="Your profile photo" />
+                            }
+                            else
+                            {
+                                @Model.Initials
+                            }
+                        </div>
+
+                        <div>
+                            <div class="photo-buttons">
+                                <button type="button" class="secondary-button small-button" id="changePhotoButton">Change photo</button>
+                                <button type="button" class="link-button" id="removePhotoButton" hidden="@(!hasPhoto)">Remove photo</button>
+                            </div>
+                            <p class="photo-hint" id="photoHint">JPG or PNG, maximum 5 MB</p>
+                            @Html.ValidationMessage("Photo", new { @class = "field-error" })
+                        </div>
+
+                        <input type="file"
+                               name="Photo"
+                               id="photoInput"
+                               accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+                               hidden />
+                    </div>
+
+                    <div class="field-grid">
+
+                        <div class="field">
+                            <label for="FullName">Full name</label>
+                            <input class="input" id="FullName" name="FullName" type="text" maxlength="100"
+                                   value="@form.FullName" autocomplete="name" placeholder="Your full name" />
+                            @Html.ValidationMessage("FullName", new { @class = "field-error" })
+                        </div>
+
+                        <div class="field">
+                            <label for="Email">Email address</label>
+                            <input class="input" id="Email" name="Email" type="email" maxlength="256"
+                                   value="@form.Email" autocomplete="email" />
+                            @Html.ValidationMessage("Email", new { @class = "field-error" })
+                        </div>
+
+                        <div class="field">
+                            <label for="PhoneNumber">Phone number</label>
+                            <input class="input" id="PhoneNumber" name="PhoneNumber" type="tel" maxlength="30"
+                                   value="@form.PhoneNumber" autocomplete="tel" placeholder="+27 82 000 0000" />
+                            @Html.ValidationMessage("PhoneNumber", new { @class = "field-error" })
+                        </div>
+
+                        <div class="field">
+                            <label for="Organisation">Organisation / production group</label>
+                            <input class="input" id="Organisation" name="Organisation" type="text" maxlength="150"
+                                   value="@form.Organisation" autocomplete="organization" placeholder="Independent Community Producer" />
+                            @Html.ValidationMessage("Organisation", new { @class = "field-error" })
+                        </div>
+
+                        <div class="field">
+                            <label for="PreferredContactMethod">Preferred contact method</label>
+                            @Html.DropDownList(
+                                "PreferredContactMethod",
+                                new SelectList(Model.ContactMethods, form.PreferredContactMethod),
+                                new { @class = "input", id = "PreferredContactMethod" })
+                            @Html.ValidationMessage("PreferredContactMethod", new { @class = "field-error" })
+                        </div>
+
+                        <div class="field">
+                            <span class="field-label">Producer category</span>
+                            <div class="readonly-box">
+                                <span>@Model.ProducerCategory</span>
+                                <small>Admin controlled</small>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <h2 class="section-title">Request position change</h2>
+                    <p class="panel-subtitle">Request a different system position. An administrator must approve the change.</p>
+
+                    <!-- These controls belong to the separate "positionForm" further down the page. -->
+                    <div class="position-row">
+
+                        @Html.DropDownList(
+                            "requestedPosition",
+                            new SelectList(Model.Positions),
+                            "Select requested position",
+                            new { @class = "input", form = "positionForm", aria_label = "Requested position" })
+
+                        <button type="submit" class="secondary-button" form="positionForm">Submit request</button>
+
+                        <div class="current-request">
+                            <strong>Current request</strong>
+                            @if (string.IsNullOrWhiteSpace(Model.RequestedPosition))
+                            {
+                                <span>No pending request</span>
+                            }
+                            else
+                            {
+                                <span>@Model.RequestedPosition • pending</span>
+                            }
+                        </div>
+
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(Model.PositionRequestedText))
+                    {
+                        <p class="photo-hint">@Model.PositionRequestedText</p>
+                    }
+
+                </section>
+
+                <!-- ===== LANGUAGE ===== -->
+                <section class="panel" data-panel="language" role="tabpanel" hidden>
+
+                    <h2 class="panel-title">Language</h2>
+                    <p class="panel-subtitle">Choose the language you would like the team to use when contacting you.</p>
+
+                    <div class="stack">
+                        <div class="field">
+                            <label for="PreferredLanguage">Preferred language</label>
+                            @Html.DropDownList(
+                                "PreferredLanguage",
+                                new SelectList(Model.Languages, form.PreferredLanguage),
+                                new { @class = "input", id = "PreferredLanguage" })
+                            @Html.ValidationMessage("PreferredLanguage", new { @class = "field-error" })
+                        </div>
+                    </div>
+
+                </section>
+
+                <!-- ===== NOTIFICATIONS ===== -->
+                <section class="panel" data-panel="notifications" role="tabpanel" hidden>
+
+                    <h2 class="panel-title">Notifications</h2>
+                    <p class="panel-subtitle">Choose which updates you want to receive.</p>
+
+                    <div class="check-list">
+
+                        <label class="check">
+                            <input type="checkbox" name="NotifyStatusChanges" value="true" checked="@form.NotifyStatusChanges" />
+                            <input type="hidden" name="NotifyStatusChanges" value="false" />
+                            <div>
+                                <strong>Proposal status changes</strong>
+                                <span>When a proposal is assigned, reviewed, approved or not approved.</span>
+                            </div>
+                        </label>
+
+                        <label class="check">
+                            <input type="checkbox" name="NotifyReviewerComments" value="true" checked="@form.NotifyReviewerComments" />
+                            <input type="hidden" name="NotifyReviewerComments" value="false" />
+                            <div>
+                                <strong>Reviewer comments</strong>
+                                <span>When a reviewer asks for changes or leaves feedback.</span>
+                            </div>
+                        </label>
+
+                        <label class="check">
+                            <input type="checkbox" name="NotifyWeeklySummary" value="true" checked="@form.NotifyWeeklySummary" />
+                            <input type="hidden" name="NotifyWeeklySummary" value="false" />
+                            <div>
+                                <strong>Weekly summary</strong>
+                                <span>A short summary of all your proposals every Monday.</span>
+                            </div>
+                        </label>
+
+                    </div>
+
+                </section>
+
+            </form>
+
+
+            <!-- ===== SECURITY (its own form) ===== -->
+            <section class="panel" data-panel="security" role="tabpanel" hidden>
+
+                <h2 class="panel-title">Security</h2>
+                <p class="panel-subtitle">Change the password you use to sign in.</p>
+
+                <form asp-controller="ProducerSettings" asp-action="ChangePassword" method="post" class="stack">
+
+                    <div class="field">
+                        <label for="currentPassword">Current password</label>
+                        <input class="input" id="currentPassword" name="currentPassword" type="password" autocomplete="current-password" required />
+                    </div>
+
+                    <div class="field">
+                        <label for="newPassword">New password</label>
+                        <input class="input" id="newPassword" name="newPassword" type="password" autocomplete="new-password" required />
+                    </div>
+
+                    <div class="field">
+                        <label for="confirmPassword">Confirm new password</label>
+                        <input class="input" id="confirmPassword" name="confirmPassword" type="password" autocomplete="new-password" required />
+                    </div>
+
+                    <div>
+                        <button type="submit" class="primary-button">Change password</button>
+                    </div>
+
+                </form>
+
+            </section>
+
+
+            <!-- ===== ACCOUNT ===== -->
+            <section class="panel" data-panel="account" role="tabpanel" hidden>
+
+                <h2 class="panel-title">Account</h2>
+                <p class="panel-subtitle">Details of the account you are signed in with.</p>
+
+                <dl class="info-list">
+                    <div class="info-row">
+                        <dt>Signed in as</dt>
+                        <dd>@Model.AccountEmail</dd>
+                    </div>
+                    <div class="info-row">
+                        <dt>System position</dt>
+                        <dd>Producer</dd>
+                    </div>
+                    <div class="info-row">
+                        <dt>Producer category</dt>
+                        <dd>@Model.ProducerCategory</dd>
+                    </div>
+                    <div class="info-row">
+                        <dt>Pending position request</dt>
+                        <dd>@(string.IsNullOrWhiteSpace(Model.RequestedPosition) ? "None" : Model.RequestedPosition)</dd>
+                    </div>
+                </dl>
+
+                <form asp-controller="ProducerAccount" asp-action="Logout" method="post">
+                    <button type="submit" class="secondary-button danger-button">Log out</button>
+                </form>
+
+            </section>
+
+
+            <!-- Form used by "Submit request" (its controls sit in the Profile tab). -->
+            <form id="positionForm" asp-controller="ProducerSettings" asp-action="RequestPosition" method="post"></form>
+
+        </div>
+    </main>
+
+    <!-- ===================== SCRIPTS ===================== -->
+    <script>
+        (function () {
+
+            // ---------- Fade out when following a link to another page ----------
+            const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+            document.addEventListener("click", function (event) {
+                const link = event.target.closest("a[href]");
+                if (!link || reduceMotion) { return; }
+
+                const href = link.getAttribute("href");
+
+                if (!href ||
+                    href.startsWith("#") ||
+                    link.target === "_blank" ||
+                    link.hasAttribute("download") ||
+                    link.origin !== window.location.origin ||
+                    event.button !== 0 ||
+                    event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+                    return;
+                }
+
+                event.preventDefault();
+                document.body.classList.add("page-leaving");
+
+                setTimeout(function () {
+                    window.location.href = link.href;
+                }, 170);
+            });
+
+            window.addEventListener("pageshow", function () {
+                document.body.classList.remove("page-leaving");
+            });
+
+            // ---------- Profile menu ----------
+            const producerAccount = document.getElementById("producerAccount");
+            const producerProfileButton = document.getElementById("producerProfileButton");
+
+            producerProfileButton.addEventListener("click", function (event) {
+                event.stopPropagation();
+                const isOpen = producerAccount.classList.toggle("open");
+                producerProfileButton.setAttribute("aria-expanded", isOpen ? "true" : "false");
+            });
+
+            document.addEventListener("click", function (event) {
+                if (!producerAccount.contains(event.target)) {
+                    producerAccount.classList.remove("open");
+                    producerProfileButton.setAttribute("aria-expanded", "false");
+                }
+            });
+
+            document.addEventListener("keydown", function (event) {
+                if (event.key === "Escape") {
+                    producerAccount.classList.remove("open");
+                    producerProfileButton.setAttribute("aria-expanded", "false");
+                }
+            });
+
+            // ---------- Tabs ----------
+            const tabs = Array.from(document.querySelectorAll(".tab"));
+            const panels = Array.from(document.querySelectorAll("[data-panel]"));
+            const activeTabInput = document.getElementById("activeTabInput");
+            const saveActions = document.getElementById("saveActions");
+            const formTabs = ["profile", "language", "notifications"];
+
+            function showTab(name) {
+                tabs.forEach(function (tab) {
+                    const on = tab.dataset.tab === name;
+                    tab.classList.toggle("active", on);
+                    tab.setAttribute("aria-selected", on ? "true" : "false");
+                });
+
+                panels.forEach(function (panel) {
+                    panel.hidden = panel.dataset.panel !== name;
+                });
+
+                activeTabInput.value = name;
+
+                // Save / Cancel only apply to the main settings form.
+                saveActions.hidden = formTabs.indexOf(name) === -1;
+
+                try {
+                    const url = new URL(window.location.href);
+                    url.searchParams.set("tab", name);
+                    window.history.replaceState(null, "", url);
+                } catch (e) { }
+            }
+
+            tabs.forEach(function (tab) {
+                tab.addEventListener("click", function () {
+                    showTab(tab.dataset.tab);
+                });
+            });
+
+            showTab(activeTabInput.value || "profile");
+
+            // ---------- Profile photo ----------
+            const maxPhotoBytes = 5 * 1024 * 1024;
+            const photoInput = document.getElementById("photoInput");
+            const photoPreview = document.getElementById("photoPreview");
+            const photoHint = document.getElementById("photoHint");
+            const changePhotoButton = document.getElementById("changePhotoButton");
+            const removePhotoButton = document.getElementById("removePhotoButton");
+            const removePhotoInput = document.getElementById("removePhotoInput");
+            const defaultHint = "JPG or PNG, maximum 5 MB";
+
+            function showInitials() {
+                photoPreview.textContent = photoPreview.dataset.initials;
+            }
+
+            function showImage(src) {
+                photoPreview.textContent = "";
+                const img = document.createElement("img");
+                img.src = src;
+                img.alt = "Your profile photo";
+                photoPreview.appendChild(img);
+            }
+
+            function setHint(text, selected) {
+                photoHint.textContent = text;
+                photoHint.classList.toggle("selected", selected);
+            }
+
+            changePhotoButton.addEventListener("click", function () {
+                photoInput.click();
+            });
+
+            photoInput.addEventListener("change", function () {
+                const file = photoInput.files && photoInput.files[0];
+                if (!file) { return; }
+
+                const name = file.name.toLowerCase();
+                const okType = /\.(jpe?g|png)$/.test(name);
+
+                if (!okType) {
+                    photoInput.value = "";
+                    setHint("Please choose a JPG or PNG image.", false);
+                    return;
+                }
+
+                if (file.size > maxPhotoBytes) {
+                    photoInput.value = "";
+                    setHint("That photo is larger than 5 MB. Please choose a smaller one.", false);
+                    return;
+                }
+
+                // Preview straight away (saved when "Save changes" is clicked).
+                const reader = new FileReader();
+                reader.onload = function () { showImage(reader.result); };
+                reader.readAsDataURL(file);
+
+                removePhotoInput.value = "false";
+                removePhotoButton.hidden = false;
+                setHint(file.name + " selected - click Save changes to keep it.", true);
+            });
+
+            removePhotoButton.addEventListener("click", function () {
+                photoInput.value = "";
+                removePhotoInput.value = photoPreview.dataset.savedUrl ? "true" : "false";
+                removePhotoButton.hidden = true;
+                showInitials();
+                setHint(photoPreview.dataset.savedUrl
+                    ? "Photo will be removed when you click Save changes."
+                    : defaultHint, !!photoPreview.dataset.savedUrl);
+            });
+
+            // ---------- Cancel: undo unsaved changes ----------
+            document.getElementById("cancelButton").addEventListener("click", function () {
+                const form = document.getElementById("settingsForm");
+                const tab = activeTabInput.value;
+
+                form.reset();
+                activeTabInput.value = tab;
+                removePhotoInput.value = "false";
+
+                if (photoPreview.dataset.savedUrl) {
+                    showImage(photoPreview.dataset.savedUrl);
+                    removePhotoButton.hidden = false;
+                } else {
+                    showInitials();
+                    removePhotoButton.hidden = true;
+                }
+
+                setHint(defaultHint, false);
+            });
+
+        })();
+    </script>
+
+</body>
+</html>

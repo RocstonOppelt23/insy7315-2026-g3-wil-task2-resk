@@ -1,0 +1,360 @@
+﻿@model RESK.WIL.Models.ReskExportViewModel
+
+@{
+    Layout = "~/Views/AdminProposals/_AdminLayout.cshtml";
+    ViewData["Title"] = "Export CSV";
+
+    var settings = Model.Form;
+    var columns = RESK.WIL.Controllers.AdminReportsController.ExportColumns;
+    var statuses = RESK.WIL.Controllers.AdminReportsController.StatusOptions;
+    var ranges = RESK.WIL.Controllers.AdminReportsController.RangeOptions;
+    var chosen = new HashSet<string>(settings.Columns ?? new List<string>());
+    bool custom = settings.Range == "custom";
+    bool anyMoreChosen = columns.Any(c => c.More && chosen.Contains(c.Key));
+}
+
+@section Styles {
+    <style>
+        .field-grid { display: grid; gap: 20px 24px; margin-top: 24px; }
+        .field-grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .field-grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .label { display: block; margin-bottom: 9px; color: #5d6d87; font-size: 12px; font-weight: 700; }
+        .hint { margin-top: 7px; color: #8493aa; font-size: 11px; }
+        .dates { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+        [hidden] { display: none !important; }
+
+        .cols-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-top: 30px; }
+        .cols-head .label { margin: 0; }
+        .cols-head button { border: none; background: none; color: #00a9bd; font-size: 12px; font-weight: 800; cursor: pointer; padding: 0; margin-left: 14px; }
+        .cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 24px; margin-top: 12px; }
+        .col { display: flex; align-items: center; gap: 13px; min-height: 38px; padding: 0 14px; border: 1px solid #dde4ee; border-radius: 8px; background: #f7f9fc; color: #14233e; font-size: 13px; cursor: pointer; }
+        .col input { width: 17px; height: 17px; flex-shrink: 0; accent-color: #12b8ce; cursor: pointer; }
+        .col:has(input:checked) { font-weight: 800; }
+        .col:has(input:focus-visible) { outline: 2px solid #12b8ce; outline-offset: 2px; }
+        details.more-cols { margin-top: 14px; }
+        details.more-cols summary { color: #00a9bd; font-size: 12px; font-weight: 800; cursor: pointer; }
+
+        .preview { margin-top: 26px; padding: 16px 20px; border: 1px solid #bfeaf0; border-radius: 10px; background: #eefafc; }
+        .preview-line { color: #14233e; font-size: 13px; font-weight: 800; }
+        .preview-sub { margin-top: 4px; color: #52637e; font-size: 11px; }
+        .preview-error { margin-top: 6px; color: #c9444d; font-size: 12px; font-weight: 700; }
+        .preview-table-wrap { margin-top: 12px; overflow-x: auto; border: 1px solid #d6eef2; border-radius: 8px; background: white; }
+        .preview table { width: 100%; border-collapse: collapse; font-size: 11px; }
+        .preview th { padding: 8px 10px; background: #f4f7fb; color: #5d6d87; font-weight: 800; text-align: left; white-space: nowrap; }
+        .preview td { padding: 8px 10px; border-top: 1px solid #edf1f6; color: #52637e; white-space: nowrap; max-width: 220px; overflow: hidden; text-overflow: ellipsis; }
+        .preview .empty { padding: 14px 10px; color: #8493aa; text-align: center; }
+
+        .form-actions { display: flex; justify-content: flex-end; align-items: center; gap: 14px; margin-top: 24px; }
+        .download-note { margin-right: auto; color: #1f8a5c; font-size: 12px; font-weight: 700; }
+
+        .history-card { margin-top: 18px; }
+        .history-item { display: flex; align-items: center; gap: 14px; padding: 12px 0; border-bottom: 1px solid #edf1f6; }
+        .history-item:last-child { border-bottom: none; }
+        .history-item div { flex: 1; min-width: 0; }
+        .history-item strong { display: block; color: #14233e; font-size: 12px; }
+        .history-item span { display: block; margin-top: 3px; color: #6d7e99; font-size: 11px; }
+        .link { color: #00a9bd; font-size: 12px; font-weight: 800; text-decoration: none; }
+        .link:hover { text-decoration: underline; }
+
+        @@media (max-width: 900px) {
+            .field-grid.two, .field-grid.three, .cols { grid-template-columns: 1fr; }
+        }
+    </style>
+}
+
+<header class="page-header">
+    <div>
+        <h1>Export CSV</h1>
+        <p>Select the proposal data columns and filters for a spreadsheet export.</p>
+    </div>
+    <div class="header-actions">
+        <a href="/Admin/Reports" class="secondary-button">Back to reports</a>
+    </div>
+</header>
+
+<section class="card">
+
+    <h2 class="card-title">CSV export settings</h2>
+    <p class="card-subtitle">Choose which records and fields should appear in the downloaded file.</p>
+
+    <form id="exportForm" method="post" action="/Admin/Reports/Export" novalidate>
+        @Html.AntiForgeryToken()
+
+        <div class="field-grid two">
+            <div>
+                <label class="label" for="FileName">File name</label>
+                <input class="input" id="FileName" name="FileName" value="@settings.FileName" maxlength="84" autocomplete="off" />
+                <p class="hint">Letters, numbers, dashes and dots. ".csv" is added for you.</p>
+            </div>
+
+            <div>
+                <label class="label" for="Range">Date range</label>
+                <select class="input" id="Range" name="Range">
+                    @foreach (var (key, text) in ranges)
+                    {
+                        if (key == settings.Range) { <option value="@key" selected>@text</option> }
+                        else { <option value="@key">@text</option> }
+                    }
+                </select>
+                <div class="dates" id="customDates" hidden="@(!custom)">
+                    <input class="input" type="date" id="From" name="From" value="@settings.From" aria-label="From date" />
+                    <input class="input" type="date" id="To" name="To" value="@settings.To" aria-label="To date" />
+                </div>
+                <p class="hint" id="periodHint">Based on the submission date.</p>
+            </div>
+        </div>
+
+        <div class="field-grid three">
+            <div>
+                <label class="label" for="Status">Proposal status</label>
+                <select class="input" id="Status" name="Status">
+                    @foreach (var (key, text) in statuses)
+                    {
+                        if (key == (settings.Status ?? "")) { <option value="@key" selected>@text</option> }
+                        else { <option value="@key">@text</option> }
+                    }
+                </select>
+            </div>
+
+            <div>
+                <label class="label" for="Category">Category</label>
+                <select class="input" id="Category" name="Category">
+                    <option value="">All categories</option>
+                    @foreach (var name in Model.Categories)
+                    {
+                        if (string.Equals(name, settings.Category, StringComparison.OrdinalIgnoreCase)) { <option value="@name" selected>@name</option> }
+                        else { <option value="@name">@name</option> }
+                    }
+                </select>
+            </div>
+
+            <div>
+                <label class="label" for="Producer">Submitted by</label>
+                <select class="input" id="Producer" name="Producer">
+                    <option value="">All producers</option>
+                    @foreach (var p in Model.Producers)
+                    {
+                        if (p.Id == settings.Producer) { <option value="@p.Id" selected>@p.Name</option> }
+                        else { <option value="@p.Id">@p.Name</option> }
+                    }
+                </select>
+            </div>
+        </div>
+
+        <div class="cols-head">
+            <span class="label">Columns to include</span>
+            <span>
+                <button type="button" id="selectAll">Select all</button>
+                <button type="button" id="selectNone">Clear</button>
+            </span>
+        </div>
+
+        <div class="cols">
+            @foreach (var c in columns.Where(k => !k.More))
+            {
+                <label class="col">
+                    <input type="checkbox" name="Columns" value="@c.Key" checked="@chosen.Contains(c.Key)" />
+                    @c.Label
+                </label>
+            }
+        </div>
+
+        <details class="more-cols" open="@anyMoreChosen">
+            <summary>More columns</summary>
+            <div class="cols">
+                @foreach (var c in columns.Where(k => k.More))
+                {
+                    <label class="col">
+                        <input type="checkbox" name="Columns" value="@c.Key" checked="@chosen.Contains(c.Key)" />
+                        @c.Label
+                    </label>
+                }
+            </div>
+        </details>
+
+        <div class="field-grid two">
+            <div>
+                <label class="label" for="DateFormat">Date format</label>
+                <select class="input" id="DateFormat" name="DateFormat">
+                    @if (settings.DateFormat == "iso")
+                    {
+                        <option value="dmy">01 Aug 2026</option>
+                        <option value="iso" selected>2026-08-01 (best for sorting)</option>
+                    }
+                    else
+                    {
+                        <option value="dmy" selected>01 Aug 2026</option>
+                        <option value="iso">2026-08-01 (best for sorting)</option>
+                    }
+                </select>
+            </div>
+        </div>
+
+        <div class="preview" aria-live="polite">
+            <div class="preview-line" id="previewLine">CSV preview: @Model.MatchingCount proposal records • @chosen.Count selected columns</div>
+            <div class="preview-sub" id="previewSub">First rows of the file are shown below.</div>
+            <div class="preview-error" id="previewError" hidden></div>
+            <div class="preview-table-wrap"><table id="previewTable"></table></div>
+        </div>
+
+        <div class="form-actions">
+            <span class="download-note" id="downloadNote" hidden>Your download has started.</span>
+            <a href="/Admin/Reports" class="secondary-button">Cancel</a>
+            <button type="submit" class="primary-button" id="exportButton">Export CSV</button>
+        </div>
+    </form>
+
+</section>
+
+<section class="card history-card">
+    <h2 class="card-title" style="font-size:16px;">Recent exports</h2>
+    <p class="card-subtitle">Every download is recorded with who exported it.</p>
+
+    @if (Model.RecentExports.Count == 0)
+    {
+        <p class="card-subtitle" style="margin-top:14px;">No exports yet.</p>
+    }
+    else
+    {
+        foreach (var e in Model.RecentExports)
+        {
+            <div class="history-item">
+                <div>
+                    <strong>@e.FileName</strong>
+                    <span>@e.When • @e.By • @e.Rows rows, @e.Columns columns • @e.Summary</span>
+                </div>
+                <a href="/Admin/Reports/Export@(e.Query)" class="link">Use these settings</a>
+            </div>
+        }
+    }
+</section>
+
+@section Scripts {
+    <script>
+        (function () {
+            var form = document.getElementById("exportForm");
+            var range = document.getElementById("Range");
+            var customDates = document.getElementById("customDates");
+            var fileName = document.getElementById("FileName");
+            var line = document.getElementById("previewLine");
+            var sub = document.getElementById("previewSub");
+            var errorBox = document.getElementById("previewError");
+            var table = document.getElementById("previewTable");
+            var note = document.getElementById("downloadNote");
+            var fileNameTouched = false;
+            var timer = null;
+            var request = 0;
+
+            fileName.addEventListener("input", function () { fileNameTouched = true; });
+
+            function checkedCount() {
+                return form.querySelectorAll("input[name='Columns']:checked").length;
+            }
+
+            function render(data) {
+                line.textContent = "CSV preview: " + data.count + " proposal " + (data.count === 1 ? "record" : "records") +
+                    " • " + data.columns.length + " selected " + (data.columns.length === 1 ? "column" : "columns");
+                sub.textContent = data.period + (data.count > 5 ? " • showing the first 5 rows" : "");
+                errorBox.hidden = !data.error;
+                errorBox.textContent = data.error || "";
+
+                if (!fileNameTouched && data.fileName) { fileName.value = data.fileName; }
+
+                table.innerHTML = "";
+                if (data.columns.length === 0) {
+                    table.innerHTML = "<tr><td class='empty'>Choose at least one column.</td></tr>";
+                    return;
+                }
+
+                var head = document.createElement("tr");
+                data.columns.forEach(function (c) {
+                    var th = document.createElement("th");
+                    th.textContent = c;
+                    head.appendChild(th);
+                });
+                table.appendChild(head);
+
+                if (data.rows.length === 0) {
+                    var empty = document.createElement("tr");
+                    var td = document.createElement("td");
+                    td.className = "empty";
+                    td.colSpan = data.columns.length;
+                    td.textContent = "No proposals match these filters.";
+                    empty.appendChild(td);
+                    table.appendChild(empty);
+                    return;
+                }
+
+                data.rows.forEach(function (cells) {
+                    var tr = document.createElement("tr");
+                    cells.forEach(function (value) {
+                        var cell = document.createElement("td");
+                        cell.textContent = value;
+                        cell.title = value;
+                        tr.appendChild(cell);
+                    });
+                    table.appendChild(tr);
+                });
+            }
+
+            function refresh() {
+                customDates.hidden = range.value !== "custom";
+                var params = new URLSearchParams(new FormData(form));
+                params.delete("__RequestVerificationToken");
+                var mine = ++request;
+
+                fetch("/Admin/Reports/Export/Preview?" + params.toString(), { headers: { "Accept": "application/json" } })
+                    .then(function (response) { return response.ok ? response.json() : null; })
+                    .then(function (data) { if (data && mine === request) { render(data); } })
+                    .catch(function () { });
+            }
+
+            function later() {
+                clearTimeout(timer);
+                timer = setTimeout(refresh, 200);
+            }
+
+            form.addEventListener("change", later);
+            form.addEventListener("input", function (event) { if (event.target !== fileName) { later(); } });
+
+            document.getElementById("selectAll").addEventListener("click", function () {
+                form.querySelectorAll("input[name='Columns']").forEach(function (box) { box.checked = true; });
+                form.querySelector("details.more-cols").open = true;
+                refresh();
+            });
+
+            document.getElementById("selectNone").addEventListener("click", function () {
+                form.querySelectorAll("input[name='Columns']").forEach(function (box) { box.checked = false; });
+                refresh();
+            });
+
+            form.addEventListener("submit", function (event) {
+                if (checkedCount() === 0) {
+                    event.preventDefault();
+                    errorBox.hidden = false;
+                    errorBox.textContent = "Choose at least one column to include.";
+                    return;
+                }
+                if (range.value === "custom" && (!document.getElementById("From").value && !document.getElementById("To").value)) {
+                    event.preventDefault();
+                    errorBox.hidden = false;
+                    errorBox.textContent = "Choose a start or end date for the custom range.";
+                    return;
+                }
+                note.hidden = false;
+                setTimeout(function () { note.hidden = true; }, 6000);
+            });
+
+            refresh();
+
+            // Highlight "Reports" in the sidebar.
+            document.querySelectorAll(".sidebar nav a").forEach(function (link) {
+                if ((link.getAttribute("href") || "").toLowerCase().indexOf("/admin/reports") === 0) {
+                    link.setAttribute("aria-current", "page");
+                } else {
+                    link.removeAttribute("aria-current");
+                }
+            });
+        })();
+    </script>
+}

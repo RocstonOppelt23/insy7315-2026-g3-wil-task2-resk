@@ -1,0 +1,71 @@
+﻿@model RESK.WIL.Models.ReskRoleWizardForm
+
+@{
+    var modules = RESK.WIL.Services.ReskRoleStore.Modules;
+    string roleName = string.IsNullOrWhiteSpace(Model.Name) ? "New role" : Model.Name!;
+    string initials = RESK.WIL.Services.ReskRoleStore.Initials(roleName);
+    var preview = new RESK.WIL.Services.ReskRole { Permissions = Model.Perms ?? new List<string>(), Area = Model.Area };
+
+    string Scope(string module)
+    {
+        if (RESK.WIL.Services.ReskRoleStore.Summary(preview, module) == "No access") { return "—"; }
+
+        return module switch
+        {
+            "users" => "Authorised profiles",
+            "proposals" => Model.Area == "Reviewer" ? "Assigned only" : "All proposals",
+            "categories" => "All categories",
+            "reports" => "Authorised reports",
+            "roles" => "All roles",
+            "audit" => "All records",
+            _ => "Station-wide"
+        };
+    }
+}
+
+<div class="section-head">
+    <h2>Role overview</h2>
+    <p>Review the information below. You can return to edit before creating the role.</p>
+</div>
+
+<div class="overview">
+    <span class="role-avatar">@initials</span>
+    <div style="flex:1;min-width:0;">
+        <h3>@roleName</h3>
+        <span class="pill @(Model.AssignNow ? "pill-active" : "pill-inactive")" style="margin-top:8px;">@(Model.AssignNow ? "Active" : "Inactive")</span>
+        <p>@Model.Description</p>
+        <p style="margin-top:4px;color:#6d7e99;">Signs in to: @RESK.WIL.Services.ReskRoleStore.AreaLabel(Model.Area)</p>
+    </div>
+    <button type="submit" name="Go" value="step1" class="btn">Edit role details</button>
+</div>
+
+<div class="summary-head">
+    <div>
+        <h3>Permission summary</h3>
+        <p>This role will receive the following access.</p>
+    </div>
+    <button type="submit" name="Go" value="step2" class="btn">Edit permissions</button>
+</div>
+
+<table class="summary">
+    <thead><tr><th>Module</th><th>Allowed actions</th><th>Scope</th></tr></thead>
+    <tbody>
+        @foreach (var m in modules)
+        {
+            string allowed = RESK.WIL.Services.ReskRoleStore.Summary(preview, m.Key);
+            <tr>
+                <td>@m.Name</td>
+                <td class="@(allowed == "No access" ? "none" : "")">@allowed</td>
+                <td>@Scope(m.Key)</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<div class="form-foot">
+    <p>After creation, administrators can edit this role from the main Roles &amp; Permissions screen.</p>
+    <div class="buttons">
+        <button type="submit" name="Go" value="draft" class="btn">Save draft</button>
+        <button type="submit" name="Go" value="create" class="btn primary">Create role</button>
+    </div>
+</div>

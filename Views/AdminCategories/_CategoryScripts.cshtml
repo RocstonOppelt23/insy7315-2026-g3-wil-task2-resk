@@ -1,0 +1,50 @@
+﻿<script>
+    (function () {
+        // Status dot follows the Status box.
+        var status = document.getElementById("Status");
+        var dot = document.getElementById("statusDot");
+        if (status && dot) {
+            status.addEventListener("change", function () { dot.classList.toggle("off", status.value !== "Active"); });
+        }
+
+        // Colour swatch follows the Icon colour box.
+        var colour = document.getElementById("IconColour");
+        var swatch = document.getElementById("colourSwatch");
+        if (colour && swatch) {
+            colour.addEventListener("change", function () {
+                swatch.style.background = colour.options[colour.selectedIndex].getAttribute("data-hex");
+            });
+        }
+
+        // Description counter.
+        var description = document.getElementById("Description");
+        var counter = document.getElementById("descCounter");
+        if (description && counter) {
+            var update = function () {
+                counter.textContent = description.value.length + "/250";
+                counter.classList.toggle("full", description.value.length >= 250);
+            };
+            description.addEventListener("input", update);
+            update();
+        }
+
+        // Code in capitals as you type.
+        var code = document.getElementById("Code");
+        if (code) {
+            code.addEventListener("input", function () {
+                var at = code.selectionStart;
+                code.value = code.value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+                code.setSelectionRange(at, at);
+            });
+        }
+
+        // Highlight "Categories" in the sidebar.
+        document.querySelectorAll(".sidebar nav a").forEach(function (link) {
+            if ((link.getAttribute("href") || "").toLowerCase().indexOf("/admin/categories") === 0) {
+                link.setAttribute("aria-current", "page");
+            } else {
+                link.removeAttribute("aria-current");
+            }
+        });
+    })();
+</script>

@@ -1,0 +1,617 @@
+﻿@model RESK.WIL.Models.AdminUserDetailsViewModel
+@inject Microsoft.AspNetCore.Hosting.IWebHostEnvironment Env
+
+@{
+    Layout = "~/Views/AdminProposals/_AdminLayout.cshtml";
+    ViewData["Title"] = "User details";
+
+    var row = Model.Row;
+    var tab = Model.Tab;
+    bool suspended = row.StatusKey is "suspended" or "banned" or "rejected";
+    bool banned = row.StatusKey == "banned";
+    bool restricted = row.StatusKey is "suspended" or "banned";
+    var acct = RESK.WIL.Services.ReskAccountStore.Load(Env.ContentRootPath, row.Id);
+    string? untilText = acct.SuspendedUntilUtc.HasValue
+        ? RESK.WIL.Controllers.AdminUserRestrictionsController.LocalText(acct.SuspendedUntilUtc.Value)
+        : null;
+    string restrictionTitle = banned
+        ? "This account is banned"
+        : untilText != null ? "Suspended until " + untilText : "Suspended until lifted by an admin";
+    bool locked = row.StatusKey == "locked";
+    string roleText = row.Role ?? "No role";
+    string subtitle = tab == "overview"
+        ? "Review account information, assigned role, activity and access status."
+        : "Review account information, access and activity.";
+
+    var tabs = new[] { ("overview", "Overview"), ("permissions", "Permissions"), ("proposals", "Proposals"), ("activity", "Activity"), ("security", "Security") };
+}
+
+@section Styles {
+    <style>
+        .profile-card { display: flex; align-items: center; gap: 26px; }
+        .big-avatar { width: 84px; height: 84px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: white; font-size: 24px; font-weight: 800; line-height: 1; }
+
+        .restriction { display: flex; align-items: center; gap: 20px; margin-top: 18px; padding: 18px 22px; border: 1px solid #f0c2c5; border-radius: 12px; background: #fde9ea; }
+        .restriction.amber { border-color: #f3dca0; background: #fff8e6; }
+        .restriction-text { flex: 1; min-width: 0; }
+        .restriction-text strong { display: block; color: #a8323b; font-size: 14px; }
+        .restriction.amber .restriction-text strong { color: #8a5d00; }
+        .restriction-text span { display: block; margin-top: 5px; color: #5d6d87; font-size: 12px; line-height: 1.5; }
+        .restriction form { margin: 0; }
+        .lift-button { min-height: 40px; padding: 0 20px; border: 1px solid #d3dce8; border-radius: 8px; background: white; color: #14233e; font-size: 13px; font-weight: 800; cursor: pointer; }
+        .lift-button:hover { border-color: #12b8ce; }
+        .profile-text { flex: 1; min-width: 0; }
+        .profile-text h2 { color: #14233e; font-size: 24px; font-weight: 800; }
+        .profile-text p { margin-top: 8px; color: #5d6d87; font-size: 13px; }
+        .profile-side { display: grid; grid-template-columns: auto auto; gap: 14px 50px; align-content: start; }
+        .meta-label { color: #5d6d87; font-size: 10px; font-weight: 800; text-transform: uppercase; }
+        .meta-value { margin-top: 6px; color: #14233e; font-size: 13px; }
+        .pill-active { background: #e3f5ec; color: #1f8a5c; }
+        .pill-pending, .pill-locked { background: #fdf1d6; color: #b07200; }
+        .pill-suspended, .pill-rejected { background: #fde7e8; color: #c9444d; }
+        .pill-banned { background: #c9444d; color: #ffffff; }
+        .pill-role { background: #e6f8fa; color: #0a8a9c; }
+
+        .tabs { display: flex; gap: 8px; margin-top: 22px; padding: 11px 13px; border: 1px solid #d9e1ec; border-radius: 13px; background: white; overflow-x: auto; }
+        .tab { flex: 1; min-width: 110px; max-width: 160px; display: flex; align-items: center; justify-content: center; height: 34px; border-radius: 8px; color: #61728d; font-size: 13px; text-decoration: none; }
+        .tab:hover { color: #14233e; }
+        .tab.active { background: #eaf9fb; color: #0a9fb2; font-weight: 800; }
+
+        .split { display: grid; grid-template-columns: minmax(0, 1.75fr) minmax(280px, 1fr); gap: 18px; margin-top: 22px; align-items: start; }
+        .split .card + .card { margin-top: 0; }
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; margin-top: 10px; }
+        .info { padding: 18px 0; border-bottom: 1px solid #e8edf3; }
+        .info:nth-last-child(-n+1) { border-bottom: none; }
+        .info .meta-value { font-size: 14px; }
+        .ok { color: #1f9a66 !important; }
+        .warn { color: #c77c00 !important; }
+        .bad { color: #c9444d !important; }
+
+        .action-list { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
+        .action-list form { margin: 0; }
+        .action-btn { width: 100%; display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border: 1px solid #dde4ee; border-radius: 9px; background: white; color: #14233e; font-size: 13px; font-weight: 800; text-align: left; text-decoration: none; cursor: pointer; transition: border-color 0.2s; }
+        .action-btn:hover { border-color: #12b8ce; }
+        .action-btn.teal { border-color: #bfeaf0; background: #eefafc; }
+        .action-btn.amber { border-color: #f3dca0; background: #fff8e6; color: #8a5d00; }
+        .action-btn.red { border-color: #f0c2c5; background: #fde9ea; color: #c9444d; }
+        .action-btn span:last-child { color: #8493aa; font-weight: 600; }
+        .small-note { margin-top: 12px; padding-top: 10px; border-top: 1px solid #edf1f6; color: #6d7e99; font-size: 11px; }
+
+        .tab-card { margin-top: 22px; }
+        table { width: 100%; margin-top: 20px; border-collapse: collapse; }
+        thead th { padding: 13px 18px; background: #f4f7fb; color: #5d6d87; font-size: 11px; font-weight: 800; text-align: left; text-transform: uppercase; }
+        thead th:first-child { border-radius: 8px 0 0 8px; }
+        thead th:last-child { border-radius: 0 8px 8px 0; }
+        tbody td { padding: 16px 18px; border-bottom: 1px solid #edf1f6; color: #52637e; font-size: 12px; }
+        tbody tr:last-child td { border-bottom: none; }
+        .perm { text-align: center !important; }
+        .tick { display: inline-flex; width: 19px; height: 19px; align-items: center; justify-content: center; border-radius: 4px; background: #12b8ce; color: white; font-size: 12px; font-weight: 800; }
+        .no-tick { display: inline-block; width: 19px; height: 19px; border: 1px solid #dde4ee; border-radius: 4px; background: #f4f7fb; }
+        .callout { margin-top: 16px; padding: 10px 16px; border-radius: 8px; background: #eefafc; color: #0a8a9c; font-size: 11px; }
+        .cell-title strong { display: block; color: #14233e; font-size: 13px; }
+        .cell-title span { display: block; margin-top: 4px; color: #6d7e99; font-size: 11px; }
+        .pill-draft { background: #eef2f7; color: #5b6b85; }
+        .pill-review { background: #fff4dc; color: #c77c00; }
+        .pill-approved { background: #e3f5ec; color: #1f8a5c; }
+        .pill-changes { background: #fde7e8; color: #c9444d; }
+        .link { color: #00a9bd; font-size: 12px; font-weight: 800; text-decoration: none; }
+        .link:hover { text-decoration: underline; }
+        .muted { color: #8493aa; font-size: 12px; }
+        .card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+        .small-select { width: 160px; height: 36px; }
+
+        .timeline-wrap { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(260px, 1fr); gap: 30px; margin-top: 26px; align-items: start; }
+        .timeline { list-style: none; padding-left: 20px; }
+        .event { position: relative; display: flex; gap: 20px; padding-bottom: 26px; }
+        .event:not(:last-child)::before { content: ""; position: absolute; left: 9px; top: 18px; bottom: 0; width: 2px; background: #e2e8f0; }
+        .event-dot { position: relative; z-index: 1; width: 20px; height: 20px; flex-shrink: 0; border-radius: 50%; background: #12b8ce; }
+        .event.success .event-dot { background: #1f9a66; }
+        .event.warning .event-dot { background: #d39a12; }
+        .event.danger .event-dot { background: #c9444d; }
+        .event.dark .event-dot { background: #1d3557; }
+        .event strong { display: block; color: #14233e; font-size: 13px; }
+        .event span { display: block; margin-top: 5px; color: #6d7e99; font-size: 11px; }
+        .summary-side { padding: 20px 22px; border: 1px solid #dde4ee; border-radius: 11px; background: #f7f9fc; }
+        .summary-side h3 { color: #14233e; font-size: 14px; font-weight: 800; }
+        .summary-side p { margin-top: 12px; color: #5d6d87; font-size: 12px; }
+
+        .security-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; margin-top: 22px; }
+        .sec-box { margin-top: 10px; padding: 14px 18px; border: 1px solid #dde4ee; border-radius: 9px; background: #f7f9fc; }
+        .sec-box strong { display: block; color: #14233e; font-size: 14px; }
+        .sec-box span { display: block; margin-top: 4px; color: #6d7e99; font-size: 11px; }
+        .section-title { margin-top: 32px; color: #14233e; font-size: 18px; font-weight: 800; }
+        .session-note { margin-top: 14px; padding: 16px 20px; border: 1px solid #dde4ee; border-radius: 10px; background: #f7f9fc; color: #52637e; font-size: 12px; line-height: 1.6; }
+        .sec-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 16px; margin-top: 18px; }
+        .sec-link { display: flex; align-items: center; justify-content: center; height: 42px; border: 1px solid #d3dce8; border-radius: 8px; background: white; color: #14233e; font-size: 12px; font-weight: 800; text-decoration: none; }
+        .sec-link.amber { border-color: #f3dca0; background: #fff8e6; color: #8a5d00; }
+        .sec-link.red { border-color: #f0c2c5; background: #fde9ea; color: #c9444d; }
+        .sec-link:hover { filter: brightness(0.97); }
+        .sec-actions form { margin: 0; }
+        .sec-actions button { width: 100%; height: 42px; border: 1px solid #d3dce8; border-radius: 8px; background: white; color: #14233e; font-size: 12px; font-weight: 800; cursor: pointer; }
+        .sec-actions button.amber { border-color: #f3dca0; background: #fff8e6; color: #8a5d00; }
+        .sec-actions button.red { border-color: #f0c2c5; background: #fde9ea; color: #c9444d; }
+        .sec-actions button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        @@media (max-width: 1050px) {
+            .split, .timeline-wrap { grid-template-columns: 1fr; }
+            .security-grid, .sec-actions { grid-template-columns: 1fr 1fr; }
+            .profile-card { flex-wrap: wrap; }
+        }
+
+        @@media (max-width: 700px) {
+            .info-grid, .security-grid, .sec-actions { grid-template-columns: 1fr; }
+            table { display: block; overflow-x: auto; }
+        }
+    </style>
+}
+
+<header class="page-header">
+    <div>
+        <h1>User details</h1>
+        <p>@subtitle</p>
+    </div>
+    <div class="header-actions">
+        <a href="/Admin/Users" class="secondary-button">Back to users</a>
+        @if (row.StatusKey == "pending")
+        {
+            <a href="/Admin/Users/@row.Id/Pending" class="primary-button">Review registration</a>
+        }
+        else
+        {
+            <a href="/Admin/Users/@row.Id/Edit" class="primary-button">Edit user</a>
+        }
+    </div>
+</header>
+
+<!-- ===== PROFILE CARD ===== -->
+<section class="card profile-card">
+    <div class="big-avatar" style="background:@row.AvatarColour;">@row.Initials</div>
+
+    <div class="profile-text">
+        <h2>@row.Name</h2>
+        <p>@row.Email</p>
+        <p>@(row.Role == "Producer" ? Model.Category : row.RoleLabel) • @row.Organisation</p>
+    </div>
+
+    <div class="profile-side">
+        <span class="pill pill-@row.StatusKey" style="justify-self:start;">@row.StatusLabel</span>
+        <span class="pill pill-role" style="justify-self:start;">@roleText role</span>
+        <div>
+            <div class="meta-label">User ID</div>
+            <div class="meta-value">@row.UserCode</div>
+        </div>
+        <div>
+            <div class="meta-label">Joined</div>
+            <div class="meta-value">@row.JoinedText</div>
+        </div>
+    </div>
+</section>
+
+@if (restricted)
+{
+    <section class="restriction @(banned ? "" : "amber")" role="status">
+        <div class="restriction-text">
+            <strong>@restrictionTitle</strong>
+            <span>
+                The user cannot sign in.
+                @if (!string.IsNullOrWhiteSpace(acct.RestrictionReason))
+                {
+                    <text>Reason: @acct.RestrictionReason.</text>
+                }
+                @if (!string.IsNullOrWhiteSpace(acct.RestrictedBy))
+                {
+                    <text>By @acct.RestrictedBy.</text>
+                }
+            </span>
+        </div>
+        <form method="post" action="/Admin/Users/@row.Id/Lift"
+              onsubmit="return confirm('@(banned ? "Lift the ban" : "Lift the suspension")? The user will be able to sign in again.');">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="returnTab" value="@(tab == "overview" ? "" : tab)" />
+            <button type="submit" class="lift-button">@(banned ? "Lift ban" : "Lift suspension")</button>
+        </form>
+    </section>
+}
+
+<!-- ===== TABS ===== -->
+<nav class="tabs" aria-label="User sections">
+    @foreach (var (key, text) in tabs)
+    {
+        if (key == tab)
+        {
+            <a href="/Admin/Users/@(row.Id)?tab=@key" class="tab active" aria-current="page">@text</a>
+        }
+        else
+        {
+            <a href="/Admin/Users/@(row.Id)?tab=@key" class="tab">@text</a>
+        }
+    }
+</nav>
+
+@if (tab == "overview")
+{
+    <div class="split">
+
+        <section class="card">
+            <h2 class="card-title">Account information</h2>
+            <p class="card-subtitle">Personal and organisation details linked to this account.</p>
+
+            <div class="info-grid">
+                <div class="info"><div class="meta-label">Full name</div><div class="meta-value">@row.Name</div></div>
+                <div class="info"><div class="meta-label">Email address</div><div class="meta-value">@row.Email</div></div>
+                <div class="info"><div class="meta-label">Phone number</div><div class="meta-value">@row.Phone</div></div>
+                <div class="info"><div class="meta-label">Organisation</div><div class="meta-value">@row.Organisation</div></div>
+                <div class="info"><div class="meta-label">Preferred contact</div><div class="meta-value">@Model.PreferredContact</div></div>
+                <div class="info"><div class="meta-label">Language</div><div class="meta-value">@Model.Language</div></div>
+                <div class="info"><div class="meta-label">Assigned role</div><div class="meta-value">@roleText</div></div>
+                <div class="info">
+                    <div class="meta-label">Account status</div>
+                    <div class="meta-value @(row.StatusKey == "active" ? "ok" : row.StatusKey is "pending" or "locked" ? "warn" : "bad")">@row.StatusLabel</div>
+                </div>
+                <div class="info"><div class="meta-label">Last activity</div><div class="meta-value">@Model.LastActivityText</div></div>
+            </div>
+        </section>
+
+        <section class="card">
+            <h2 class="card-title">Account actions</h2>
+            <p class="card-subtitle">Administrative controls for this user.</p>
+
+            <div class="action-list">
+                <a href="/Admin/Users/@row.Id/Edit" class="action-btn teal"><span>Edit account details</span><span>›</span></a>
+                <a href="/Admin/Users/@row.Id/Edit#role" class="action-btn"><span>Change assigned role</span><span>›</span></a>
+
+                <form method="post" action="/Admin/Users/@row.Id/ResetPassword"
+                      onsubmit="return confirm('Create a new temporary password for this user? Their current password will stop working.');">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="action-btn"><span>Reset password</span><span>›</span></button>
+                </form>
+
+                <a href="/Admin/Users/@(row.Id)?tab=activity" class="action-btn"><span>View audit activity</span><span>›</span></a>
+
+                @if (!Model.IsSelf)
+                {
+                    if (restricted)
+                    {
+                        <form method="post" action="/Admin/Users/@row.Id/Lift"
+                              onsubmit="return confirm('@(banned ? "Lift the ban" : "Lift the suspension")? The user will be able to sign in again.');">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="action-btn teal"><span>@(banned ? "Lift ban" : "Lift suspension")</span><span>›</span></button>
+                        </form>
+
+                        if (!banned)
+                        {
+                            <a href="/Admin/Users/@row.Id/Restrict?mode=ban" class="action-btn red"><span>Ban user permanently</span><span>›</span></a>
+                        }
+                    }
+                    else if (suspended)
+                    {
+                        <form method="post" action="/Admin/Users/@row.Id/Reactivate">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="action-btn teal"><span>Reactivate account</span><span></span></button>
+                        </form>
+                    }
+                    else
+                    {
+                        <a href="/Admin/Users/@row.Id/Restrict?mode=suspend" class="action-btn amber"><span>Suspend temporarily</span><span>›</span></a>
+                        <a href="/Admin/Users/@row.Id/Restrict?mode=ban" class="action-btn red"><span>Ban user</span><span>›</span></a>
+                    }
+
+                    <form method="post" action="/Admin/Users/@row.Id/Delete"
+                          onsubmit="return confirm('Delete this account permanently? This cannot be undone.');">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="action-btn red"><span>Delete account</span><span></span></button>
+                    </form>
+                }
+            </div>
+
+            <p class="small-note">All administrative changes are recorded in the user's activity.</p>
+        </section>
+
+    </div>
+}
+else if (tab == "permissions")
+{
+    <section class="card tab-card">
+        <h2 class="card-title">Effective permissions</h2>
+        <p class="card-subtitle">Permissions inherited from the @roleText role. Admins can change the assigned role.</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Module</th>
+                    <th class="perm">View</th>
+                    <th class="perm">Create</th>
+                    <th class="perm">Edit</th>
+                    <th class="perm">Delete</th>
+                    <th class="perm">Approve</th>
+                    <th class="perm">Export</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var p in Model.Permissions)
+                {
+                    <tr>
+                        <td><strong style="color:#14233e;">@p.Module</strong></td>
+                        @foreach (bool allowed in new[] { p.View, p.Create, p.Edit, p.Delete, p.Approve, p.Export })
+                        {
+                            <td class="perm">
+                                @if (allowed && row.Role != null)
+                                {
+                                    <span class="tick" aria-label="Allowed">✓</span>
+                                }
+                                else
+                                {
+                                    <span class="no-tick" aria-label="Not allowed"></span>
+                                }
+                            </td>
+                        }
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <p class="callout">
+            @if (row.Role == "Admin")
+            {
+                @:This user can manage proposals, users, reviews and reports.
+            }
+            else if (row.Role == "Reviewer")
+            {
+                @:This user can review assigned proposals but cannot manage users or change system settings.
+            }
+            else if (row.Role == "Producer")
+            {
+                @:This user cannot approve proposals, access admin reports, manage users or change system settings.
+            }
+            else
+            {
+                @:This account has no role yet, so it has no access until the registration is approved.
+            }
+        </p>
+    </section>
+}
+else if (tab == "proposals")
+{
+    <section class="card tab-card">
+        <div class="card-head">
+            <div>
+                <h2 class="card-title">User proposals</h2>
+                <p class="card-subtitle">All proposals created by this user.</p>
+            </div>
+            <select class="input small-select" id="proposalFilter" aria-label="Filter by status">
+                <option value="">All statuses</option>
+                <option value="draft">Draft</option>
+                <option value="review">In review</option>
+                <option value="approved">Approved</option>
+                <option value="changes">Changes</option>
+                <option value="rejected">Not approved</option>
+            </select>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Proposal</th>
+                    <th>Category</th>
+                    <th>Status</th>
+                    <th>Updated</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="proposalRows">
+                @if (Model.Proposals.Count == 0)
+                {
+                    <tr><td colspan="5" class="muted" style="text-align:center;">This user has no proposals yet.</td></tr>
+                }
+
+                @foreach (var p in Model.Proposals)
+                {
+                    <tr data-status="@p.StatusKey">
+                        <td class="cell-title"><strong>@p.Title</strong><span>@p.Reference</span></td>
+                        <td>@p.Category</td>
+                        <td><span class="pill pill-@p.StatusKey">@p.StatusLabel</span></td>
+                        <td>@p.UpdatedText</td>
+                        <td>
+                            @if (p.IsDraft)
+                            {
+                                <span class="muted">Private draft</span>
+                            }
+                            else
+                            {
+                                <a href="/Admin/Proposals/@p.Id" class="link">View</a>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <p class="muted" style="margin-top:14px;font-size:11px;">Admins can view submitted proposal records but not a producer's private draft content.</p>
+    </section>
+}
+else if (tab == "activity")
+{
+    <section class="card tab-card">
+        <h2 class="card-title">Recent activity</h2>
+        <p class="card-subtitle">A read-only history of this user's actions and account changes.</p>
+
+        <div class="timeline-wrap">
+            <div>
+                @if (Model.Activity.Count == 0)
+                {
+                    <p class="muted">No activity recorded yet.</p>
+                }
+                else
+                {
+                    <ol class="timeline">
+                        @foreach (var e in Model.Activity)
+                        {
+                            <li class="event @e.Kind">
+                                <span class="event-dot" aria-hidden="true"></span>
+                                <div>
+                                    <strong>@e.Title</strong>
+                                    <span>@e.Detail</span>
+                                </div>
+                            </li>
+                        }
+                    </ol>
+                }
+            </div>
+
+            <aside class="summary-side">
+                <h3>Activity summary</h3>
+                <p>@Model.ProposalUpdatesThisWeek proposal @(Model.ProposalUpdatesThisWeek == 1 ? "update" : "updates") this week</p>
+                <p>@Model.SubmittedCount submitted @(Model.SubmittedCount == 1 ? "proposal" : "proposals")</p>
+                <p>@Model.AdminActionsThisWeek account @(Model.AdminActionsThisWeek == 1 ? "change" : "changes") this week</p>
+                <p>@Model.FailedAttempts failed login @(Model.FailedAttempts == 1 ? "attempt" : "attempts")</p>
+            </aside>
+        </div>
+    </section>
+}
+else if (tab == "security")
+{
+    <section class="card tab-card">
+        <h2 class="card-title">Account security</h2>
+        <p class="card-subtitle">Review login security, sessions and account protection.</p>
+
+        <div class="security-grid">
+            <div>
+                <span class="section-label">Password last changed</span>
+                <div class="sec-box">
+                    <strong>@Model.PasswordChangedText</strong>
+                    <span>@Model.PasswordChangedAgo</span>
+                </div>
+            </div>
+            <div>
+                <span class="section-label">Multi-factor authentication</span>
+                <div class="sec-box">
+                    @if (Model.TwoFactorEnabled)
+                    {
+                        <strong class="ok">Enabled</strong>
+                    }
+                    else
+                    {
+                        <strong class="warn">Not enabled</strong>
+                    }
+                    <span>Optional for @roleText accounts</span>
+                </div>
+            </div>
+            <div>
+                <span class="section-label">Account locks</span>
+                <div class="sec-box">
+                    @if (banned)
+                    {
+                        <strong class="bad">Banned</strong>
+                        <span>Cannot sign in until the ban is lifted</span>
+                    }
+                    else if (restricted)
+                    {
+                        <strong class="bad">Suspended</strong>
+                        <span>@(untilText != null ? "Until " + untilText : "Until lifted by an admin")</span>
+                    }
+                    else if (suspended)
+                    {
+                        <strong class="bad">@row.StatusLabel</strong>
+                        <span>Cannot sign in until reactivated</span>
+                    }
+                    else if (Model.LockedUntilText != null)
+                    {
+                        <strong class="warn">Locked</strong>
+                        <span>Until @Model.LockedUntilText</span>
+                    }
+                    else
+                    {
+                        <strong class="ok">No active lock</strong>
+                        <span>@Model.FailedAttempts failed @(Model.FailedAttempts == 1 ? "attempt" : "attempts")</span>
+                    }
+                </div>
+            </div>
+        </div>
+
+        @if (Model.RequirePasswordChange)
+        {
+            <p class="callout">This user has a temporary password and has been asked to change it.</p>
+        }
+
+        <h3 class="section-title">Active sessions</h3>
+        <div class="session-note">
+            Individual browser sessions are not tracked. Use <strong>Sign out all sessions</strong> to end every
+            session this user is signed in on — they will need to sign in again.
+        </div>
+
+        <h3 class="section-title">Administrative security actions</h3>
+
+        <div class="sec-actions">
+            <form method="post" action="/Admin/Users/@row.Id/ResetPassword"
+                  onsubmit="return confirm('Create a new temporary password for this user?');">
+                @Html.AntiForgeryToken()
+                <button type="submit">Reset password</button>
+            </form>
+
+            <form method="post" action="/Admin/Users/@row.Id/SignOutAll">
+                @Html.AntiForgeryToken()
+                <button type="submit">Sign out all sessions</button>
+            </form>
+
+            @if (locked)
+            {
+                <form method="post" action="/Admin/Users/@row.Id/Unlock">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="amber">Unlock account</button>
+                </form>
+            }
+            else
+            {
+                <form method="post" action="/Admin/Users/@row.Id/Lock"
+                      onsubmit="return confirm('Lock this account for 24 hours?');">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="amber" disabled="@(Model.IsSelf || suspended)">Lock for 24 hours</button>
+                </form>
+            }
+
+            @if (restricted)
+            {
+                <form method="post" action="/Admin/Users/@row.Id/Lift"
+                      onsubmit="return confirm('@(banned ? "Lift the ban" : "Lift the suspension")? The user will be able to sign in again.');">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="returnTab" value="security" />
+                    <button type="submit">@(banned ? "Lift ban" : "Lift suspension")</button>
+                </form>
+
+                if (!banned)
+                {
+                    <a href="/Admin/Users/@row.Id/Restrict?mode=ban&amp;returnTab=security" class="sec-link red">Ban permanently</a>
+                }
+            }
+            else if (suspended)
+            {
+                <form method="post" action="/Admin/Users/@row.Id/Reactivate">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="returnTab" value="security" />
+                    <button type="submit">Reactivate account</button>
+                </form>
+            }
+            else if (!Model.IsSelf)
+            {
+                <a href="/Admin/Users/@row.Id/Restrict?mode=suspend&amp;returnTab=security" class="sec-link amber">Suspend temporarily</a>
+                <a href="/Admin/Users/@row.Id/Restrict?mode=ban&amp;returnTab=security" class="sec-link red">Ban user</a>
+            }
+        </div>
+    </section>
+}
+
+@section Scripts {
+    <script>
+        // Proposals tab: filter rows by status.
+        (function () {
+            var filter = document.getElementById("proposalFilter");
+            if (!filter) { return; }
+
+            filter.addEventListener("change", function () {
+                document.querySelectorAll("#proposalRows tr[data-status]").forEach(function (row) {
+                    row.hidden = filter.value !== "" && row.dataset.status !== filter.value;
+                });
+            });
+        })();
+    </script>
+}

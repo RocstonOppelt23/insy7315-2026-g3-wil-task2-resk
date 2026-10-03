@@ -1,0 +1,86 @@
+﻿@model RESK.WIL.Models.ReskSettingsViewModel
+
+@{
+    var s = Model.Settings;
+    var roles = RESK.WIL.Services.ReskSettingsStore.RegistrationRoles;
+}
+
+<h2 class="card-title">Organisation settings</h2>
+<p class="card-subtitle">These details are shown on the sign-in help pages and to people who need to contact the station.</p>
+
+<div class="grid-2">
+    <div>
+        <label class="section-label" for="OrganisationName">Organisation name</label>
+        <input class="input" id="OrganisationName" name="OrganisationName" value="@s.OrganisationName" maxlength="80" />
+    </div>
+    <div>
+        <label class="section-label" for="SystemName">System display name</label>
+        <input class="input" id="SystemName" name="SystemName" value="@s.SystemName" maxlength="80" />
+    </div>
+    <div>
+        <label class="section-label" for="SupportEmail">Support email</label>
+        <input class="input" id="SupportEmail" name="SupportEmail" type="email" value="@s.SupportEmail" maxlength="120" />
+    </div>
+    <div>
+        <label class="section-label" for="ContactNumber">Contact number</label>
+        <input class="input" id="ContactNumber" name="ContactNumber" type="tel" value="@s.ContactNumber" maxlength="30" />
+    </div>
+</div>
+
+<h3 class="block-title">Registration controls</h3>
+<p class="block-sub">Control how new users register and gain access.</p>
+
+<div class="toggles">
+    <div class="toggle">
+        <label class="toggle-main">
+            <input type="checkbox" name="RequireApproval" value="true" checked="@s.RequireApproval" />
+            <span class="switch"></span>
+            <span>
+                <strong>Require admin approval for new accounts</strong>
+                <small>New users remain pending until an administrator activates them.</small>
+            </span>
+        </label>
+    </div>
+
+    <div class="toggle">
+        <label class="toggle-main">
+            <input type="checkbox" name="RequireAdminKey" value="true" checked="@s.RequireAdminKey" data-controls="AdminKey" />
+            <span class="switch"></span>
+            <span>
+                <strong>Use an administrator registration key</strong>
+                <small>Only users with the configured key can register an administrator account.</small>
+            </span>
+        </label>
+        <input class="input" id="AdminKey" name="AdminKey" value="@s.AdminKey" maxlength="40" autocomplete="off" spellcheck="false"
+               placeholder="Registration key" aria-label="Administrator registration key" />
+    </div>
+</div>
+
+<h3 class="block-title">System defaults</h3>
+
+<div class="grid-3">
+    <div>
+        <label class="section-label" for="DefaultLanguage">Default language</label>
+        <select class="input" id="DefaultLanguage" name="DefaultLanguage">
+            @foreach (var language in s.Languages.Where(l => l.Active))
+            {
+                <option value="@language.Code" selected="@(language.Code == s.DefaultLanguage)">@language.Name</option>
+            }
+        </select>
+    </div>
+    <div>
+        <label class="section-label" for="DefaultRole">Default user role</label>
+        <select class="input" id="DefaultRole" name="DefaultRole">
+            @foreach (var role in roles)
+            {
+                <option value="@role" selected="@(role == s.DefaultRole)">@role</option>
+            }
+        </select>
+    </div>
+    <div>
+        <label class="section-label" for="TimeZone">Time zone</label>
+        <input class="input" id="TimeZone" value="South Africa Standard Time" readonly aria-describedby="zoneHint" />
+    </div>
+</div>
+
+<p class="foot-note" id="zoneHint">All dates and times in the system use South Africa Standard Time (UTC+02:00).</p>

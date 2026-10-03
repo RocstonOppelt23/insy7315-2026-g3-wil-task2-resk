@@ -1,0 +1,1415 @@
+﻿@model RESK.WIL.Models.ProgrammeDetailsViewModel
+
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<IdentityUser> UserManager
+
+@{
+    Layout = null;
+    ViewData["Title"] = "Programme Details";
+
+    var currentUser = await UserManager.GetUserAsync(User);
+
+    var producerUsername =
+        currentUser?.Email
+        ?? currentUser?.UserName
+        ?? "Producer";
+
+    var producerInitial =
+        !string.IsNullOrWhiteSpace(producerUsername)
+            ? producerUsername.Substring(0, 1).ToUpper()
+            : "P";
+}
+
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="utf-8" />
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0" />
+
+    <title>Programme Details - R.E.S.K</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body {
+            min-height: 100%;
+        }
+
+        body {
+            font-family: Inter, "Segoe UI", Arial, sans-serif;
+            background: #f4f7fb;
+            color: #14233e;
+        }
+
+        button,
+        input,
+        textarea,
+        select,
+        a {
+            font-family: inherit;
+        }
+
+
+        /* =====================================================
+           SIDEBAR
+        ===================================================== */
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+
+            width: 277px;
+
+            display: flex;
+            flex-direction: column;
+
+            padding: 39px 21px;
+
+            background: #071d3b;
+            color: white;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+
+            gap: 16px;
+
+            margin: 0 14px 50px;
+        }
+
+        .brand-icon {
+            width: 60px;
+            height: 60px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            flex-shrink: 0;
+
+            border: 2px solid #12b8ce;
+            border-radius: 18px;
+
+            color: #14bfd4;
+
+            font-size: 25px;
+            font-weight: 900;
+        }
+
+        .brand-name {
+            color: white;
+
+            font-size: 24px;
+            font-weight: 900;
+
+            letter-spacing: 4px;
+        }
+
+        .brand-subtitle {
+            margin-top: 7px;
+
+            color: #c7d1e1;
+
+            font-size: 9px;
+            font-weight: 600;
+        }
+
+
+        /* =====================================================
+           PROPOSAL STEPS
+        ===================================================== */
+
+        .steps-heading {
+            margin: 0 14px 12px;
+
+            color: #6f83a2;
+
+            font-size: 10px;
+            font-weight: 800;
+        }
+
+        .steps {
+            display: flex;
+            flex-direction: column;
+
+            gap: 7px;
+        }
+
+        .step {
+            min-height: 51px;
+
+            display: flex;
+            align-items: center;
+
+            gap: 13px;
+
+            padding: 0 14px;
+
+            border-radius: 10px;
+
+            color: #8093b1;
+        }
+
+        .step.active {
+            background: #15345e;
+            color: white;
+        }
+
+        .step.complete {
+            color: #8ca4c2;
+        }
+
+        .step-number {
+            width: 29px;
+            height: 29px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            flex-shrink: 0;
+
+            border: 1px solid #506685;
+            border-radius: 50%;
+
+            color: #9bacc3;
+
+            font-size: 10px;
+            font-weight: 800;
+        }
+
+        .step.complete .step-number {
+            border-color: #13b8ce;
+            background: #13b8ce;
+            color: white;
+        }
+
+        .step.active .step-number {
+            border-color: #13b8ce;
+            background: #13b8ce;
+            color: white;
+        }
+
+        .step-name {
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+
+        /* =====================================================
+           PROFILE
+        ===================================================== */
+
+        .producer-profile {
+            margin-top: auto;
+
+            display: flex;
+            align-items: center;
+
+            gap: 11px;
+
+            padding: 13px;
+
+            border-radius: 11px;
+
+            background: #14345e;
+        }
+
+        .producer-avatar {
+            width: 37px;
+            height: 37px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            flex-shrink: 0;
+
+            border-radius: 50%;
+
+            background: #12b8ce;
+            color: white;
+
+            font-size: 11px;
+            font-weight: 900;
+        }
+
+        .producer-profile-info {
+            min-width: 0;
+        }
+
+        .producer-name {
+            overflow: hidden;
+
+            color: white;
+
+            font-size: 11px;
+            font-weight: 800;
+
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+
+        .producer-role {
+            margin-top: 5px;
+
+            color: #b6c4d7;
+
+            font-size: 9px;
+        }
+
+
+        /* =====================================================
+           MAIN PAGE
+        ===================================================== */
+
+        .main {
+            min-height: 100vh;
+
+            margin-left: 277px;
+
+            padding: 0 0 50px;
+
+            background: #f4f7fb;
+        }
+
+        .page {
+            width: calc(100% - 126px);
+            max-width: 1000px;
+
+            margin: 0 auto;
+
+            padding-top: 25px;
+        }
+
+
+        /* =====================================================
+           HEADER
+        ===================================================== */
+
+        .page-header {
+            margin-bottom: 25px;
+        }
+
+        .page-title {
+            color: #071d3b;
+
+            font-size: 23px;
+            font-weight: 900;
+        }
+
+        .page-description {
+            margin-top: 8px;
+
+            color: #71839e;
+
+            font-size: 12px;
+        }
+
+
+        /* =====================================================
+           PROGRESS
+        ===================================================== */
+
+        .progress-section {
+            margin-bottom: 20px;
+        }
+
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+
+            margin-bottom: 8px;
+
+            color: #71839e;
+
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+        .progress-track {
+            width: 100%;
+            height: 6px;
+
+            overflow: hidden;
+
+            border-radius: 20px;
+
+            background: #dce4ef;
+        }
+
+        .progress-bar {
+            width: 40%;
+            height: 100%;
+
+            border-radius: 20px;
+
+            background: #12b8ce;
+        }
+
+
+        /* =====================================================
+           CARD
+        ===================================================== */
+
+        .form-card {
+            padding: 29px 32px;
+
+            border: 1px solid #d6dfeb;
+            border-radius: 14px;
+
+            background: white;
+        }
+
+        .card-title {
+            color: #071d3b;
+
+            font-size: 19px;
+            font-weight: 900;
+        }
+
+        .card-description {
+            margin-top: 8px;
+
+            color: #71839e;
+
+            font-size: 11px;
+        }
+
+
+        /* =====================================================
+           FORM
+        ===================================================== */
+
+        .form-grid {
+            display: grid;
+
+            grid-template-columns:
+                repeat(2, minmax(0, 1fr));
+
+            gap: 21px 23px;
+
+            margin-top: 27px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+
+            gap: 8px;
+        }
+
+        .form-group.full {
+            grid-column: 1 / -1;
+        }
+
+        .form-label {
+            color: #14233e;
+
+            font-size: 11px;
+            font-weight: 800;
+        }
+
+        .required {
+            color: #d64d58;
+        }
+
+        .form-control {
+            width: 100%;
+            height: 47px;
+
+            padding: 0 14px;
+
+            border: 1px solid #cfdae8;
+            border-radius: 9px;
+
+            outline: none;
+
+            background: white;
+            color: #14233e;
+
+            font-size: 12px;
+
+            transition:
+                border-color .2s,
+                box-shadow .2s;
+        }
+
+        .form-control:focus {
+            border-color: #12b8ce;
+
+            box-shadow:
+                0 0 0 3px rgba(18, 184, 206, .10);
+        }
+
+        select.form-control {
+            cursor: pointer;
+        }
+
+        textarea.form-control {
+            height: 130px;
+
+            padding: 13px 14px;
+
+            line-height: 1.55;
+
+            resize: vertical;
+        }
+
+        .field-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+            gap: 10px;
+        }
+
+        .character-count {
+            color: #8797ac;
+
+            font-size: 9px;
+        }
+
+        .field-help {
+            color: #8494aa;
+
+            font-size: 9px;
+
+            line-height: 1.5;
+        }
+
+        .validation-message {
+            color: #cf4d56;
+
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .validation-summary {
+            margin-bottom: 20px;
+
+            padding: 13px 15px;
+
+            border: 1px solid #f0c2c5;
+            border-radius: 9px;
+
+            background: #fff7f7;
+            color: #b84048;
+
+            font-size: 11px;
+        }
+
+        .validation-summary:empty {
+            display: none;
+        }
+
+
+        /* =====================================================
+           ACTION BUTTONS
+        ===================================================== */
+
+        .actions {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            margin-top: 24px;
+        }
+
+        .back-button,
+        .draft-button,
+        .continue-button {
+            min-height: 43px;
+
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+
+            border-radius: 8px;
+
+            font-size: 11px;
+            font-weight: 800;
+
+            text-decoration: none;
+        }
+
+        .back-button {
+            min-width: 118px;
+
+            border: 1px solid #d3ddea;
+
+            background: white;
+            color: #526783;
+        }
+
+        .right-actions {
+            display: flex;
+
+            gap: 11px;
+        }
+
+        .draft-button {
+            min-width: 128px;
+
+            border: 1px solid #d3ddea;
+
+            background: white;
+            color: #526783;
+
+            cursor: pointer;
+        }
+
+        .continue-button {
+            min-width: 139px;
+
+            border: none;
+
+            background: #12b8ce;
+            color: white;
+
+            cursor: pointer;
+        }
+
+        .continue-button:hover {
+            background: #0faabd;
+        }
+
+
+        /* =====================================================
+           RESPONSIVE
+        ===================================================== */
+
+        @@media(max-width: 900px) {
+
+            .sidebar {
+                position: relative;
+
+                width: 100%;
+                min-height: auto;
+            }
+
+            .main {
+                margin-left: 0;
+            }
+
+            .page {
+                width: calc(100% - 40px);
+            }
+
+            .producer-profile {
+                margin-top: 30px;
+            }
+
+        }
+
+        @@media(max-width: 650px) {
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-group.full {
+                grid-column: auto;
+            }
+
+            .actions {
+                flex-direction: column;
+
+                gap: 12px;
+            }
+
+            .back-button,
+            .right-actions,
+            .draft-button,
+            .continue-button {
+                width: 100%;
+            }
+
+            .right-actions {
+                flex-direction: column;
+            }
+
+        }
+
+    </style>
+
+    <style id="reskWizardButtons">
+        .resk-cancel { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 22px; border: 1px solid #e1e7ef; border-radius: 8px; background: transparent; color: #61728d; font-size: 13px; font-weight: 800; text-decoration: none; transition: background 0.2s, border-color 0.2s, color 0.2s; }
+        .resk-cancel:hover { border-color: #f0c2c5; background: #fff7f7; color: #b84048; }
+        .resk-save-draft { min-height: 44px; padding: 0 22px; border: 1px solid #d3dce8; border-radius: 8px; background: #ffffff; color: #14233e; font-family: inherit; font-size: 13px; font-weight: 800; cursor: pointer; transition: border-color 0.2s, color 0.2s; }
+        .resk-save-draft:hover { border-color: #12b8ce; color: #0a9fb2; }
+    </style>    <link rel="icon" type="image/x-icon" href="/favicon.ico?v=resk2" />
+</head>
+
+
+<body>
+
+
+    <!-- =====================================================
+         SIDEBAR
+    ====================================================== -->
+
+    <aside class="sidebar">
+
+
+        <!-- LOGO -->
+
+        <div class="brand">
+
+            <div class="brand-icon">
+                R
+            </div>
+
+            <div>
+
+                <div class="brand-name">
+                    R.E.S.K
+                </div>
+
+                <div class="brand-subtitle">
+                    SOFTWARE STUDIO
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- STEPS -->
+
+        <div class="steps-heading">
+            NEW PROPOSAL
+        </div>
+
+
+        <div class="steps">
+
+
+            <!-- STEP 1 -->
+
+            <div class="step complete">
+
+                <div class="step-number">
+                    ✓
+                </div>
+
+                <div class="step-name">
+                    Producer details
+                </div>
+
+            </div>
+
+
+            <!-- STEP 2 -->
+
+            <div class="step active">
+
+                <div class="step-number">
+                    2
+                </div>
+
+                <div class="step-name">
+                    Programme details
+                </div>
+
+            </div>
+
+
+            <!-- STEP 3 -->
+
+            <div class="step">
+
+                <div class="step-number">
+                    3
+                </div>
+
+                <div class="step-name">
+                    Production details
+                </div>
+
+            </div>
+
+
+            <!-- STEP 4 -->
+
+            <div class="step">
+
+                <div class="step-number">
+                    4
+                </div>
+
+                <div class="step-name">
+                    Attachments
+                </div>
+
+            </div>
+
+
+            <!-- STEP 5 -->
+
+            <div class="step">
+
+                <div class="step-number">
+                    5
+                </div>
+
+                <div class="step-name">
+                    Review & submit
+                </div>
+
+            </div>
+
+
+        </div>
+
+
+        <!-- PRODUCER PROFILE -->
+
+        <div class="producer-profile">
+
+            <div class="producer-avatar">@await Component.InvokeAsync("ProducerAvatar", new { part = "avatar" })</div>
+
+            <div class="producer-profile-info">
+
+                <div class="producer-name">@await Component.InvokeAsync("ProducerAvatar", new { part = "name" })</div>
+
+                <div class="producer-role">
+                    Community Producer
+                </div>
+
+            </div>
+
+        </div>
+
+
+    
+        <!-- ===== PRODUCER ACCOUNT (photo, name, Account settings, Log out) ===== -->
+        <style>
+            .producer-account:not(.resk-account), .sidebar > .producer-profile { display: none !important; }
+            .resk-account { position: relative; margin-top: auto; padding: 0 8px; }
+            .resk-profile { width: 100%; display: flex; align-items: center; gap: 11px; padding: 12px 10px; border: none; border-radius: 11px; background: #142a4b; color: #ffffff; cursor: pointer; text-align: left; font-family: inherit; }
+            .resk-profile:hover { background: #193456; }
+            .resk-avatar { width: 34px; height: 34px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 50%; background: #0bb6ca; color: #ffffff; font-size: 11px; font-weight: 800; }
+            .resk-text { min-width: 0; flex: 1; }
+            .resk-name { overflow: hidden; color: #ffffff; font-size: 13px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+            .resk-role { margin-top: 4px; color: #b5c0d1; font-size: 10px; }
+            .resk-menu { position: absolute; left: 8px; right: 8px; bottom: calc(100% + 9px); z-index: 10; padding: 7px; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; background: #142a4b; box-shadow: 0 18px 35px rgba(0,0,0,0.25); opacity: 0; visibility: hidden; transform: translateY(8px); transition: 0.2s; }
+            .resk-account.open .resk-menu { opacity: 1; visibility: visible; transform: translateY(0); }
+            .resk-menu-link, .resk-logout { width: 100%; display: block; padding: 10px 11px; border: none; border-radius: 7px; background: transparent; color: #d6deea; font-family: inherit; font-size: 12px; font-weight: 600; text-align: left; text-decoration: none; cursor: pointer; }
+            .resk-menu-link:hover, .resk-logout:hover { background: rgba(255,255,255,0.06); color: #ffffff; }
+            .resk-logout { color: #ff9e9e; }
+            .resk-divider { height: 1px; margin: 5px 4px; background: rgba(255,255,255,0.08); }
+        </style>
+
+        <div class="resk-account" id="reskAccount">
+
+            <div class="resk-menu">
+                <a href="/Producer/Settings" class="resk-menu-link">Account settings</a>
+                <div class="resk-divider"></div>
+                <form method="post" action="/Producer/Logout" style="margin:0;">
+                    <button type="submit" class="resk-logout" id="reskLogoutButton" data-step="2">Log out</button>
+                </form>
+            </div>
+
+            <button type="button" class="resk-profile" id="reskProfileButton" aria-expanded="false">
+                <div class="resk-avatar">@await Component.InvokeAsync("ProducerAvatar", new { part = "avatar" })</div>
+                <div class="resk-text">
+                    <div class="resk-name">@await Component.InvokeAsync("ProducerAvatar", new { part = "name" })</div>
+                    <div class="resk-role">Community Producer</div>
+                </div>
+            </button>
+
+        </div>
+
+        <script>
+            (function () {
+                var account = document.getElementById("reskAccount");
+                var button = document.getElementById("reskProfileButton");
+                var logoutButton = document.getElementById("reskLogoutButton");
+
+                button.addEventListener("click", function (event) {
+                    event.stopPropagation();
+                    var isOpen = account.classList.toggle("open");
+                    button.setAttribute("aria-expanded", isOpen ? "true" : "false");
+                });
+
+                document.addEventListener("click", function (event) {
+                    if (!account.contains(event.target)) {
+                        account.classList.remove("open");
+                        button.setAttribute("aria-expanded", "false");
+                    }
+                });
+
+                document.addEventListener("keydown", function (event) {
+                    if (event.key === "Escape") {
+                        account.classList.remove("open");
+                        button.setAttribute("aria-expanded", "false");
+                    }
+                });
+
+                // Log out: save this page to Drafts first, then sign out.
+                logoutButton.addEventListener("click", function (event) {
+                    var forms = Array.prototype.filter.call(document.querySelectorAll("form"), function (f) {
+                        var method = (f.getAttribute("method") || "").toLowerCase();
+                        return !account.contains(f) && method === "post";
+                    });
+
+                    var form = forms[0];
+
+                    // No proposal form on the page: just log out normally.
+                    if (!form) { return; }
+
+                    event.preventDefault();
+
+                    function addHidden(name, value) {
+                        var input = document.createElement("input");
+                        input.type = "hidden";
+                        input.name = name;
+                        input.value = value;
+                        form.appendChild(input);
+                    }
+
+                    addHidden("step", logoutButton.getAttribute("data-step"));
+                    addHidden("logout", "true");
+
+                    form.setAttribute("action", "/Producer/SaveDraft");
+                    HTMLFormElement.prototype.submit.call(form);
+                });
+            })();
+        </script>
+</aside>
+
+
+    <!-- =====================================================
+         MAIN CONTENT
+    ====================================================== -->
+
+    <main class="main">
+
+
+        <div class="page">
+
+
+            <!-- HEADER -->
+
+            <header class="page-header">
+
+                <h1 class="page-title">
+                    Programme details
+                </h1>
+
+                <p class="page-description">
+                    Describe your programme content, audience and broadcast format.
+                </p>
+
+            </header>
+
+
+            <!-- PROGRESS -->
+
+            <div class="progress-section">
+
+                <div class="progress-info">
+
+                    <span>
+                        Step 2 of 5
+                    </span>
+
+                    <span>
+                        40% complete
+                    </span>
+
+                </div>
+
+                <div class="progress-track">
+
+                    <div class="progress-bar">
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- FORM -->
+
+            <form asp-controller="Producer"
+                  asp-action="ProgrammeDetails"
+                  method="post">
+
+                @Html.AntiForgeryToken()
+
+
+                <div asp-validation-summary="ModelOnly"
+                     class="validation-summary">
+                </div>
+
+
+                <section class="form-card">
+
+
+                    <h2 class="card-title">
+                        Programme information
+                    </h2>
+
+                    <p class="card-description">
+                        Tell us about the programme you are proposing for Cape Town TV.
+                    </p>
+
+
+                    <div class="form-grid">
+
+
+                        <!-- =================================================
+                             PROGRAMME TITLE
+                        ================================================== -->
+
+                        <div class="form-group full">
+
+                            <label asp-for="ProgrammeTitle"
+                                   class="form-label">
+
+                                Programme title
+                                <span class="required">*</span>
+
+                            </label>
+
+                            <input asp-for="ProgrammeTitle"
+                                   class="form-control"
+                                   placeholder="e.g. Voices of Cape Town" />
+
+                            <span asp-validation-for="ProgrammeTitle"
+                                  class="validation-message">
+                            </span>
+
+                        </div>
+
+
+                        <!-- =================================================
+                             CATEGORY
+                        ================================================== -->
+
+                        <div class="form-group">
+
+                            <label asp-for="Category"
+                                   class="form-label">
+
+                                Category
+                                <span class="required">*</span>
+
+                            </label>
+
+                            <select asp-for="Category"
+                                    class="form-control">
+    <option value="">Select a category</option>
+    @await Component.InvokeAsync("ReskCategoryOptions", new { selected = Model?.Category })
+</select>
+@await Component.InvokeAsync("ReskCategoryOptions", new { part = "hint" })
+
+                            <span asp-validation-for="Category"
+                                  class="validation-message">
+                            </span>
+
+                        </div>
+
+
+                        <!-- =================================================
+                             PROGRAMME FORMAT
+                        ================================================== -->
+
+                        <div class="form-group">
+
+                            <label asp-for="ProgrammeFormat"
+                                   class="form-label">
+
+                                Programme format
+                                <span class="required">*</span>
+
+                            </label>
+
+                            <select asp-for="ProgrammeFormat"
+                                    class="form-control">
+
+                                <option value="">
+                                    Select format
+                                </option>
+
+                                <option value="Studio">
+                                    Studio
+                                </option>
+
+                                <option value="Documentary">
+                                    Documentary
+                                </option>
+
+                                <option value="Magazine">
+                                    Magazine
+                                </option>
+
+                                <option value="Interview">
+                                    Interview / Talk Show
+                                </option>
+
+                                <option value="Reality">
+                                    Reality
+                                </option>
+
+                                <option value="Drama">
+                                    Drama
+                                </option>
+
+                                <option value="Educational">
+                                    Educational
+                                </option>
+
+                                <option value="Other">
+                                    Other
+                                </option>
+
+                            </select>
+
+                            <span asp-validation-for="ProgrammeFormat"
+                                  class="validation-message">
+                            </span>
+
+                        </div>
+
+
+                        <!-- =================================================
+                             LANGUAGE
+                        ================================================== -->
+
+                        <div class="form-group">
+
+                            <label asp-for="PrimaryLanguage"
+                                   class="form-label">
+
+                                Primary language
+                                <span class="required">*</span>
+
+                            </label>
+
+                            <select asp-for="PrimaryLanguage"
+                                    class="form-control">
+
+                                <option value="">
+                                    Select language
+                                </option>
+
+                                <option value="English">
+                                    English
+                                </option>
+
+                                <option value="Afrikaans">
+                                    Afrikaans
+                                </option>
+
+                                <option value="isiXhosa">
+                                    isiXhosa
+                                </option>
+
+                                <option value="Multilingual">
+                                    Multilingual
+                                </option>
+
+                                <option value="Other">
+                                    Other
+                                </option>
+
+                            </select>
+
+                            <span asp-validation-for="PrimaryLanguage"
+                                  class="validation-message">
+                            </span>
+
+                        </div>
+
+
+                        <!-- =================================================
+                             EPISODE DURATION
+                        ================================================== -->
+
+                        <div class="form-group">
+
+                            <label asp-for="EpisodeDuration"
+                                   class="form-label">
+
+                                Episode duration
+                                <span class="required">*</span>
+
+                            </label>
+
+                            <select asp-for="EpisodeDuration"
+                                    class="form-control">
+
+                                <option value="">
+                                    Select duration
+                                </option>
+
+                                <option value="5 minutes">
+                                    5 minutes
+                                </option>
+
+                                <option value="15 minutes">
+                                    15 minutes
+                                </option>
+
+                                <option value="24 minutes">
+                                    24 minutes
+                                </option>
+
+                                <option value="30 minutes">
+                                    30 minutes
+                                </option>
+
+                                <option value="48 minutes">
+                                    48 minutes
+                                </option>
+
+                                <option value="60 minutes">
+                                    60 minutes
+                                </option>
+
+                                <option value="Other">
+                                    Other
+                                </option>
+
+                            </select>
+
+                            <span asp-validation-for="EpisodeDuration"
+                                  class="validation-message">
+                            </span>
+
+                        </div>
+
+
+                        <!-- =================================================
+                             SYNOPSIS
+                        ================================================== -->
+
+                        <div class="form-group full">
+
+                            <div class="field-header">
+
+                                <label asp-for="Synopsis"
+                                       class="form-label">
+
+                                    Programme synopsis
+                                    <span class="required">*</span>
+
+                                </label>
+
+                                <span id="synopsisCount"
+                                      class="character-count">
+
+                                    0 / 1000
+
+                                </span>
+
+                            </div>
+
+                            <textarea asp-for="Synopsis"
+                                      id="Synopsis"
+                                      maxlength="1000"
+                                      class="form-control"
+                                      placeholder="Describe the programme concept, purpose and the type of content viewers can expect."></textarea>
+
+                            <span class="field-help">
+                                Give us a clear overview of your programme idea and what viewers can expect.
+                            </span>
+
+                            <span asp-validation-for="Synopsis"
+                                  class="validation-message">
+                            </span>
+
+                        </div>
+
+
+                        <!-- =================================================
+                             TARGET AUDIENCE
+                        ================================================== -->
+
+                        <div class="form-group">
+
+                            <label asp-for="TargetAudience"
+                                   class="form-label">
+
+                                Target audience
+                                <span class="required">*</span>
+
+                            </label>
+
+                            <input asp-for="TargetAudience"
+                                   class="form-control"
+                                   placeholder="e.g. Cape Town youth aged 18–30" />
+
+                            <span asp-validation-for="TargetAudience"
+                                  class="validation-message">
+                            </span>
+
+                        </div>
+
+
+                        <!-- =================================================
+                             BROADCAST FREQUENCY
+                        ================================================== -->
+
+                        <div class="form-group">
+
+                            <label asp-for="BroadcastFrequency"
+                                   class="form-label">
+
+                                Broadcast frequency
+                                <span class="required">*</span>
+
+                            </label>
+
+                            <select asp-for="BroadcastFrequency"
+                                    class="form-control">
+
+                                <option value="">
+                                    Select frequency
+                                </option>
+
+                                <option value="Once-off">
+                                    Once-off special
+                                </option>
+
+                                <option value="Daily">
+                                    Daily
+                                </option>
+
+                                <option value="Weekly">
+                                    Weekly
+                                </option>
+
+                                <option value="Fortnightly">
+                                    Fortnightly
+                                </option>
+
+                                <option value="Monthly">
+                                    Monthly
+                                </option>
+
+                                <option value="Limited series">
+                                    Limited series
+                                </option>
+
+                            </select>
+
+                            <span asp-validation-for="BroadcastFrequency"
+                                  class="validation-message">
+                            </span>
+
+                        </div>
+
+
+                    </div>
+
+
+                </section>
+
+
+                <!-- =====================================================
+                     BUTTONS
+                ====================================================== -->
+
+                <div class="actions">
+
+
+                    <a asp-controller="Producer"
+                       asp-action="Create"
+                       class="back-button">
+
+                        ← Back
+
+                    </a>
+
+
+                    <div class="right-actions">
+
+
+                        
+
+
+                        <div style="display:flex;align-items:center;gap:14px;margin-left:auto;flex-wrap:wrap;justify-content:flex-end;">
+                        <a href="/Producer/CancelProposal" class="resk-cancel">Cancel</a>
+                        <button type="button" class="resk-save-draft" onclick="var f=this.form;var s=document.createElement('input');s.type='hidden';s.name='step';s.value='2';f.appendChild(s);f.action='/Producer/SaveDraft';HTMLFormElement.prototype.submit.call(f);">Save draft</button>
+                        <button type="submit"
+                                class="continue-button">
+
+                            Continue →
+
+                        </button>
+                    </div>
+
+
+                    </div>
+
+
+                </div>
+
+
+            </form>
+
+
+        </div>
+
+
+    </main>
+
+
+    <!-- =====================================================
+         JAVASCRIPT
+    ====================================================== -->
+
+    <script>
+
+        const synopsis =
+            document.getElementById("Synopsis");
+
+        const synopsisCount =
+            document.getElementById("synopsisCount");
+
+
+        function updateSynopsisCount() {
+
+            if (!synopsis || !synopsisCount) {
+                return;
+            }
+
+            synopsisCount.textContent =
+                synopsis.value.length + " / 1000";
+        }
+
+
+        if (synopsis) {
+
+            synopsis.addEventListener(
+                "input",
+                updateSynopsisCount
+            );
+
+            updateSynopsisCount();
+        }
+
+    </script>
+
+
+</body>
+
+</html>

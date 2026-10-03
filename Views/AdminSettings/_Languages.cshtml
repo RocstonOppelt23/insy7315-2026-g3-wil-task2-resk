@@ -1,0 +1,243 @@
+﻿@model RESK.WIL.Models.ReskSettingsViewModel
+
+@{
+    var s = Model.Settings;
+    var active = s.Languages.Where(l => l.Active).ToList();
+}
+
+<h2 class="card-title">Language settings</h2>
+<p class="card-subtitle">Manage available interface languages and the default translation source.</p>
+
+<div class="grid-2">
+    <div>
+        <label class="section-label" for="DefaultLanguage">Default language</label>
+        <select class="input" id="DefaultLanguage" name="DefaultLanguage" data-chosen="@s.DefaultLanguage">
+            @foreach (var language in active)
+            {
+                <option value="@language.Code" selected="@(language.Code == s.DefaultLanguage)">@language.Name</option>
+            }
+        </select>
+    </div>
+    <div>
+        <label class="section-label" for="FallbackLanguage">Fallback language</label>
+        <select class="input" id="FallbackLanguage" name="FallbackLanguage" data-chosen="@s.FallbackLanguage">
+            @foreach (var language in active)
+            {
+                <option value="@language.Code" selected="@(language.Code == s.FallbackLanguage)">@language.Name</option>
+            }
+        </select>
+    </div>
+</div>
+
+<h3 class="block-title">Available languages</h3>
+
+<div class="lang-list" id="langList">
+    @for (int i = 0; i < s.Languages.Count; i++)
+    {
+        var l = s.Languages[i];
+        string field = "Languages[" + i + "].";
+
+        <div class="lang" data-code="@l.Code" data-name="@l.Name">
+            <input type="hidden" name="Languages.Index" value="@i" />
+            <input type="hidden" name="@(field + "Code")" value="@l.Code" />
+            <input type="hidden" name="@(field + "Name")" value="@l.Name" />
+            <input type="hidden" name="@(field + "File")" value="@l.File" />
+            <input type="hidden" name="@(field + "Maintainer")" value="@l.Maintainer" />
+            <input type="hidden" name="@(field + "Active")" value="@(l.Active ? "true" : "false")" class="active-value" />
+
+            <span class="lang-code" aria-hidden="true">@l.Code</span>
+            <div class="lang-text">
+                <strong>@l.Name</strong>
+                <small>Translation file: @l.File &bull; @(string.IsNullOrWhiteSpace(l.Maintainer) ? "No maintainer yet" : "Maintained by " + l.Maintainer)</small>
+            </div>
+            <button type="button" class="state @(l.Active ? "" : "off")" aria-pressed="@(l.Active ? "true" : "false")" aria-label="@(l.Name + ": active")">@(l.Active ? "Active" : "Inactive")</button>
+            <button type="button" class="remove" aria-label="@("Remove " + l.Name)">&times;</button>
+        </div>
+    }
+</div>
+
+<button type="button" class="add-lang" id="addLang">+ Add another language</button>
+
+<div class="add-form" id="addForm" hidden>
+    <div>
+        <label class="section-label" for="newName">Language name</label>
+        <input class="input" id="newName" maxlength="40" placeholder="e.g. Afrikaans" />
+    </div>
+    <div>
+        <label class="section-label" for="newCode">Code</label>
+        <input class="input" id="newCode" maxlength="5" placeholder="af" />
+    </div>
+    <div>
+        <label class="section-label" for="newMaintainer">Maintained by</label>
+        <input class="input" id="newMaintainer" maxlength="40" placeholder="Name (optional)" />
+    </div>
+    <button type="button" class="mini-button go" id="newAdd">Add</button>
+    <button type="button" class="mini-button" id="newCancel">Cancel</button>
+</div>
+<p class="foot-note" id="addError" role="alert" style="color:#c9444d;" hidden></p>
+
+<h3 class="block-title">Language behaviour</h3>
+
+<div class="toggles">
+    <div class="toggle highlight">
+        <label class="toggle-main">
+            <input type="checkbox" name="RememberLanguage" value="true" checked="@s.RememberLanguage" />
+            <span class="switch"></span>
+            <span>
+                <strong>Remember each user's language preference</strong>
+                <small>The interface opens in the language last selected by the user.</small>
+            </span>
+        </label>
+    </div>
+</div>
+
+<p class="foot-note">These language choices are saved. No page reads them yet, so the interface stays in its current language until translations are connected.</p>
+
+<script>
+    (function () {
+        var list = document.getElementById("langList");
+        var addButton = document.getElementById("addLang");
+        var addForm = document.getElementById("addForm");
+        var addError = document.getElementById("addError");
+        var next = 0;
+
+        function changed() { if (window.reskSettingsChanged) { window.reskSettingsChanged(); } }
+
+        // The two drop-downs only offer languages that are active.
+        function refreshSelects() {
+            ["DefaultLanguage", "FallbackLanguage"].forEach(function (id) {
+                var select = document.getElementById(id);
+                var wanted = select.value || select.getAttribute("data-chosen");
+                select.textContent = "";
+
+                list.querySelectorAll(".lang").forEach(function (row) {
+                    if (row.querySelector(".active-value").value !== "true") { return; }
+                    var option = document.createElement("option");
+                    option.value = row.getAttribute("data-code");
+                    option.textContent = row.getAttribute("data-name");
+                    option.selected = option.value === wanted;
+                    select.appendChild(option);
+                });
+            });
+
+            // The last language can't be removed.
+            var rows = list.querySelectorAll(".lang");
+            rows.forEach(function (row) { row.querySelector(".remove").hidden = rows.length < 2; });
+        }
+
+        function wire(row) {
+            var state = row.querySelector(".state");
+            var value = row.querySelector(".active-value");
+
+            state.addEventListener("click", function () {
+                var on = value.value !== "true";
+                value.value = on ? "true" : "false";
+                state.textContent = on ? "Active" : "Inactive";
+                state.classList.toggle("off", !on);
+                state.setAttribute("aria-pressed", on ? "true" : "false");
+                refreshSelects();
+                changed();
+            });
+
+            row.querySelector(".remove").addEventListener("click", function () {
+                row.remove();
+                refreshSelects();
+                changed();
+            });
+        }
+
+        function hidden(name, value, className) {
+            var input = document.createElement("input");
+            input.type = "hidden";
+            input.name = name;
+            input.value = value;
+            if (className) { input.className = className; }
+            return input;
+        }
+
+        function addRow(name, code, maintainer) {
+            var key = "n" + (next++);
+            var field = "Languages[" + key + "].";
+            var row = document.createElement("div");
+            row.className = "lang";
+            row.setAttribute("data-code", code);
+            row.setAttribute("data-name", name);
+
+            row.appendChild(hidden("Languages.Index", key));
+            row.appendChild(hidden(field + "Code", code));
+            row.appendChild(hidden(field + "Name", name));
+            row.appendChild(hidden(field + "File", code + ".json"));
+            row.appendChild(hidden(field + "Maintainer", maintainer));
+            row.appendChild(hidden(field + "Active", "true", "active-value"));
+
+            var badge = document.createElement("span");
+            badge.className = "lang-code";
+            badge.textContent = code;
+            row.appendChild(badge);
+
+            var text = document.createElement("div");
+            text.className = "lang-text";
+            var strong = document.createElement("strong");
+            strong.textContent = name;
+            var small = document.createElement("small");
+            small.textContent = "Translation file: " + code + ".json \u2022 " + (maintainer ? "Maintained by " + maintainer : "No maintainer yet");
+            text.appendChild(strong);
+            text.appendChild(small);
+            row.appendChild(text);
+
+            var state = document.createElement("button");
+            state.type = "button";
+            state.className = "state";
+            state.textContent = "Active";
+            state.setAttribute("aria-pressed", "true");
+            row.appendChild(state);
+
+            var remove = document.createElement("button");
+            remove.type = "button";
+            remove.className = "remove";
+            remove.setAttribute("aria-label", "Remove " + name);
+            remove.textContent = "\u00d7";
+            row.appendChild(remove);
+
+            list.appendChild(row);
+            wire(row);
+        }
+
+        list.querySelectorAll(".lang").forEach(wire);
+        refreshSelects();
+
+        addButton.addEventListener("click", function () {
+            addForm.hidden = false;
+            addButton.hidden = true;
+            document.getElementById("newName").focus();
+        });
+
+        document.getElementById("newCancel").addEventListener("click", function () {
+            addForm.hidden = true;
+            addButton.hidden = false;
+            addError.hidden = true;
+        });
+
+        document.getElementById("newAdd").addEventListener("click", function () {
+            var name = document.getElementById("newName").value.trim();
+            var code = document.getElementById("newCode").value.trim().toLowerCase();
+            var maintainer = document.getElementById("newMaintainer").value.trim();
+            var message = "";
+
+            if (!name) { message = "Enter the language name."; }
+            else if (!/^[a-z]{2,5}$/.test(code)) { message = "The code must be 2 to 5 letters, for example \"af\"."; }
+            else if (list.querySelector(".lang[data-code='" + code + "']")) { message = "That language code is already in the list."; }
+
+            addError.textContent = message;
+            addError.hidden = !message;
+            if (message) { return; }
+
+            addRow(name, code, maintainer);
+            ["newName", "newCode", "newMaintainer"].forEach(function (id) { document.getElementById(id).value = ""; });
+            addForm.hidden = true;
+            addButton.hidden = false;
+            refreshSelects();
+            changed();
+        });
+    })();
+</script>

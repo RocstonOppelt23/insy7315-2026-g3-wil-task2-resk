@@ -1,17 +1,34 @@
-﻿@{
+﻿@model RESK.WIL.Models.ProducerDashboardViewModel
+
+@{
     Layout = null;
     ViewData["Title"] = "Producer Dashboard";
+
+    var producerName = Model.ProducerName;
+
+    var initial =
+        !string.IsNullOrWhiteSpace(producerName)
+            ? producerName.Substring(0, 1).ToUpper()
+            : "P";
+
+    var draftLabel =
+        Model.Drafts == 1 ? "1 draft" : $"{Model.Drafts} drafts";
 }
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0" />
 
     <title>Producer Dashboard - R.E.S.K</title>
 
     <style>
+
         * {
             box-sizing: border-box;
             margin: 0;
@@ -27,17 +44,38 @@
             font-family: Inter, "Segoe UI", Arial, sans-serif;
             background: #f4f7fb;
             color: #13223c;
-            opacity: 0;
-            animation: pageFadeIn 0.55s ease forwards;
+        }
+
+
+        /* =========================================================
+           PAGE TRANSITION
+           Only the main content fades. The sidebar stays still,
+           so moving between pages feels smooth.
+        ========================================================= */
+
+        .main {
+            animation: pageFadeIn 0.4s ease-out both;
+        }
+
+        /* Added by the script when a link is clicked. */
+        body.page-leaving .main {
+            animation: pageFadeOut 0.18s ease-in both;
         }
 
         @@keyframes pageFadeIn {
-            from {
-                opacity: 0;
-            }
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: none; }
+        }
 
-            to {
-                opacity: 1;
+        @@keyframes pageFadeOut {
+            from { opacity: 1; transform: none; }
+            to { opacity: 0; transform: translateY(-4px); }
+        }
+
+        @@media (prefers-reduced-motion: reduce) {
+            .main,
+            body.page-leaving .main {
+                animation: none;
             }
         }
 
@@ -45,6 +83,7 @@
         a {
             font-family: inherit;
         }
+
 
         /* =========================================================
            SIDEBAR
@@ -55,29 +94,19 @@
             left: 0;
             top: 0;
             bottom: 0;
-
             width: 260px;
-
             display: flex;
             flex-direction: column;
-
             background: #0c1a33;
-            color: #ffffff;
-
+            color: white;
             padding: 36px 20px 38px;
-
             z-index: 100;
         }
-
-        /* =========================================================
-           BRAND
-        ========================================================= */
 
         .brand {
             display: flex;
             align-items: center;
             gap: 15px;
-
             padding-left: 13px;
             margin-bottom: 42px;
         }
@@ -85,23 +114,18 @@
         .brand-icon {
             width: 56px;
             height: 56px;
-
             display: flex;
             align-items: center;
             justify-content: center;
-
             border: 2px solid #00b9d0;
             border-radius: 17px;
-
             color: #00bfd7;
-
             font-size: 28px;
             font-weight: 700;
         }
 
         .brand-name {
-            color: #ffffff;
-
+            color: white;
             font-size: 24px;
             font-weight: 800;
             letter-spacing: 1.5px;
@@ -109,29 +133,16 @@
 
         .brand-subtitle {
             margin-top: 5px;
-
             color: #d3dae7;
-
             font-size: 9px;
-            letter-spacing: 0.3px;
         }
-
-        /* =========================================================
-           SIDEBAR LABEL
-        ========================================================= */
 
         .nav-label {
             margin: 0 12px 8px;
-
             color: #72809a;
-
             font-size: 10px;
             font-weight: 800;
         }
-
-        /* =========================================================
-           NAVIGATION
-        ========================================================= */
 
         .sidebar-nav {
             display: flex;
@@ -142,40 +153,31 @@
         .sidebar-link {
             display: flex;
             align-items: center;
-
             min-height: 43px;
-
             padding: 0 32px;
-
             border-radius: 10px;
-
             color: #b9c2d1;
-
             font-size: 14px;
             font-weight: 500;
-
             text-decoration: none;
-
-            transition:
-                background 0.2s ease,
-                color 0.2s ease,
-                transform 0.2s ease;
+            transition: 0.2s;
         }
 
         .sidebar-link:hover {
-            color: #ffffff;
-            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            background: rgba(255,255,255,0.05);
             transform: translateX(2px);
         }
 
         .sidebar-link.active {
             background: #142a4b;
-            color: #ffffff;
+            color: white;
             font-weight: 700;
         }
 
+
         /* =========================================================
-           PRODUCER PROFILE
+           PRODUCER ACCOUNT
         ========================================================= */
 
         .producer-account {
@@ -186,24 +188,16 @@
 
         .producer-profile {
             width: 100%;
-
             display: flex;
             align-items: center;
             gap: 11px;
-
             padding: 12px 10px;
-
-            border: 0;
+            border: none;
             border-radius: 11px;
-
             background: #142a4b;
-
             color: white;
-
-            text-align: left;
             cursor: pointer;
-
-            transition: background 0.2s ease;
+            text-align: left;
         }
 
         .producer-profile:hover {
@@ -213,19 +207,14 @@
         .producer-avatar {
             width: 34px;
             height: 34px;
-
             flex-shrink: 0;
-
             display: flex;
             align-items: center;
             justify-content: center;
-
             border-radius: 50%;
-
             background: #0bb6ca;
-            color: #ffffff;
-
-            font-size: 10px;
+            color: white;
+            font-size: 11px;
             font-weight: 800;
         }
 
@@ -236,53 +225,33 @@
 
         .producer-name {
             overflow: hidden;
-
-            color: #ffffff;
-
+            color: white;
             font-size: 13px;
             font-weight: 700;
-
             text-overflow: ellipsis;
             white-space: nowrap;
         }
 
         .producer-role {
             margin-top: 4px;
-
             color: #b5c0d1;
-
             font-size: 10px;
         }
 
-        /* =========================================================
-           PROFILE POPUP
-        ========================================================= */
-
         .profile-menu {
             position: absolute;
-
             left: 8px;
             right: 8px;
             bottom: calc(100% + 9px);
-
             padding: 7px;
-
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255,255,255,0.08);
             border-radius: 10px;
-
             background: #142a4b;
-
-            box-shadow: 0 18px 35px rgba(0, 0, 0, 0.25);
-
+            box-shadow: 0 18px 35px rgba(0,0,0,0.25);
             opacity: 0;
             visibility: hidden;
-
             transform: translateY(8px);
-
-            transition:
-                opacity 0.2s ease,
-                visibility 0.2s ease,
-                transform 0.2s ease;
+            transition: 0.2s;
         }
 
         .producer-account.open .profile-menu {
@@ -294,30 +263,22 @@
         .profile-menu-link,
         .logout-button {
             width: 100%;
-
             display: block;
-
             padding: 10px 11px;
-
-            border: 0;
+            border: none;
             border-radius: 7px;
-
             background: transparent;
-
             color: #d6deea;
-
             font-size: 12px;
             font-weight: 600;
-
             text-align: left;
             text-decoration: none;
-
             cursor: pointer;
         }
 
         .profile-menu-link:hover,
         .logout-button:hover {
-            background: rgba(255, 255, 255, 0.06);
+            background: rgba(255,255,255,0.06);
             color: white;
         }
 
@@ -328,9 +289,9 @@
         .menu-divider {
             height: 1px;
             margin: 5px 4px;
-
-            background: rgba(255, 255, 255, 0.08);
+            background: rgba(255,255,255,0.08);
         }
+
 
         /* =========================================================
            MAIN
@@ -340,20 +301,14 @@
             min-height: 100vh;
             margin-left: 260px;
             padding: 28px 52px 38px;
-
             background: #f4f7fb;
         }
 
         .dashboard {
             width: 100%;
             max-width: 1070px;
-
             margin: 0 auto;
         }
-
-        /* =========================================================
-           WELCOME
-        ========================================================= */
 
         .welcome {
             margin-bottom: 26px;
@@ -361,50 +316,41 @@
 
         .welcome h1 {
             color: #14233e;
-
             font-size: 31px;
             line-height: 1.2;
             font-weight: 800;
+            overflow-wrap: anywhere;
         }
 
         .welcome p {
             margin-top: 8px;
-
             color: #697a96;
-
             font-size: 14px;
         }
 
+
         /* =========================================================
-           KPI CARDS
+           STATS
         ========================================================= */
 
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(4, minmax(0, 1fr));
             gap: 15px;
-
             margin-bottom: 21px;
         }
 
         .stat-card {
             min-height: 117px;
-
             padding: 20px;
-
             border: 1px solid #d9e1ec;
             border-radius: 13px;
-
-            background: #ffffff;
-
-            box-shadow: 0 1px 2px rgba(20, 35, 62, 0.02);
+            background: white;
         }
 
         .stat-title {
             margin-bottom: 12px;
-
             color: #61728d;
-
             font-size: 11px;
             font-weight: 800;
         }
@@ -417,7 +363,6 @@
 
         .stat-number {
             color: #12213b;
-
             font-size: 35px;
             line-height: 1;
             font-weight: 800;
@@ -425,7 +370,6 @@
 
         .stat-text {
             color: #687995;
-
             font-size: 11px;
         }
 
@@ -439,13 +383,14 @@
             font-weight: 700;
         }
 
+
         /* =========================================================
-           DASHBOARD COLUMNS
+           GRID + PANELS
         ========================================================= */
 
         .dashboard-grid {
             display: grid;
-            grid-template-columns: minmax(0, 1.95fr) minmax(300px, 1fr);
+            grid-template-columns: minmax(0,1.95fr) minmax(300px,1fr);
             gap: 15px;
         }
 
@@ -456,16 +401,10 @@
             gap: 15px;
         }
 
-        /* =========================================================
-           PANEL
-        ========================================================= */
-
         .panel {
             border: 1px solid #d9e1ec;
             border-radius: 13px;
-
-            background: #ffffff;
-
+            background: white;
             overflow: hidden;
         }
 
@@ -475,18 +414,16 @@
 
         .panel-title {
             color: #14233e;
-
             font-size: 19px;
             font-weight: 800;
         }
 
         .panel-subtitle {
             margin-top: 5px;
-
             color: #6d7e99;
-
             font-size: 11px;
         }
+
 
         /* =========================================================
            CURRENT PROPOSAL
@@ -494,236 +431,209 @@
 
         .current-proposal {
             margin-top: 20px;
-
-            padding: 13px 23px 10px;
-
+            padding: 22px 25px;
             border: 1px solid #dde4ee;
             border-radius: 12px;
-
             background: #f7f9fc;
         }
 
-        .proposal-top {
+        .current-top {
             display: flex;
+            align-items: flex-start;
             justify-content: space-between;
-            gap: 15px;
+            gap: 14px;
         }
 
-        .proposal-name {
+        .current-title {
             color: #14233e;
-
             font-size: 19px;
             font-weight: 800;
+            overflow-wrap: anywhere;
         }
 
-        .proposal-meta {
-            margin-top: 9px;
-
+        .current-meta {
+            margin-top: 12px;
             color: #627490;
-
             font-size: 11px;
+            line-height: 1.8;
         }
-
-        .proposal-date {
-            margin-top: 7px;
-
-            color: #627490;
-
-            font-size: 11px;
-        }
-
-        /* =========================================================
-           STATUS BADGES
-        ========================================================= */
-
-        .status {
-            min-width: 80px;
-
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-
-            padding: 6px 13px;
-
-            border-radius: 999px;
-
-            font-size: 10px;
-            font-weight: 700;
-        }
-
-        .status-review {
-            background: #fff2d8;
-            color: #bd7900;
-        }
-
-        .status-approved {
-            background: #e6f6ef;
-            color: #229865;
-        }
-
-        .status-draft {
-            background: #f0f3f7;
-            color: #66768e;
-        }
-
-        .status-changes {
-            background: #fde9eb;
-            color: #d34e5d;
-        }
-
-        /* =========================================================
-           WORKFLOW
-        ========================================================= */
 
         .workflow {
-            display: grid;
-            grid-template-columns: auto 1fr auto;
+            display: flex;
             align-items: center;
-            gap: 10px;
-
-            margin-top: 19px;
+            gap: 12px;
+            margin-top: 14px;
         }
 
         .workflow-label {
             color: #14233e;
-
             font-size: 11px;
-            font-weight: 700;
+            font-weight: 800;
+            white-space: nowrap;
         }
 
-        .progress-track {
-            height: 8px;
-
-            border-radius: 999px;
-
-            background: #e2e7ef;
-
+        .workflow-track {
+            flex: 1;
+            height: 7px;
             overflow: hidden;
+            border-radius: 20px;
+            background: #e2e8f0;
         }
 
-        .progress-bar {
-            width: 67%;
+        .workflow-bar {
             height: 100%;
-
-            border-radius: inherit;
-
-            background: #14b5c8;
+            border-radius: 20px;
+            background: #12b8ce;
         }
 
-        .workflow-stages {
-            color: #667791;
-
+        .workflow-value {
+            color: #6d7e99;
             font-size: 10px;
+            white-space: nowrap;
         }
 
-        .proposal-actions {
+        .current-actions {
             display: flex;
             justify-content: flex-end;
+            margin-top: 14px;
+        }
 
+        .small-button {
+            display: inline-block;
+            padding: 8px 16px;
+            border: 1px solid #d3ddea;
+            border-radius: 7px;
+            background: white;
+            color: #14233e;
+            font-size: 10px;
+            font-weight: 800;
+            text-decoration: none;
+        }
+
+        .small-button:hover {
+            border-color: #12b8ce;
+        }
+
+        .empty-title {
+            color: #14233e;
+            font-size: 19px;
+            font-weight: 800;
+        }
+
+        .empty-text {
             margin-top: 10px;
-            padding-right: 51px;
+            color: #627490;
+            font-size: 11px;
+            line-height: 1.8;
         }
 
         .outline-button {
-            min-width: 106px;
-
-            padding: 8px 14px;
-
-            border: 1px solid #d5deea;
+            display: inline-block;
+            margin-top: 18px;
+            padding: 9px 27px;
+            border: 1px solid #11b6ca;
             border-radius: 8px;
-
             background: white;
-            color: #14233e;
-
+            color: #00a9bd;
             font-size: 10px;
             font-weight: 700;
-
             text-decoration: none;
-            text-align: center;
-
-            cursor: pointer;
         }
 
         .outline-button:hover {
-            border-color: #12b8cc;
-            color: #00a9bd;
+            background: #eefbfc;
         }
+
+
+        /* =========================================================
+           STATUS PILLS
+        ========================================================= */
+
+        .status-pill {
+            display: inline-block;
+            padding: 5px 14px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .status-draft {
+            background: #eef2f7;
+            color: #5b6b85;
+        }
+
+        .status-review {
+            background: #fdf1d6;
+            color: #c77c00;
+        }
+
+        .status-approved {
+            background: #e3f5ec;
+            color: #1f8a5c;
+        }
+
+        .status-changes,
+        .status-rejected {
+            background: #fde7e8;
+            color: #c9444d;
+        }
+
 
         /* =========================================================
            NEXT ACTION
         ========================================================= */
 
-        .next-action-panel {
-            min-height: 252px;
-        }
-
         .info-box {
             display: flex;
             gap: 12px;
-
             margin-top: 20px;
-
-            padding: 8px 10px 8px;
-
+            padding: 13px;
             border: 1px solid #8ee0e9;
             border-radius: 10px;
-
             background: #eefbfc;
         }
 
         .info-icon {
             width: 28px;
             height: 28px;
-
             flex-shrink: 0;
-
             display: flex;
             align-items: center;
             justify-content: center;
-
             border-radius: 50%;
-
             background: #10b3c7;
             color: white;
-
             font-size: 14px;
             font-weight: 800;
         }
 
         .info-title {
-            margin-top: 5px;
-
+            margin-top: 4px;
             color: #14233e;
-
             font-size: 12px;
             font-weight: 800;
         }
 
         .info-description {
-            margin-top: 13px;
-
+            margin-top: 10px;
             color: #61748f;
-
             font-size: 10px;
             line-height: 1.7;
         }
 
         .status-details {
             display: inline-block;
-
             margin-top: 8px;
             padding: 5px 10px;
-
             border-radius: 999px;
-
             background: white;
             color: #009cb0;
-
             font-size: 10px;
             font-weight: 700;
-
             text-decoration: none;
         }
+
 
         /* =========================================================
            RECENT PROPOSALS
@@ -733,28 +643,25 @@
             display: flex;
             align-items: flex-start;
             justify-content: space-between;
-
+            gap: 14px;
             padding: 17px 23px 13px;
         }
 
         .view-all {
-            margin-top: 7px;
-
+            margin-top: 8px;
             color: #00abc0;
-
             font-size: 11px;
             font-weight: 700;
-
             text-decoration: none;
         }
 
         .proposal-table-wrap {
-            padding: 0 15px 8px;
+            padding: 0 15px 12px;
+            overflow-x: auto;
         }
 
         .proposal-table {
             width: 100%;
-
             border-collapse: collapse;
         }
 
@@ -764,91 +671,70 @@
 
         .proposal-table th {
             padding: 12px 18px;
-
             color: #64758f;
-
             font-size: 10px;
             font-weight: 800;
-
             text-align: left;
         }
 
-        .proposal-table th:first-child {
-            border-radius: 8px 0 0 8px;
-        }
-
-        .proposal-table th:last-child {
-            border-radius: 0 8px 8px 0;
-        }
-
         .proposal-table td {
-            padding: 12px 18px;
-
-            border-bottom: 1px solid #edf0f5;
-
-            color: #5d6f8a;
-
+            padding: 14px 18px;
+            border-bottom: 1px solid #edf1f6;
+            color: #687995;
             font-size: 11px;
         }
 
-        .proposal-table tbody tr:last-child td {
+        .proposal-table tr:last-child td {
             border-bottom: none;
         }
 
-        .proposal-table .programme-name {
+        .proposal-table td.programme {
             color: #14233e;
             font-weight: 700;
         }
 
-        .table-action {
-            color: #00abc0;
-
-            font-size: 11px;
+        .row-action {
+            color: #00a9bd;
             font-weight: 700;
-
             text-decoration: none;
         }
+
+        .row-action:hover {
+            text-decoration: underline;
+        }
+
+        .empty-table {
+            padding: 45px 20px !important;
+            color: #8493aa !important;
+            text-align: center;
+            font-size: 12px !important;
+        }
+
 
         /* =========================================================
            QUICK ACTIONS
         ========================================================= */
 
-        .quick-panel {
-            min-height: 321px;
-        }
-
         .quick-actions {
             display: flex;
             flex-direction: column;
             gap: 10px;
-
             margin-top: 20px;
         }
 
         .quick-action {
             min-height: 52px;
-
             display: flex;
             align-items: center;
             justify-content: space-between;
-
             padding: 0 17px;
-
             border: 1px solid #d7e0eb;
             border-radius: 9px;
-
             background: white;
-
             color: #14233e;
-
             font-size: 12px;
             font-weight: 700;
-
             text-decoration: none;
-
-            transition:
-                border 0.2s ease,
-                background 0.2s ease;
         }
 
         .quick-action:hover {
@@ -868,33 +754,28 @@
 
         .draft-count {
             padding: 4px 7px;
-
             border-radius: 999px;
-
             background: #f1f4f8;
             color: #6a7b94;
-
             font-size: 10px;
         }
 
         .profile-update {
             display: inline-block;
-
-            margin: 18px 17px 3px;
-
+            margin-top: 18px;
             color: #00abc0;
-
             font-size: 11px;
             font-weight: 700;
-
             text-decoration: none;
         }
+
 
         /* =========================================================
            RESPONSIVE
         ========================================================= */
 
         @@media (max-width: 1150px) {
+
             .stats-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
@@ -905,11 +786,10 @@
         }
 
         @@media (max-width: 800px) {
+
             .sidebar {
                 position: relative;
-
                 width: 100%;
-                min-height: auto;
             }
 
             .main {
@@ -923,6 +803,7 @@
         }
 
         @@media (max-width: 560px) {
+
             .stats-grid {
                 grid-template-columns: 1fr;
             }
@@ -931,26 +812,19 @@
                 font-size: 25px;
             }
 
-            .workflow {
-                grid-template-columns: 1fr;
-            }
-
-            .proposal-actions {
-                padding-right: 0;
-            }
-
-            .proposal-table-wrap {
-                overflow-x: auto;
-            }
-
-            .proposal-table {
-                min-width: 620px;
+            .current-top {
+                flex-direction: column;
             }
         }
+
     </style>
+
+    <link rel="icon" type="image/x-icon" href="/favicon.ico?v=resk2" />
 </head>
 
+
 <body>
+
 
     <!-- =========================================================
          SIDEBAR
@@ -960,18 +834,11 @@
 
         <div class="brand">
 
-            <div class="brand-icon">
-                R
-            </div>
+            <div class="brand-icon">R</div>
 
             <div>
-                <div class="brand-name">
-                    R.E.S.K
-                </div>
-
-                <div class="brand-subtitle">
-                    SOFTWARE STUDIO
-                </div>
+                <div class="brand-name">R.E.S.K</div>
+                <div class="brand-subtitle">SOFTWARE STUDIO</div>
             </div>
 
         </div>
@@ -986,31 +853,32 @@
 
             <a asp-controller="Producer"
                asp-action="Index"
-               class="sidebar-link active">
+               class="sidebar-link active"
+               aria-current="page">
                 Dashboard
             </a>
 
-            <a href="#"
+            <a asp-controller="Producer"
+               asp-action="Guidelines"
                class="sidebar-link">
                 New proposal
             </a>
 
-            <a href="#"
-               class="sidebar-link">
-                My proposals
-            </a>
+            <a href="/Producer/MyProposals" class="sidebar-link">My proposals</a>
 
-            <a href="#"
+            <a asp-controller="Producer"
+               asp-action="Drafts"
                class="sidebar-link">
                 Drafts
             </a>
 
-            <a href="#"
+            <a asp-controller="Producer"
+               asp-action="Guidelines"
                class="sidebar-link">
                 Guidelines
             </a>
 
-            <a href="#"
+            <a href="/Producer/Settings"
                class="sidebar-link">
                 Settings
             </a>
@@ -1018,27 +886,21 @@
         </nav>
 
 
-        <!-- =====================================================
-             PRODUCER PROFILE
-        ====================================================== -->
-
         <div class="producer-account"
              id="producerAccount">
 
             <div class="profile-menu">
 
-                <a href="#"
+                <a href="/Producer/Settings"
                    class="profile-menu-link">
                     Account settings
                 </a>
 
                 <div class="menu-divider"></div>
 
-                <form asp-controller="Account"
+                <form asp-controller="ProducerAccount"
                       asp-action="Logout"
                       method="post">
-
-                    @Html.AntiForgeryToken()
 
                     <button type="submit"
                             class="logout-button">
@@ -1049,21 +911,16 @@
 
             </div>
 
-
             <button type="button"
                     class="producer-profile"
                     id="producerProfileButton"
                     aria-expanded="false">
 
-                <div class="producer-avatar">
-                    KC
-                </div>
+                <div class="producer-avatar">@await Component.InvokeAsync("ProducerAvatar", new { part = "avatar" })</div>
 
                 <div class="producer-profile-text">
 
-                    <div class="producer-name">
-                        Kuan Chi
-                    </div>
+                    <div class="producer-name">@await Component.InvokeAsync("ProducerAvatar", new { part = "name" })</div>
 
                     <div class="producer-role">
                         Community Producer
@@ -1078,6 +935,7 @@
     </aside>
 
 
+
     <!-- =========================================================
          MAIN DASHBOARD
     ========================================================== -->
@@ -1086,15 +944,12 @@
 
         <div class="dashboard">
 
-            <!-- =================================================
-                 WELCOME
-            ================================================== -->
+
+            <!-- WELCOME -->
 
             <section class="welcome">
 
-                <h1>
-                    Welcome back, Kuan Chi
-                </h1>
+                <h1>Welcome back, @producerName</h1>
 
                 <p>
                     Track your proposals, continue drafts and start a new programme submission.
@@ -1103,91 +958,51 @@
             </section>
 
 
-            <!-- =================================================
-                 STATISTICS
-            ================================================== -->
+
+            <!-- STATISTICS (real counts from the database) -->
 
             <section class="stats-grid">
 
                 <article class="stat-card">
 
-                    <div class="stat-title">
-                        MY PROPOSALS
-                    </div>
+                    <div class="stat-title">MY PROPOSALS</div>
 
                     <div class="stat-content">
-
-                        <div class="stat-number">
-                            8
-                        </div>
-
-                        <div class="stat-text">
-                            total submissions
-                        </div>
-
+                        <div class="stat-number">@Model.TotalSubmissions</div>
+                        <div class="stat-text">total submissions</div>
                     </div>
 
                 </article>
 
-
                 <article class="stat-card">
 
-                    <div class="stat-title">
-                        IN REVIEW
-                    </div>
+                    <div class="stat-title">IN REVIEW</div>
 
                     <div class="stat-content">
-
-                        <div class="stat-number">
-                            3
-                        </div>
-
-                        <div class="stat-text review">
-                            Awaiting feedback
-                        </div>
-
+                        <div class="stat-number">@Model.InReview</div>
+                        <div class="stat-text review">Awaiting feedback</div>
                     </div>
 
                 </article>
 
-
                 <article class="stat-card">
 
-                    <div class="stat-title">
-                        APPROVED
-                    </div>
+                    <div class="stat-title">APPROVED</div>
 
                     <div class="stat-content">
-
-                        <div class="stat-number">
-                            3
-                        </div>
-
-                        <div class="stat-text approved">
-                            Ready for next steps
-                        </div>
-
+                        <div class="stat-number">@Model.Approved</div>
+                        <div class="stat-text approved">Ready for next steps</div>
                     </div>
 
                 </article>
 
-
                 <article class="stat-card">
 
-                    <div class="stat-title">
-                        DRAFTS
-                    </div>
+                    <div class="stat-title">DRAFTS</div>
 
                     <div class="stat-content">
-
-                        <div class="stat-number">
-                            2
-                        </div>
-
-                        <div class="stat-text">
-                            Continue editing
-                        </div>
-
+                        <div class="stat-number">@Model.Drafts</div>
+                        <div class="stat-text">Continue editing</div>
                     </div>
 
                 </article>
@@ -1195,11 +1010,9 @@
             </section>
 
 
-            <!-- =================================================
-                 MAIN TWO-COLUMN AREA
-            ================================================== -->
 
             <section class="dashboard-grid">
+
 
                 <!-- =================================================
                      LEFT COLUMN
@@ -1207,13 +1020,12 @@
 
                 <div class="left-column">
 
+
                     <!-- CURRENT PROPOSAL -->
 
                     <article class="panel panel-padding">
 
-                        <div class="panel-title">
-                            Current proposal
-                        </div>
+                        <div class="panel-title">Current proposal</div>
 
                         <div class="panel-subtitle">
                             Your most recently updated submission
@@ -1222,72 +1034,112 @@
 
                         <div class="current-proposal">
 
-                            <div class="proposal-top">
+                            @if (Model.CurrentProposal != null)
+                            {
+                                var current = Model.CurrentProposal;
 
-                                <div>
+                                <div class="current-top">
 
-                                    <div class="proposal-name">
-                                        Voices of Cape Town
+                                    <div class="current-title">
+                                        @current.Title
                                     </div>
 
-                                    <div class="proposal-meta">
-                                        Documentary • 30 minute episode • English
-                                    </div>
-
-                                    <div class="proposal-date">
-                                        Submitted 5 August 2026
-                                    </div>
-
-                                </div>
-
-
-                                <div>
-
-                                    <span class="status status-review">
-                                        Under review
+                                    <span class="status-pill @current.StatusCss">
+                                        @current.StatusLabel
                                     </span>
 
                                 </div>
 
-                            </div>
+                                <div class="current-meta">
 
+                                    @if (!string.IsNullOrWhiteSpace(current.MetaLine))
+                                    {
+                                        @current.MetaLine
+                                        <br />
+                                    }
 
-                            <div class="workflow">
-
-                                <div class="workflow-label">
-                                    Workflow progress
-                                </div>
-
-                                <div class="progress-track">
-
-                                    <div class="progress-bar"></div>
+                                    @current.SubmittedText
 
                                 </div>
 
-                                <div class="workflow-stages">
-                                    3 of 5 stages
+                                <div class="workflow">
+
+                                    <span class="workflow-label">Workflow progress</span>
+
+                                    <div class="workflow-track"
+                                         role="progressbar"
+                                         aria-valuemin="0"
+                                         aria-valuemax="5"
+                                         aria-valuenow="@current.WorkflowStage"
+                                         aria-label="Workflow progress">
+
+                                        <div class="workflow-bar"
+                                             style="width: @(current.WorkflowPercent)%">
+                                        </div>
+
+                                    </div>
+
+                                    <span class="workflow-value">
+                                        @current.WorkflowStage of 5 stages
+                                    </span>
+
                                 </div>
 
-                            </div>
+                                <div class="current-actions">
 
+                                    <a asp-controller="Producer"
+                                       asp-action="Details"
+                                       asp-route-id="@current.Id"
+                                       class="small-button">
+                                        View proposal
+                                    </a>
 
-                            <div class="proposal-actions">
+                                </div>
+                            }
+                            else if (Model.Drafts > 0)
+                            {
+                                <div class="empty-title">
+                                    Nothing submitted yet
+                                </div>
 
-                                <a href="#"
+                                <div class="empty-text">
+                                    You have @draftLabel waiting to be finished.
+                                    <br />
+                                    Submit a draft and it will appear here.
+                                </div>
+
+                                <a asp-controller="Producer"
+                                   asp-action="Drafts"
                                    class="outline-button">
-                                    View proposal
+                                    Go to drafts
                                 </a>
+                            }
+                            else
+                            {
+                                <div class="empty-title">
+                                    No proposals yet
+                                </div>
 
-                            </div>
+                                <div class="empty-text">
+                                    You have not created a programme proposal yet.
+                                    <br />
+                                    Start your first proposal when you are ready.
+                                </div>
+
+                                <a asp-controller="Producer"
+                                   asp-action="Guidelines"
+                                   class="outline-button">
+                                    New proposal
+                                </a>
+                            }
 
                         </div>
 
                     </article>
 
 
-                    <!-- =================================================
-                         RECENT PROPOSALS
-                    ================================================== -->
+
+                    <!-- RECENT PROPOSALS -->
 
                     <article class="panel">
 
@@ -1295,9 +1147,7 @@
 
                             <div>
 
-                                <div class="panel-title">
-                                    My recent proposals
-                                </div>
+                                <div class="panel-title">My recent proposals</div>
 
                                 <div class="panel-subtitle">
                                     Recent submissions and their current status
@@ -1305,8 +1155,8 @@
 
                             </div>
 
-
-                            <a href="#"
+                            <a asp-controller="Producer"
+                               asp-action="MyProposals"
                                class="view-all">
                                 View all
                             </a>
@@ -1319,120 +1169,76 @@
                             <table class="proposal-table">
 
                                 <thead>
-
                                     <tr>
                                         <th>PROGRAMME</th>
                                         <th>UPDATED</th>
                                         <th>STATUS</th>
                                         <th>ACTION</th>
                                     </tr>
-
                                 </thead>
 
                                 <tbody>
 
-                                    <tr>
+                                    @if (Model.RecentProposals.Count == 0)
+                                    {
+                                        <tr>
+                                            <td colspan="4"
+                                                class="empty-table">
+                                                No proposals have been submitted yet.
+                                            </td>
+                                        </tr>
+                                    }
+                                    else
+                                    {
+                                        foreach (var row in Model.RecentProposals)
+                                        {
+                                            <tr>
 
-                                        <td class="programme-name">
-                                            Voices of Cape Town
-                                        </td>
+                                                <td class="programme">@row.Title</td>
 
-                                        <td>
-                                            05 Aug
-                                        </td>
+                                                <td>@row.UpdatedText</td>
 
-                                        <td>
-                                            <span class="status status-review">
-                                                In review
-                                            </span>
-                                        </td>
+                                                <td>
+                                                    <span class="status-pill @row.StatusCss">
+                                                        @row.StatusLabel
+                                                    </span>
+                                                </td>
 
-                                        <td>
-                                            <a href="#"
-                                               class="table-action">
-                                                View
-                                            </a>
-                                        </td>
+                                                <td>
 
-                                    </tr>
+                                                    @if (row.Status == RESK.WIL.Models.ProposalStatuses.Draft)
+                                                    {
+                                                        <a asp-controller="Producer"
+                                                           asp-action="ContinueDraft"
+                                                           asp-route-id="@row.Id"
+                                                           class="row-action">
+                                                            Continue
+                                                        </a>
+                                                    }
+                                                    else if (row.Status == RESK.WIL.Models.ProposalStatuses.ChangesRequested)
+                                                    {
+                                                        <a asp-controller="Producer"
+                                                           asp-action="Edit"
+                                                           asp-route-id="@row.Id"
+                                                           class="row-action">
+                                                            Edit
+                                                        </a>
+                                                    }
+                                                    else
+                                                    {
+                                                        <a asp-controller="Producer"
+                                                           asp-action="Details"
+                                                           asp-route-id="@row.Id"
+                                                           class="row-action">
+                                                            View
+                                                        </a>
+                                                    }
 
+                                                </td>
 
-                                    <tr>
-
-                                        <td class="programme-name">
-                                            Youth Lens
-                                        </td>
-
-                                        <td>
-                                            01 Aug
-                                        </td>
-
-                                        <td>
-                                            <span class="status status-approved">
-                                                Approved
-                                            </span>
-                                        </td>
-
-                                        <td>
-                                            <a href="#"
-                                               class="table-action">
-                                                View
-                                            </a>
-                                        </td>
-
-                                    </tr>
-
-
-                                    <tr>
-
-                                        <td class="programme-name">
-                                            Street Stories
-                                        </td>
-
-                                        <td>
-                                            30 Jul
-                                        </td>
-
-                                        <td>
-                                            <span class="status status-draft">
-                                                Draft
-                                            </span>
-                                        </td>
-
-                                        <td>
-                                            <a href="#"
-                                               class="table-action">
-                                                Continue
-                                            </a>
-                                        </td>
-
-                                    </tr>
-
-
-                                    <tr>
-
-                                        <td class="programme-name">
-                                            Cape Voices
-                                        </td>
-
-                                        <td>
-                                            25 Jul
-                                        </td>
-
-                                        <td>
-                                            <span class="status status-changes">
-                                                Changes
-                                            </span>
-                                        </td>
-
-                                        <td>
-                                            <a href="#"
-                                               class="table-action">
-                                                Edit
-                                            </a>
-                                        </td>
-
-                                    </tr>
+                                            </tr>
+                                        }
+                                    }
 
                                 </tbody>
 
@@ -1445,47 +1251,43 @@
                 </div>
 
 
+
                 <!-- =================================================
                      RIGHT COLUMN
                 ================================================== -->
 
                 <div class="right-column">
 
+
                     <!-- NEXT ACTION -->
 
-                    <article class="panel panel-padding next-action-panel">
+                    <article class="panel panel-padding">
 
-                        <div class="panel-title">
-                            Next action
-                        </div>
+                        <div class="panel-title">Next action</div>
 
                         <div class="panel-subtitle">
                             What you need to do next
                         </div>
 
-
                         <div class="info-box">
 
-                            <div class="info-icon">
-                                i
-                            </div>
-
+                            <div class="info-icon">i</div>
 
                             <div>
 
                                 <div class="info-title">
-                                    No action required right now
+                                    @Model.NextActionTitle
                                 </div>
 
                                 <div class="info-description">
-                                    Your proposal is currently being reviewed.
-                                    <br />
-                                    You will be notified if changes are requested.
+                                    @Model.NextActionText
                                 </div>
 
-                                <a href="#"
+                                <a asp-controller="Producer"
+                                   asp-action="@Model.NextActionAction"
+                                   asp-route-id="@Model.NextActionProposalId"
                                    class="status-details">
-                                    Check status details
+                                    @Model.NextActionButton
                                 </a>
 
                             </div>
@@ -1495,66 +1297,43 @@
                     </article>
 
 
+
                     <!-- QUICK ACTIONS -->
 
-                    <article class="panel panel-padding quick-panel">
+                    <article class="panel panel-padding">
 
-                        <div class="panel-title">
-                            Quick actions
-                        </div>
+                        <div class="panel-title">Quick actions</div>
 
                         <div class="panel-subtitle">
                             Continue your proposal work
                         </div>
 
-
                         <div class="quick-actions">
 
-                            <a href="#"
+                            <a asp-controller="Producer"
+                               asp-action="Guidelines"
                                class="quick-action primary">
-
-                                <span>
-                                    Start a new proposal
-                                </span>
-
-                                <span class="quick-arrow">
-                                    ›
-                                </span>
-
+                                <span>Start a new proposal</span>
+                                <span class="quick-arrow">›</span>
                             </a>
 
-
-                            <a href="#"
+                            <a asp-controller="Producer"
+                               asp-action="Drafts"
                                class="quick-action">
-
-                                <span>
-                                    Continue saved drafts
-                                </span>
-
-                                <span class="draft-count">
-                                    2 drafts
-                                </span>
-
+                                <span>Continue saved drafts</span>
+                                <span class="draft-count">@draftLabel</span>
                             </a>
 
-
-                            <a href="#"
+                            <a asp-controller="Producer"
+                               asp-action="Guidelines"
                                class="quick-action">
-
-                                <span>
-                                    Read proposal guidelines
-                                </span>
-
-                                <span>
-                                    ›
-                                </span>
-
+                                <span>Read proposal guidelines</span>
+                                <span class="quick-arrow">›</span>
                             </a>
 
                         </div>
 
-
-                        <a href="#"
+                        <a href="/Producer/Settings"
                            class="profile-update">
                             Update producer profile
                         </a>
@@ -1570,65 +1349,100 @@
     </main>
 
 
+
+    <!-- =========================================================
+         SCRIPTS
+    ========================================================== -->
+
     <script>
-        const producerAccount =
-            document.getElementById("producerAccount");
 
-        const producerProfileButton =
-            document.getElementById("producerProfileButton");
+        (function () {
+
+            // -----------------------------------------------------
+            // PAGE FADE OUT when following a link to another page
+            // -----------------------------------------------------
+
+            const reduceMotion =
+                window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+            document.addEventListener("click", function (event) {
+
+                const link = event.target.closest("a[href]");
+
+                if (!link || reduceMotion) {
+                    return;
+                }
+
+                const href = link.getAttribute("href");
+
+                if (!href ||
+                    href.startsWith("#") ||
+                    link.target === "_blank" ||
+                    link.hasAttribute("download") ||
+                    link.origin !== window.location.origin ||
+                    event.button !== 0 ||
+                    event.metaKey || event.ctrlKey ||
+                    event.shiftKey || event.altKey) {
+                    return;
+                }
+
+                event.preventDefault();
+
+                document.body.classList.add("page-leaving");
+
+                setTimeout(function () {
+                    window.location.href = link.href;
+                }, 170);
+            });
+
+            window.addEventListener("pageshow", function () {
+                document.body.classList.remove("page-leaving");
+            });
 
 
-        producerProfileButton.addEventListener(
-            "click",
-            function (event) {
+            // -----------------------------------------------------
+            // PROFILE MENU
+            // -----------------------------------------------------
+
+            const producerAccount =
+                document.getElementById("producerAccount");
+
+            const producerProfileButton =
+                document.getElementById("producerProfileButton");
+
+            producerProfileButton.addEventListener("click", function (event) {
 
                 event.stopPropagation();
 
-                producerAccount.classList.toggle("open");
+                const isOpen =
+                    producerAccount.classList.toggle("open");
 
                 producerProfileButton.setAttribute(
                     "aria-expanded",
-                    producerAccount.classList.contains("open")
-                        ? "true"
-                        : "false"
-                );
-            }
-        );
+                    isOpen ? "true" : "false");
+            });
 
-
-        document.addEventListener(
-            "click",
-            function (event) {
+            document.addEventListener("click", function (event) {
 
                 if (!producerAccount.contains(event.target)) {
-
                     producerAccount.classList.remove("open");
-
-                    producerProfileButton.setAttribute(
-                        "aria-expanded",
-                        "false"
-                    );
+                    producerProfileButton.setAttribute("aria-expanded", "false");
                 }
-            }
-        );
+            });
 
-
-        document.addEventListener(
-            "keydown",
-            function (event) {
+            document.addEventListener("keydown", function (event) {
 
                 if (event.key === "Escape") {
-
                     producerAccount.classList.remove("open");
-
-                    producerProfileButton.setAttribute(
-                        "aria-expanded",
-                        "false"
-                    );
+                    producerProfileButton.setAttribute("aria-expanded", "false");
                 }
-            }
-        );
+            });
+
+        })();
+
     </script>
 
+
 </body>
+
 </html>

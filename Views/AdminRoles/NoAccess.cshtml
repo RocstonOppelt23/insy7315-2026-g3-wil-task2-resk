@@ -1,0 +1,31 @@
+﻿@{
+    Layout = "~/Views/AdminProposals/_AdminLayout.cshtml";
+    ViewData["Title"] = "No access";
+
+    string moduleName = ViewData["ModuleName"] as string ?? "this page";
+    string actionName = ViewData["ActionName"] as string ?? "open";
+    string roleName = ViewData["RoleName"] as string ?? "your role";
+}
+
+@section Styles {
+    <style>
+        .no-access { max-width: 560px; margin: 60px auto 0; padding: 40px 34px; text-align: center; }
+        .no-access .icon { width: 56px; height: 56px; margin: 0 auto 18px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: #fff4dc; color: #c77c00; font-size: 26px; font-weight: 800; }
+        .no-access h1 { color: #14233e; font-size: 22px; font-weight: 800; }
+        .no-access p { margin-top: 12px; color: #5d6d87; font-size: 13px; line-height: 1.6; }
+        .no-access .actions { display: flex; justify-content: center; gap: 12px; margin-top: 26px; }
+    </style>
+}
+
+<section class="card no-access">
+    <div class="icon" aria-hidden="true">!</div>
+    <h1>Your role doesn't allow this</h1>
+    <p>
+        The <strong>@roleName</strong> role does not have the <strong>@actionName</strong> permission for
+        <strong>@moduleName</strong>. Ask an administrator to change your role in Roles &amp; permissions if you need it.
+    </p>
+    <div class="actions">
+        <button type="button" class="secondary-button" onclick="history.back()">Go back</button>
+        <a href="/Admin" class="primary-button">Dashboard</a>
+    </div>
+</section>
