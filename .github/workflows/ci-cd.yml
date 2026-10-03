@@ -36,10 +36,28 @@ jobs:
 
       - name: Publish (artifact)
         run: |
-          dotnet publish "RESK.WIL.slnx" -c Release -o ${{ runner.temp }}/publish
+          dotnet publish "RESK.WIL.csproj" -c Release -o ${{ runner.temp }}/publish
 
       - name: Upload published artifact
         uses: actions/upload-artifact@v4
         with:
           name: publish
           path: ${{ runner.temp }}/publish
+
+  deploy:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: publish
+          path: publish
+
+      - name: Deploy to Azure App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ vars.AZURE_WEBAPP_NAME }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: publish
