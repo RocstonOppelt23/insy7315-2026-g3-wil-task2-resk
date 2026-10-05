@@ -1,0 +1,1714 @@
+﻿@using RESK.WIL.Models
+
+@{
+    Layout = null;
+
+    int totalUsers = ViewBag.TotalUsers ?? 0;
+    int pendingUsers = ViewBag.PendingUsers ?? 0;
+    int activeUsers = ViewBag.ActiveUsers ?? 0;
+    int suspendedUsers = ViewBag.SuspendedUsers ?? 0;
+
+    int totalProposals = ViewBag.TotalProposals ?? 0;
+    int pendingProposals = ViewBag.PendingProposals ?? 0;
+    int approvedProposals = ViewBag.ApprovedProposals ?? 0;
+    int rejectedProposals = ViewBag.RejectedProposals ?? 0;
+    int draftProposals = ViewBag.DraftProposals ?? 0;
+
+    IEnumerable<Proposal> recentProposals =
+        ViewBag.RecentProposals as IEnumerable<Proposal>
+        ?? Enumerable.Empty<Proposal>();
+
+    IEnumerable<User> pendingRegistrations =
+        ViewBag.PendingRegistrations as IEnumerable<User>
+        ?? Enumerable.Empty<User>();
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Admin Dashboard | R.E.S.K</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body {
+            min-height: 100%;
+            font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI",
+                Roboto, Arial, sans-serif;
+            background: #f5f7fa;
+            color: #17233b;
+        }
+
+        body {
+            min-height: 100vh;
+        }
+
+        a {
+            text-decoration: none;
+        }
+
+        button,
+        a {
+            font: inherit;
+        }
+
+        .app {
+            min-height: 100vh;
+            display: flex;
+        }
+
+        /* =========================================================
+           SIDEBAR
+           ========================================================= */
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: 260px;
+            min-height: 100vh;
+            padding: 37px 20px 38px;
+            background: #0d172b;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding-left: 13px;
+            margin-bottom: 42px;
+        }
+
+        .brand-logo {
+            width: 56px;
+            height: 56px;
+            border: 2px solid #12b9cb;
+            border-radius: 17px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #12b9cb;
+            font-size: 27px;
+            font-weight: 800;
+            flex-shrink: 0;
+        }
+
+        .brand-name {
+            color: #ffffff;
+            font-size: 24px;
+            line-height: 1;
+            font-weight: 800;
+            letter-spacing: 1px;
+        }
+
+        .brand-subtitle {
+            margin-top: 9px;
+            color: #d4dbea;
+            font-size: 10px;
+            letter-spacing: .3px;
+        }
+
+        .sidebar-label {
+            padding: 0 12px;
+            margin-bottom: 8px;
+            color: #75839c;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .navigation {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .nav-link {
+            min-height: 43px;
+            border-radius: 9px;
+            padding: 0 32px;
+            display: flex;
+            align-items: center;
+            color: #b5bfd0;
+            font-size: 14px;
+            transition: .18s ease;
+        }
+
+        .nav-link:hover {
+            color: #ffffff;
+            background: rgba(255,255,255,.055);
+            transform: translateX(2px);
+        }
+
+        .nav-link.active {
+            color: #ffffff;
+            background: #142847;
+            font-weight: 700;
+        }
+
+        /* =========================================================
+           ADMIN ACCOUNT MENU
+           ========================================================= */
+
+        .admin-account {
+            position: relative;
+            margin-top: auto;
+        }
+
+        .admin-profile {
+            width: 100%;
+            min-height: 64px;
+            padding: 11px;
+            border: 0;
+            border-radius: 12px;
+            background: #142847;
+            display: flex;
+            align-items: center;
+            gap: 11px;
+            cursor: pointer;
+            text-align: left;
+            transition: .18s ease;
+        }
+
+        .admin-profile:hover {
+            background: #193354;
+            transform: translateY(-1px);
+        }
+
+        .admin-avatar {
+            width: 34px;
+            height: 34px;
+            flex: 0 0 34px;
+            border-radius: 50%;
+            background: rgba(18,185,203,.12);
+            color: #12b9cb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 800;
+        }
+
+        .admin-details {
+            min-width: 0;
+            flex: 1;
+        }
+
+        .admin-name {
+            color: #ffffff;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .admin-role {
+            margin-top: 4px;
+            color: #aeb9cc;
+            font-size: 11px;
+        }
+
+        .admin-chevron {
+            color: #8fa0b9;
+            font-size: 14px;
+            transition: transform .18s ease;
+        }
+
+        .admin-account.open .admin-chevron {
+            transform: rotate(180deg);
+        }
+
+        .admin-menu {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: calc(100% + 10px);
+            padding: 7px;
+            border: 1px solid #253a5b;
+            border-radius: 12px;
+            background: #14233d;
+            box-shadow: 0 16px 35px rgba(0,0,0,.28);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(8px);
+            transition: .18s ease;
+            z-index: 500;
+        }
+
+        .admin-account.open .admin-menu {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .admin-menu-item {
+            width: 100%;
+            min-height: 41px;
+            padding: 0 12px;
+            border: 0;
+            border-radius: 8px;
+            background: transparent;
+            color: #d5ddea;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            font-size: 12px;
+            text-align: left;
+            transition: .15s ease;
+        }
+
+        .admin-menu-item:hover {
+            background: rgba(255,255,255,.06);
+            color: #ffffff;
+        }
+
+        .admin-menu-divider {
+            height: 1px;
+            margin: 6px 4px;
+            background: #293c59;
+        }
+
+        .admin-menu-form {
+            margin: 0;
+        }
+
+        .admin-menu-item.logout {
+            color: #ff9da5;
+        }
+
+        .admin-menu-item.logout:hover {
+            color: #ffffff;
+            background: rgba(216,92,103,.16);
+        }
+
+        /* =========================================================
+           MAIN
+           ========================================================= */
+
+        .main {
+            width: calc(100% - 260px);
+            min-height: 100vh;
+            margin-left: 260px;
+            padding: 31px 48px 60px;
+        }
+
+        .content {
+            width: 100%;
+            max-width: 1180px;
+            margin: 0 auto;
+        }
+
+        /* =========================================================
+           HEADER
+           ========================================================= */
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 30px;
+            margin-bottom: 28px;
+        }
+
+        .page-title {
+            color: #17233b;
+            font-size: 32px;
+            line-height: 1.1;
+            font-weight: 750;
+            letter-spacing: -.5px;
+        }
+
+        .page-description {
+            margin-top: 10px;
+            color: #64748f;
+            font-size: 14px;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn {
+            min-height: 43px;
+            padding: 0 20px;
+            border: 1px solid #d7dfeb;
+            border-radius: 9px;
+            background: #ffffff;
+            color: #17233b;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 700;
+            transition: .17s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 5px 14px rgba(15,23,42,.06);
+        }
+
+        .btn-primary {
+            border-color: #12b9cb;
+            background: #12b9cb;
+            color: #ffffff;
+        }
+
+        .btn-primary:hover {
+            background: #0faabd;
+        }
+
+        /* =========================================================
+           STATISTICS
+           ========================================================= */
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            min-height: 125px;
+            padding: 21px 22px;
+            border: 1px solid #dce3ed;
+            border-radius: 14px;
+            background: #ffffff;
+            box-shadow: 0 1px 2px rgba(15,23,42,.015);
+        }
+
+        .stat-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .stat-label {
+            color: #66758d;
+            font-size: 11px;
+            font-weight: 750;
+            text-transform: uppercase;
+            letter-spacing: .15px;
+        }
+
+        .stat-icon {
+            width: 33px;
+            height: 33px;
+            border-radius: 9px;
+            background: #eaf9fb;
+            color: #12b9cb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 800;
+        }
+
+        .stat-value {
+            margin-top: 15px;
+            color: #17233b;
+            font-size: 32px;
+            line-height: 1;
+            font-weight: 750;
+        }
+
+        .stat-subtext {
+            margin-top: 8px;
+            color: #8491a5;
+            font-size: 10.5px;
+        }
+
+        /* =========================================================
+           SECTION GRID
+           ========================================================= */
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.6fr) minmax(300px, .8fr);
+            gap: 20px;
+            margin-bottom: 22px;
+        }
+
+        .card {
+            border: 1px solid #dce3ed;
+            border-radius: 14px;
+            background: #ffffff;
+            overflow: hidden;
+        }
+
+        .card-header {
+            min-height: 67px;
+            padding: 17px 21px;
+            border-bottom: 1px solid #e8edf3;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .card-title {
+            color: #17233b;
+            font-size: 16px;
+            font-weight: 750;
+        }
+
+        .card-description {
+            margin-top: 5px;
+            color: #7b899d;
+            font-size: 10.5px;
+        }
+
+        .card-link {
+            color: #0cabbc;
+            font-size: 11.5px;
+            font-weight: 700;
+        }
+
+        .card-link:hover {
+            text-decoration: underline;
+        }
+
+        /* =========================================================
+           PROPOSAL OVERVIEW
+           ========================================================= */
+
+        .proposal-overview {
+            padding: 24px 21px 27px;
+        }
+
+        .proposal-status-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+
+        .proposal-status {
+            padding: 18px 15px;
+            border: 1px solid #e2e7ef;
+            border-radius: 11px;
+            background: #fafbfd;
+        }
+
+        .proposal-number {
+            color: #17233b;
+            font-size: 26px;
+            font-weight: 750;
+        }
+
+        .proposal-label {
+            margin-top: 8px;
+            color: #697991;
+            font-size: 11px;
+        }
+
+        .status-line {
+            width: 28px;
+            height: 3px;
+            margin-top: 15px;
+            border-radius: 10px;
+            background: #12b9cb;
+        }
+
+        .status-line.pending {
+            background: #e4a62d;
+        }
+
+        .status-line.approved {
+            background: #38a875;
+        }
+
+        .status-line.rejected {
+            background: #d85c67;
+        }
+
+        /* =========================================================
+           QUICK ACTIONS
+           ========================================================= */
+
+        .quick-actions {
+            padding: 17px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .quick-action {
+            min-height: 58px;
+            padding: 10px 13px;
+            border: 1px solid #e2e7ef;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: .16s ease;
+        }
+
+        .quick-action:hover {
+            border-color: #bfe9ee;
+            background: #f9fdfe;
+            transform: translateY(-1px);
+        }
+
+        .quick-icon {
+            width: 34px;
+            height: 34px;
+            flex: 0 0 34px;
+            border-radius: 9px;
+            background: #eaf9fb;
+            color: #12b9cb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 800;
+        }
+
+        .quick-title {
+            color: #17233b;
+            font-size: 11.5px;
+            font-weight: 750;
+        }
+
+        .quick-description {
+            margin-top: 3px;
+            color: #8190a4;
+            font-size: 9.5px;
+        }
+
+        .quick-arrow {
+            margin-left: auto;
+            color: #9aa7b8;
+            font-size: 17px;
+        }
+
+        /* =========================================================
+           TABLES
+           ========================================================= */
+
+        .bottom-grid {
+            display: grid;
+            grid-template-columns: 1.45fr 1fr;
+            gap: 20px;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+        }
+
+        .dashboard-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .dashboard-table th {
+            height: 40px;
+            padding: 0 18px;
+            background: #f4f6f9;
+            color: #6c7a91;
+            font-size: 9.5px;
+            font-weight: 750;
+            text-transform: uppercase;
+            text-align: left;
+        }
+
+        .dashboard-table td {
+            height: 60px;
+            padding: 9px 18px;
+            border-bottom: 1px solid #edf0f4;
+            color: #344159;
+            font-size: 11px;
+            vertical-align: middle;
+        }
+
+        .dashboard-table tbody tr:last-child td {
+            border-bottom: 0;
+        }
+
+        .proposal-title {
+            color: #17233b;
+            font-size: 11.5px;
+            font-weight: 700;
+        }
+
+        .proposal-type {
+            margin-top: 4px;
+            color: #8390a3;
+            font-size: 9.5px;
+        }
+
+        .producer-name {
+            color: #53627a;
+        }
+
+        .badge {
+            min-width: 68px;
+            min-height: 23px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 9.5px;
+            font-weight: 700;
+        }
+
+        .badge-pending {
+            color: #936200;
+            background: #fff4dd;
+        }
+
+        .badge-approved {
+            color: #219a69;
+            background: #e7f6ee;
+        }
+
+        .badge-rejected {
+            color: #d24c57;
+            background: #fde9eb;
+        }
+
+        .badge-draft {
+            color: #62738c;
+            background: #eef2f6;
+        }
+
+        /* =========================================================
+           PENDING USERS
+           ========================================================= */
+
+        .pending-list {
+            padding: 3px 18px;
+        }
+
+        .pending-user {
+            min-height: 69px;
+            border-bottom: 1px solid #edf0f4;
+            display: flex;
+            align-items: center;
+            gap: 11px;
+        }
+
+        .pending-user:last-child {
+            border-bottom: 0;
+        }
+
+        .user-avatar {
+            width: 35px;
+            height: 35px;
+            flex: 0 0 35px;
+            border-radius: 50%;
+            background: #28466f;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 800;
+        }
+
+        .pending-user-info {
+            min-width: 0;
+            flex: 1;
+        }
+
+        .pending-user-name {
+            color: #17233b;
+            font-size: 11px;
+            font-weight: 750;
+        }
+
+        .pending-user-email {
+            max-width: 160px;
+            margin-top: 4px;
+            color: #8290a4;
+            font-size: 9.5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .review-link {
+            color: #0babbc;
+            font-size: 10px;
+            font-weight: 750;
+        }
+
+        /* =========================================================
+           EMPTY STATE
+           ========================================================= */
+
+        .empty-state {
+            padding: 40px 20px;
+            color: #8190a4;
+            font-size: 11px;
+            text-align: center;
+        }
+
+        /* =========================================================
+           RESPONSIVE
+           ========================================================= */
+
+        @@media (max-width: 1100px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .dashboard-grid,
+            .bottom-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @@media (max-width: 850px) {
+            .sidebar {
+                width: 210px;
+            }
+
+            .main {
+                width: calc(100% - 210px);
+                margin-left: 210px;
+                padding-left: 25px;
+                padding-right: 25px;
+            }
+
+            .proposal-status-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @@media (max-width: 650px) {
+            .app {
+                display: block;
+            }
+
+            .sidebar {
+                position: static;
+                width: 100%;
+                min-height: auto;
+            }
+
+            .main {
+                width: 100%;
+                margin-left: 0;
+                padding: 25px 15px 50px;
+            }
+
+            .page-header {
+                flex-direction: column;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .proposal-status-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .navigation {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .admin-account {
+                margin-top: 25px;
+            }
+        }
+    </style>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico?v=resk2" />
+</head>
+
+<body>
+
+<div class="app">
+
+    <!-- =========================================================
+         SIDEBAR
+         ========================================================= -->
+    <aside class="sidebar">
+
+        <div class="brand">
+            <div class="brand-logo">R</div>
+
+            <div>
+                <div class="brand-name">R.E.S.K</div>
+                <div class="brand-subtitle">SOFTWARE STUDIO</div>
+            </div>
+        </div>
+
+        <div class="sidebar-label">
+            Management
+        </div>
+
+        <nav class="navigation">
+
+            <a class="nav-link active"
+               asp-controller="Admin"
+               asp-action="Index">
+                Dashboard
+            </a>
+
+            <a class="nav-link"
+               asp-controller="Proposal"
+               asp-action="Index">
+                Proposals
+            </a>
+
+            <a class="nav-link"
+               asp-controller="Users"
+               asp-action="Index">
+                Users
+            </a>
+
+            <a href="/Admin/Categories" class="nav-link">
+                Categories
+            </a>
+
+            <a href="/Admin/Reports" class="nav-link">
+                Reports
+            </a>
+
+            <a href="/Admin/Roles" class="nav-link">
+                Roles &amp; permissions
+            </a>
+
+            <a href="/Admin/Audit" class="nav-link">
+                Audit log
+            </a>
+
+            <a href="/Admin/Settings" class="nav-link">
+                System settings
+            </a>
+
+        </nav>
+
+        <!-- =====================================================
+             ADMIN PROFILE / ACCOUNT MENU
+             ===================================================== -->
+        <div class="admin-account"
+             id="adminAccount">
+
+            <div class="admin-menu"
+                 id="adminMenu">
+
+                <button type="button"
+                        class="admin-menu-item">
+                    Account settings
+                </button>
+
+                <div class="admin-menu-divider"></div>
+
+                <form asp-controller="Account"
+                      asp-action="Logout"
+                      method="post"
+                      class="admin-menu-form">
+
+                    @Html.AntiForgeryToken()
+
+                    <button type="submit"
+                            class="admin-menu-item logout">
+                        Log out
+                    </button>
+
+                </form>
+
+            </div>
+
+            <button type="button"
+                    class="admin-profile"
+                    id="adminProfileButton"
+                    aria-expanded="false"
+                    aria-controls="adminMenu">
+
+                <div class="admin-avatar">
+                    AD
+                </div>
+
+                <div class="admin-details">
+
+                    <div class="admin-name">
+                        Admin User
+                    </div>
+
+                    <div class="admin-role">
+                        Station Management
+                    </div>
+
+                </div>
+
+                <div class="admin-chevron">
+                    ▲
+                </div>
+
+            </button>
+
+        </div>
+
+    </aside>
+
+    <!-- =========================================================
+         MAIN CONTENT
+         ========================================================= -->
+    <main class="main">
+
+        <div class="content">
+
+            <!-- HEADER -->
+            <header class="page-header">
+
+                <div>
+                    <h1 class="page-title">
+                        Dashboard
+                    </h1>
+
+                    <p class="page-description">
+                        Welcome back. Here's an overview of the CTTV proposal management system.
+                    </p>
+                </div>
+
+                <div class="header-actions">
+
+                    <a class="btn"
+                       asp-controller="Users"
+                       asp-action="Index">
+                        Manage users
+                    </a>
+
+                    <a class="btn btn-primary"
+                       asp-controller="Proposal"
+                       asp-action="Index">
+                        View proposals
+                    </a>
+
+                </div>
+
+            </header>
+
+            <!-- =====================================================
+                 TOP STATISTICS
+                 ===================================================== -->
+            <section class="stats-grid">
+
+                <article class="stat-card">
+
+                    <div class="stat-top">
+                        <div class="stat-label">
+                            Total proposals
+                        </div>
+
+                        <div class="stat-icon">
+                            P
+                        </div>
+                    </div>
+
+                    <div class="stat-value">
+                        @totalProposals
+                    </div>
+
+                    <div class="stat-subtext">
+                        @draftProposals currently saved as drafts
+                    </div>
+
+                </article>
+
+                <article class="stat-card">
+
+                    <div class="stat-top">
+                        <div class="stat-label">
+                            Pending review
+                        </div>
+
+                        <div class="stat-icon">
+                            R
+                        </div>
+                    </div>
+
+                    <div class="stat-value">
+                        @pendingProposals
+                    </div>
+
+                    <div class="stat-subtext">
+                        Proposals waiting for review
+                    </div>
+
+                </article>
+
+                <article class="stat-card">
+
+                    <div class="stat-top">
+                        <div class="stat-label">
+                            Total users
+                        </div>
+
+                        <div class="stat-icon">
+                            U
+                        </div>
+                    </div>
+
+                    <div class="stat-value">
+                        @totalUsers
+                    </div>
+
+                    <div class="stat-subtext">
+                        @activeUsers active accounts
+                    </div>
+
+                </article>
+
+                <article class="stat-card">
+
+                    <div class="stat-top">
+                        <div class="stat-label">
+                            Pending users
+                        </div>
+
+                        <div class="stat-icon">
+                            A
+                        </div>
+                    </div>
+
+                    <div class="stat-value">
+                        @pendingUsers
+                    </div>
+
+                    <div class="stat-subtext">
+                        Accounts awaiting approval
+                    </div>
+
+                </article>
+
+            </section>
+
+            <!-- =====================================================
+                 OVERVIEW + QUICK ACTIONS
+                 ===================================================== -->
+            <section class="dashboard-grid">
+
+                <!-- PROPOSAL OVERVIEW -->
+                <article class="card">
+
+                    <div class="card-header">
+
+                        <div>
+                            <h2 class="card-title">
+                                Proposal overview
+                            </h2>
+
+                            <div class="card-description">
+                                Current proposal status across the system
+                            </div>
+                        </div>
+
+                        <a class="card-link"
+                           asp-controller="Proposal"
+                           asp-action="Index">
+                            View all
+                        </a>
+
+                    </div>
+
+                    <div class="proposal-overview">
+
+                        <div class="proposal-status-grid">
+
+                            <div class="proposal-status">
+
+                                <div class="proposal-number">
+                                    @draftProposals
+                                </div>
+
+                                <div class="proposal-label">
+                                    Draft
+                                </div>
+
+                                <div class="status-line"></div>
+
+                            </div>
+
+                            <div class="proposal-status">
+
+                                <div class="proposal-number">
+                                    @pendingProposals
+                                </div>
+
+                                <div class="proposal-label">
+                                    Pending
+                                </div>
+
+                                <div class="status-line pending"></div>
+
+                            </div>
+
+                            <div class="proposal-status">
+
+                                <div class="proposal-number">
+                                    @approvedProposals
+                                </div>
+
+                                <div class="proposal-label">
+                                    Approved
+                                </div>
+
+                                <div class="status-line approved"></div>
+
+                            </div>
+
+                            <div class="proposal-status">
+
+                                <div class="proposal-number">
+                                    @rejectedProposals
+                                </div>
+
+                                <div class="proposal-label">
+                                    Rejected
+                                </div>
+
+                                <div class="status-line rejected"></div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </article>
+
+                <!-- QUICK ACTIONS -->
+                <article class="card">
+
+                    <div class="card-header">
+
+                        <div>
+                            <h2 class="card-title">
+                                Quick actions
+                            </h2>
+
+                            <div class="card-description">
+                                Common administration tasks
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="quick-actions">
+
+                        <a class="quick-action"
+                           asp-controller="Users"
+                           asp-action="Index">
+
+                            <div class="quick-icon">
+                                U
+                            </div>
+
+                            <div>
+                                <div class="quick-title">
+                                    Review users
+                                </div>
+
+                                <div class="quick-description">
+                                    @pendingUsers pending registrations
+                                </div>
+                            </div>
+
+                            <div class="quick-arrow">
+                                ›
+                            </div>
+
+                        </a>
+
+                        <a class="quick-action"
+                           asp-controller="Proposal"
+                           asp-action="Index">
+
+                            <div class="quick-icon">
+                                P
+                            </div>
+
+                            <div>
+                                <div class="quick-title">
+                                    Review proposals
+                                </div>
+
+                                <div class="quick-description">
+                                    @pendingProposals waiting for review
+                                </div>
+                            </div>
+
+                            <div class="quick-arrow">
+                                ›
+                            </div>
+
+                        </a>
+
+                        <a class="quick-action"
+                           href="#">
+
+                            <div class="quick-icon">
+                                R
+                            </div>
+
+                            <div>
+                                <div class="quick-title">
+                                    Roles &amp; permissions
+                                </div>
+
+                                <div class="quick-description">
+                                    Manage system access
+                                </div>
+                            </div>
+
+                            <div class="quick-arrow">
+                                ›
+                            </div>
+
+                        </a>
+
+                    </div>
+
+                </article>
+
+            </section>
+
+            <!-- =====================================================
+                 RECENT PROPOSALS + PENDING USERS
+                 ===================================================== -->
+            <section class="bottom-grid">
+
+                <!-- RECENT PROPOSALS -->
+                <article class="card">
+
+                    <div class="card-header">
+
+                        <div>
+                            <h2 class="card-title">
+                                Recent proposals
+                            </h2>
+
+                            <div class="card-description">
+                                Latest proposal activity
+                            </div>
+                        </div>
+
+                        <a class="card-link"
+                           asp-controller="Proposal"
+                           asp-action="Index">
+                            View all
+                        </a>
+
+                    </div>
+
+                    @if (recentProposals.Any())
+                    {
+                        <div class="table-wrap">
+
+                            <table class="dashboard-table">
+
+                                <thead>
+                                    <tr>
+                                        <th>Proposal</th>
+                                        <th>Producer</th>
+                                        <th>Status</th>
+                                        <th>Updated</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody>
+
+                                @foreach (Proposal proposal in recentProposals)
+                                {
+                                    string title =
+                                        string.IsNullOrWhiteSpace(proposal.ProgrammeTitle)
+                                            ? "Untitled proposal"
+                                            : proposal.ProgrammeTitle;
+
+                                    string producerName =
+                                        proposal.Producer == null
+                                            ? "Unknown"
+                                            : $"{proposal.Producer.Name} {proposal.Producer.LastName}".Trim();
+
+                                    if (string.IsNullOrWhiteSpace(producerName))
+                                    {
+                                        producerName = "Unknown";
+                                    }
+
+                                    string status =
+                                        string.IsNullOrWhiteSpace(proposal.ProposalStatus)
+                                            ? "Draft"
+                                            : proposal.ProposalStatus;
+
+                                    string badgeClass =
+                                        status.ToLowerInvariant() switch
+                                        {
+                                            "approved" => "badge-approved",
+                                            "rejected" => "badge-rejected",
+                                            "pending" => "badge-pending",
+                                            _ => "badge-draft"
+                                        };
+
+                                    <tr>
+
+                                        <td>
+                                            <div class="proposal-title">
+                                                @title
+                                            </div>
+
+                                            <div class="proposal-type">
+                                                @proposal.ProposalType
+                                            </div>
+                                        </td>
+
+                                        <td>
+                                            <span class="producer-name">
+                                                @producerName
+                                            </span>
+                                        </td>
+
+                                        <td>
+                                            <span class="badge @badgeClass">
+                                                @status
+                                            </span>
+                                        </td>
+
+                                        <td>
+                                            @proposal.UpdatedAtUtc.ToString("dd MMM yyyy")
+                                        </td>
+
+                                    </tr>
+                                }
+
+                                </tbody>
+
+                            </table>
+
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="empty-state">
+                            No proposals have been created yet.
+                        </div>
+                    }
+
+                </article>
+
+                <!-- PENDING USERS -->
+                <article class="card">
+
+                    <div class="card-header">
+
+                        <div>
+                            <h2 class="card-title">
+                                Pending approvals
+                            </h2>
+
+                            <div class="card-description">
+                                New accounts requiring review
+                            </div>
+                        </div>
+
+                        <a class="card-link"
+                           asp-controller="Users"
+                           asp-action="Index"
+                           asp-route-status="Pending">
+                            View all
+                        </a>
+
+                    </div>
+
+                    @if (pendingRegistrations.Any())
+                    {
+                        <div class="pending-list">
+
+                            @foreach (User user in pendingRegistrations)
+                            {
+                                string name =
+                                    $"{user.Name} {user.LastName}".Trim();
+
+                                if (string.IsNullOrWhiteSpace(name))
+                                {
+                                    name = "Unnamed user";
+                                }
+
+                                string initials = "";
+
+                                if (!string.IsNullOrWhiteSpace(user.Name))
+                                {
+                                    initials += user.Name[0];
+                                }
+
+                                if (!string.IsNullOrWhiteSpace(user.LastName))
+                                {
+                                    initials += user.LastName[0];
+                                }
+
+                                if (string.IsNullOrWhiteSpace(initials))
+                                {
+                                    initials = "U";
+                                }
+
+                                <div class="pending-user">
+
+                                    <div class="user-avatar">
+                                        @initials
+                                    </div>
+
+                                    <div class="pending-user-info">
+
+                                        <div class="pending-user-name">
+                                            @name
+                                        </div>
+
+                                        <div class="pending-user-email">
+                                            @user.Email
+                                        </div>
+
+                                    </div>
+
+                                    <a class="review-link"
+                                       asp-controller="Users"
+                                       asp-action="Review"
+                                       asp-route-id="@user.Id">
+                                        Review
+                                    </a>
+
+                                </div>
+                            }
+
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="empty-state">
+                            No user accounts are waiting for approval.
+                        </div>
+                    }
+
+                </article>
+
+            </section>
+
+        </div>
+
+    </main>
+
+</div>
+
+<!-- =============================================================
+     ADMIN PROFILE DROPDOWN SCRIPT
+     ============================================================= -->
+<script>
+    const adminAccount =
+        document.getElementById("adminAccount");
+
+    const adminProfileButton =
+        document.getElementById("adminProfileButton");
+
+    if (adminAccount && adminProfileButton) {
+
+        adminProfileButton.addEventListener(
+            "click",
+            function (event) {
+
+                event.stopPropagation();
+
+                const isOpen =
+                    adminAccount.classList.toggle("open");
+
+                adminProfileButton.setAttribute(
+                    "aria-expanded",
+                    isOpen ? "true" : "false"
+                );
+            }
+        );
+
+        document.addEventListener(
+            "click",
+            function (event) {
+
+                if (!adminAccount.contains(event.target)) {
+
+                    adminAccount.classList.remove("open");
+
+                    adminProfileButton.setAttribute(
+                        "aria-expanded",
+                        "false"
+                    );
+                }
+            }
+        );
+    }
+</script>
+
+
+<script id="resk-nav-fix">
+    // Makes every admin sidebar item go to the right page, however the link is written.
+    (function () {
+        var routes = {
+            "dashboard": "/Admin",
+            "proposals": "/Admin/Proposals",
+            "users": "/Admin/Users",
+            "categories": "/Admin/Categories",
+            "roles & permissions": "/Admin/Roles",
+            "audit log": "/Admin/Audit",
+            "system settings": "/Admin/Settings",
+            "reports": "/Admin/Reports"
+        };
+
+        document.querySelectorAll(".sidebar a, .sidebar button, aside a, aside button, nav a").forEach(function (el) {
+            var key = (el.textContent || "").replace(/\s+/g, " ").trim().toLowerCase();
+            var url = routes[key];
+            if (!url) { return; }
+
+            if (el.tagName === "A") {
+                el.setAttribute("href", url);
+                el.removeAttribute("onclick");
+                el.removeAttribute("target");
+            } else {
+                el.style.cursor = "pointer";
+                el.addEventListener("click", function (event) {
+                    event.preventDefault();
+                    window.location.href = url;
+                });
+            }
+        });
+    })();
+</script>
+<script src="/Admin/Roles/MyAccess.js"></script>
+<script id="resk-motion">
+    (function () {
+        var calm = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+        function ease(t) { return 1 - Math.pow(1 - t, 3); }
+
+        function play(draw, time) {
+            var start = null;
+            draw(0);
+            function frame(now) {
+                if (start === null) { start = now; }
+                var t = Math.min(1, (now - start) / time);
+                draw(t);
+                if (t < 1) { window.requestAnimationFrame(frame); }
+            }
+            window.requestAnimationFrame(frame);
+        }
+
+        // Line charts: every point rises from the bottom line to its place, left to right.
+        function lineCharts() {
+            document.querySelectorAll("svg").forEach(function (svg) {
+                var lines = [], dots = [], base = 0, minX = Infinity, maxX = -Infinity;
+
+                svg.querySelectorAll("polyline").forEach(function (line) {
+                    var points = (line.getAttribute("points") || "").trim().split(/\s+/).map(function (pair) {
+                        var xy = pair.split(",");
+                        return [parseFloat(xy[0]), parseFloat(xy[1])];
+                    }).filter(function (p) { return !isNaN(p[0]) && !isNaN(p[1]); });
+                    if (points.length) { lines.push({ node: line, points: points }); }
+                });
+
+                if (!lines.length) { return; }
+
+                svg.querySelectorAll("circle").forEach(function (dot) {
+                    var x = parseFloat(dot.getAttribute("cx")), y = parseFloat(dot.getAttribute("cy"));
+                    if (!isNaN(x) && !isNaN(y)) { dots.push({ node: dot, x: x, y: y }); }
+                });
+
+                lines.forEach(function (line) { line.points.forEach(function (p) { base = Math.max(base, p[1]); minX = Math.min(minX, p[0]); maxX = Math.max(maxX, p[0]); }); });
+                dots.forEach(function (dot) { base = Math.max(base, dot.y); });
+
+                function at(x, y, t) {
+                    var wait = maxX > minX ? 0.4 * (x - minX) / (maxX - minX) : 0;
+                    var local = Math.max(0, Math.min(1, (t - wait) / 0.6));
+                    return (base + (y - base) * ease(local)).toFixed(2);
+                }
+
+                play(function (t) {
+                    lines.forEach(function (line) {
+                        line.node.setAttribute("points", line.points.map(function (p) { return p[0] + "," + at(p[0], p[1], t); }).join(" "));
+                    });
+                    dots.forEach(function (dot) { dot.node.setAttribute("cy", at(dot.x, dot.y, t)); });
+                }, 1100);
+            });
+        }
+
+        // Bar charts: bars grow up from the bottom line, one after the other.
+        function barCharts() {
+            document.querySelectorAll(".chart-wrap svg path").forEach(function (bar, index) {
+                bar.style.transformBox = "fill-box";
+                bar.style.transformOrigin = "50% 100%";
+                bar.style.transform = "scaleY(0)";
+                window.requestAnimationFrame(function () {
+                    window.requestAnimationFrame(function () {
+                        bar.style.transition = "transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) " + (index * 0.04) + "s";
+                        bar.style.transform = "scaleY(1)";
+                    });
+                });
+            });
+        }
+
+        // Progress bars: fill from empty to their value.
+        function fills() {
+            document.querySelectorAll(".track .fill").forEach(function (fill, index) {
+                var width = fill.style.width;
+                if (!width) { return; }
+                fill.style.width = "0";
+                window.requestAnimationFrame(function () {
+                    window.requestAnimationFrame(function () {
+                        fill.style.transition = "width 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) " + (index * 0.05) + "s";
+                        fill.style.width = width;
+                    });
+                });
+            });
+        }
+
+        if (!calm) { lineCharts(); barCharts(); fills(); }
+
+        // Profile picture and "My profile" link (every role except the Administrator).
+        if (window.fetch) {
+            window.fetch("/Account/Me.json", { credentials: "same-origin" })
+                .then(function (reply) { return reply.ok && (reply.headers.get("content-type") || "").indexOf("json") >= 0 ? reply.json() : null; })
+                .then(function (me) {
+                    if (!me) { return; }
+                    var spot = document.querySelector(".admin-initials");
+                    var menu = document.querySelector(".account-menu");
+
+                    if (me.photo && spot) {
+                        var picture = document.createElement("img");
+                        picture.src = me.photo;
+                        picture.alt = "";
+                        picture.style.cssText = "width:34px;height:34px;display:block;border-radius:50%;object-fit:cover;";
+                        spot.textContent = "";
+                        spot.appendChild(picture);
+                    }
+
+                    if (me.canEdit && menu && !menu.querySelector("[data-profile]")) {
+                        var link = document.createElement("a");
+                        link.href = "/Account/MyProfile";
+                        link.textContent = "My profile";
+                        link.setAttribute("data-profile", "1");
+                        link.style.cssText = "display:block;padding:10px 11px;border-radius:7px;color:#ffffff;font-size:12px;font-weight:600;text-decoration:none;";
+                        menu.insertBefore(link, menu.firstChild);
+                    }
+                })
+                .catch(function () { });
+        }
+    })();
+</script>
+</body>
+</html>

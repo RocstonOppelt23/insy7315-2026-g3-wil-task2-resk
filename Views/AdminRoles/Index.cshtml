@@ -1,0 +1,238 @@
+﻿@model RESK.WIL.Models.ReskRolesIndexViewModel
+
+@{
+    Layout = "~/Views/AdminProposals/_AdminLayout.cshtml";
+    ViewData["Title"] = "Roles & permissions";
+
+    var modules = RESK.WIL.Services.ReskRoleStore.Modules;
+    var actions = RESK.WIL.Services.ReskRoleStore.Actions;
+    var perms = new HashSet<string>(Model.Permissions);
+    bool locked = Model.IsAdministrator;
+    bool isDraft = Model.Status == "Draft";
+}
+
+@section Styles {
+    @await Html.PartialAsync("~/Views/AdminRoles/_IndexStyles.cshtml")
+}
+
+<header class="page-header">
+    <div>
+        <h1>Roles &amp; Permissions</h1>
+        <p>Create roles and control which modules and actions each user can access.</p>
+    </div>
+    <div class="header-actions">
+        <a href="/Admin/Roles/Create" class="primary-button">+ Create new role</a>
+    </div>
+</header>
+
+<div class="roles-layout">
+
+    <!-- ===== ROLE LIST ===== -->
+    <section class="card">
+        <h2 class="card-title">System roles</h2>
+        <p class="card-subtitle">@Model.ActiveCount active @(Model.ActiveCount == 1 ? "role" : "roles")</p>
+
+        <input class="input role-search" id="roleSearch" type="search" placeholder="Search roles..." autocomplete="off" aria-label="Search roles" />
+
+        <div class="role-list" id="roleList">
+            @foreach (var r in Model.Roles)
+            {
+                <a href="/Admin/Roles?role=@r.Id" class="role-item @(r.Id == Model.Id ? "selected" : "")" data-name="@r.Name.ToLowerInvariant()">
+                    <span class="role-avatar" style="background:@r.Colour;">@r.Initials</span>
+                    <span>
+                        <strong>
+                            @r.Name
+                            @if (r.Status == "Draft") { <span class="tag draft">Draft</span> }
+                            else if (r.Status == "Inactive") { <span class="tag">Inactive</span> }
+                        </strong>
+                        <small>@r.Users @(r.Users == 1 ? "user" : "users") • @r.Tagline</small>
+                    </span>
+                </a>
+            }
+        </div>
+
+        <a href="/Admin/Roles/Create" class="add-role">+ Add role</a>
+    </section>
+
+    <!-- ===== SELECTED ROLE ===== -->
+    <section class="card">
+        <div class="editor-head">
+            <div>
+                <h2>@Model.Name</h2>
+                <p>@RESK.WIL.Services.ReskRoleStore.AreaLabel(Model.Area) • @Model.UserCount @(Model.UserCount == 1 ? "user" : "users")</p>
+            </div>
+            <div class="editor-actions">
+                @if (isDraft)
+                {
+                    <a href="/Admin/Roles/Create?draft=@Model.Id" class="btn primary">Continue setup</a>
+                }
+                else
+                {
+                    <a href="/Admin/Roles/@Model.Id/Edit" class="btn">Edit page</a>
+                }
+                <form method="post" action="/Admin/Roles/@Model.Id/Duplicate">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn">Duplicate</button>
+                </form>
+                @if (!locked && !isDraft)
+                {
+                    <button type="submit" form="roleForm" class="btn primary">Save role</button>
+                }
+            </div>
+        </div>
+
+        @if (locked)
+        {
+            <p class="note">The Administrator role is built in and always has full access, so the system can never be locked out. Duplicate it to make a variation.</p>
+        }
+        else if (Model.IsMine)
+        {
+            <p class="note amber">This is your own role. Keep Roles &amp; permissions View and Edit ticked so you don't lock yourself out.</p>
+        }
+
+        <form id="roleForm" method="post" action="/Admin/Roles/@Model.Id/Save">
+            @Html.AntiForgeryToken()
+
+            <div class="grid-2">
+                <div>
+                    <label class="section-label" for="Name">Role name</label>
+                    <input class="input" id="Name" name="Name" value="@Model.Name" maxlength="60" disabled="@locked" />
+                </div>
+                <div>
+                    <label class="section-label" for="Status">Status</label>
+                    <div class="select-wrap">
+                        <select class="input" id="Status" name="Status" disabled="@locked">
+                            @foreach (var s in (isDraft ? new[] { "Draft" } : new[] { "Active", "Inactive" }))
+                            {
+                                if (s == Model.Status) { <option value="@s" selected>@s</option> }
+                                else { <option value="@s">@s</option> }
+                            }
+                        </select>
+                        <span class="status-dot @(Model.Status == "Active" ? "" : "off")" id="statusDot" aria-hidden="true"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="field">
+                <label class="section-label" for="Description">Description</label>
+                <textarea class="input" id="Description" name="Description" maxlength="200" disabled="@locked">@Model.Description</textarea>
+            </div>
+
+            <h3 class="block-title">Permission matrix</h3>
+            <p class="block-sub">Select the actions this role can perform in each module.</p>
+
+            <table class="matrix">
+                <thead>
+                    <tr>
+                        <th>Module</th>
+                        @foreach (var a in actions)
+                        {
+                            <th>@a.Label</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var m in modules)
+                    {
+                        <tr>
+                            <td>@m.Name</td>
+                            @foreach (var a in actions)
+                            {
+                                string key = m.Key + ":" + a.Key;
+                                <td>
+                                    @if (m.Actions.Contains(a.Key))
+                                    {
+                                        <input type="checkbox" name="Perms" value="@key" checked="@(locked || perms.Contains(key))"
+                                               disabled="@(locked || isDraft)" aria-label="@m.Name @a.Label" />
+                                    }
+                                    else
+                                    {
+                                        <span class="na" aria-label="Not applicable">—</span>
+                                    }
+                                </td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </form>
+
+        @if (Model.UserNames.Count > 0)
+        {
+            <h3 class="block-title" style="font-size:14px;">Users with this role</h3>
+            <div class="holders">
+                @foreach (var n in Model.UserNames)
+                {
+                    <span>@n</span>
+                }
+                @if (Model.UserCount > Model.UserNames.Count)
+                {
+                    <span>+@(Model.UserCount - Model.UserNames.Count) more</span>
+                }
+            </div>
+        }
+
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:16px;flex-wrap:wrap;">
+            <p class="footnote" style="margin:0;">@Model.UpdatedText. Change a user's role from Users → Edit user.</p>
+            @if (!Model.IsSystem && Model.UserCount == 0)
+            {
+                <form method="post" action="/Admin/Roles/@Model.Id/Delete" onsubmit="return confirm('Delete this role permanently?');" style="margin:0;">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn danger">Delete role</button>
+                </form>
+            }
+        </div>
+    </section>
+
+</div>
+
+@if (Model.CreatedId != null)
+{
+    <div class="modal-back" id="createdModal" role="dialog" aria-modal="true" aria-labelledby="createdTitle">
+        <div class="modal">
+            <div class="modal-icon" aria-hidden="true">!</div>
+            <h2 id="createdTitle">Role created successfully</h2>
+            <p>@Model.CreatedName is now available for assignment.</p>
+            <div class="modal-actions">
+                <button type="button" class="btn" id="closeModal">Cancel</button>
+                <a href="/Admin/Roles?role=@Model.CreatedId" class="btn primary">View role</a>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        (function () {
+            var search = document.getElementById("roleSearch");
+            search.addEventListener("input", function () {
+                var term = search.value.trim().toLowerCase();
+                document.querySelectorAll("#roleList .role-item").forEach(function (item) {
+                    item.hidden = term !== "" && item.getAttribute("data-name").indexOf(term) < 0;
+                });
+            });
+
+            var status = document.getElementById("Status");
+            var dot = document.getElementById("statusDot");
+            if (status && dot) {
+                status.addEventListener("change", function () { dot.classList.toggle("off", status.value !== "Active"); });
+            }
+
+            var modal = document.getElementById("createdModal");
+            var close = document.getElementById("closeModal");
+            if (modal && close) {
+                close.addEventListener("click", function () { modal.remove(); });
+                document.addEventListener("keydown", function (e) { if (e.key === "Escape" && modal.isConnected) { modal.remove(); } });
+                close.focus();
+            }
+
+            document.querySelectorAll(".sidebar nav a").forEach(function (link) {
+                if ((link.getAttribute("href") || "").toLowerCase().indexOf("/admin/roles") === 0) {
+                    link.setAttribute("aria-current", "page");
+                } else {
+                    link.removeAttribute("aria-current");
+                }
+            });
+        })();
+    </script>
+}

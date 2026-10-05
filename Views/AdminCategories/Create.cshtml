@@ -1,0 +1,40 @@
+﻿@model RESK.WIL.Models.AdminCategoryForm
+
+@{
+    Layout = "~/Views/AdminProposals/_AdminLayout.cshtml";
+    ViewData["Title"] = "Add category";
+}
+
+@section Styles {
+    @await Html.PartialAsync("~/Views/AdminCategories/_CategoryStyles.cshtml")
+}
+
+<header class="page-header">
+    <div>
+        <h1>Add category</h1>
+        <p>Create a new programme category for proposal submissions.</p>
+    </div>
+    <div class="header-actions">
+        <a href="/Admin/Categories" class="secondary-button">Cancel</a>
+        <button type="submit" form="categoryForm" class="primary-button">Create category</button>
+    </div>
+</header>
+
+<section class="card">
+
+    <h2 class="card-title">Category details</h2>
+    <p class="card-subtitle">Enter a clear name and description so producers understand when to use this category.</p>
+
+    <form id="categoryForm" method="post" action="/Admin/Categories/Create" novalidate>
+        @Html.AntiForgeryToken()
+
+        @await Html.PartialAsync("~/Views/AdminCategories/_CategoryFields.cshtml", Model)
+
+        <p class="form-footnote">Required fields are marked with an asterisk. The admin who creates the category is recorded with it.</p>
+    </form>
+
+</section>
+
+@section Scripts {
+    @await Html.PartialAsync("~/Views/AdminCategories/_CategoryScripts.cshtml")
+}

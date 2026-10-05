@@ -1,309 +1,195 @@
-using System.ComponentModel.DataAnnotations;
-using System.Security.Claims;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RESK.WIL.Data;
 using RESK.WIL.Models;
+using RESK.WIL.Services;
 
 namespace RESK.WIL.Controllers.API
 {
+    /*
+     * Endpoints:
+     * GET  /api/proposals
+     * GET  /api/proposals/{id:int}
+     * POST /api/proposals/{id:int}/submit
+     */
     [ApiController]
     [Route("api/proposals")]
     [Authorize(Policy = "ManageProposals")]
     public class ApiProposalController : ControllerBase
     {
         private readonly ApplicationDbContext _db;
+        private readonly UserManager<IdentityUser> _userManager;
+        private readonly IWebHostEnvironment _environment;
 
-        public ApiProposalController(ApplicationDbContext db)
+        public ApiProposalController(
+            ApplicationDbContext db,
+            UserManager<IdentityUser> userManager,
+            IWebHostEnvironment environment)
         {
             _db = db;
+            _userManager = userManager;
+            _environment = environment;
         }
 
         // GET /api/proposals
         [HttpGet]
-        public async Task<ActionResult<List<ProposalResponse>>> GetMine(
-            CancellationToken cancellationToken)
+        public async Task<ActionResult<List<ApiProposalSummary>>> GetMine(CancellationToken cancellationToken)
         {
-            if (!TryGetUserId(out int userId))
+            string? userId = _userManager.GetUserId(User);
+            if (userId == null)
                 return Unauthorized();
 
-            var proposals = await _db.Proposals
+            var proposals = await _db.ProducerProposals
                 .AsNoTracking()
-                .Where(p => p.ProducerId == userId)
+                .Where(p => p.OwnerUserId == userId)
                 .OrderByDescending(p => p.UpdatedAtUtc)
-                .Select(p => new ProposalResponse(
-                    p.Id,
-                    p.ProducerId,
-                    p.ProposalType,
-                    p.ProgrammeTitle,
-                    p.ProposalStatus,
-                    p.CreatedAtUtc,
-                    p.SubmittedAtUtc,
-                    p.UpdatedAtUtc))
                 .ToListAsync(cancellationToken);
 
-            return Ok(proposals);
+            var reviews = ProposalReviewStore.LoadAll(_environment.ContentRootPath);
+
+            var result = proposals
+                .Select(p => ApiProposalMapper.ToSummary(p, reviews.TryGetValue(p.Id, out var r) ? r : null))
+                .ToList();
+
+            return Ok(result);
         }
 
-        // GET /api/proposals/7
+        // GET /api/proposals/{id:int}
         [HttpGet("{id:int}")]
-        public async Task<ActionResult<ProposalDetailsResponse>> GetById(
-            int id,
-            CancellationToken cancellationToken)
+        public async Task<ActionResult<ApiProposalDetails>> GetById(int id, CancellationToken cancellationToken)
         {
-            if (!TryGetUserId(out int userId))
+            string? userId = _userManager.GetUserId(User);
+            if (userId == null)
                 return Unauthorized();
 
-            var proposal = await _db.Proposals
+            var proposal = await _db.ProducerProposals
                 .AsNoTracking()
-                .SingleOrDefaultAsync(
-                    p => p.Id == id && p.ProducerId == userId,
-                    cancellationToken);
+                .SingleOrDefaultAsync(p => p.Id == id && p.OwnerUserId == userId, cancellationToken);
 
-            if (proposal is null)
+            if (proposal == null)
                 return NotFound();
 
-            return Ok(ToDetailsResponse(proposal));
+            var review = ProposalReviewStore.Load(_environment.ContentRootPath, id);
+            return Ok(ApiProposalMapper.ToDetails(proposal, review));
         }
 
-        // POST /api/proposals
-        // An incomplete proposal can be saved as a draft.
-        [HttpPost]
-        public async Task<ActionResult<ProposalDetailsResponse>> CreateDraft(
-            [FromBody] SaveProposalRequest request,
-            CancellationToken cancellationToken)
-        {
-            if (!TryGetUserId(out int userId))
-                return Unauthorized();
-
-            var now = DateTime.UtcNow;
-
-            var proposal = new Proposal
-            {
-                ProducerId = userId,
-                ProposalStatus = "Draft",
-                CreatedAtUtc = now,
-                UpdatedAtUtc = now,
-                LastChangerId = userId,
-                LastAction = "Created draft"
-            };
-
-            ApplyFields(proposal, request);
-
-            _db.Proposals.Add(proposal);
-            await _db.SaveChangesAsync(cancellationToken);
-
-            return CreatedAtAction(
-                nameof(GetById),
-                new { id = proposal.Id },
-                ToDetailsResponse(proposal));
-        }
-
-        // PUT /api/proposals/7
-        [HttpPut("{id:int}")]
-        public async Task<ActionResult<ProposalDetailsResponse>> UpdateDraft(
-            int id,
-            [FromBody] SaveProposalRequest request,
-            CancellationToken cancellationToken)
-        {
-            if (!TryGetUserId(out int userId))
-                return Unauthorized();
-
-            var proposal = await _db.Proposals.SingleOrDefaultAsync(
-                p => p.Id == id && p.ProducerId == userId,
-                cancellationToken);
-
-            if (proposal is null)
-                return NotFound();
-
-            if (proposal.ProposalStatus != "Draft")
-                return Conflict("Only drafts can be edited through this endpoint.");
-
-            ApplyFields(proposal, request);
-            proposal.LastChangerId = userId;
-            proposal.LastAction = "Updated draft";
-            proposal.UpdatedAtUtc = DateTime.UtcNow;
-
-            await _db.SaveChangesAsync(cancellationToken);
-            return Ok(ToDetailsResponse(proposal));
-        }
-
-        // POST /api/proposals/7/submit
+        // POST /api/proposals/{id:int}/submit
         [HttpPost("{id:int}/submit")]
-        public async Task<ActionResult<ProposalDetailsResponse>> Submit(
-            int id,
-            CancellationToken cancellationToken)
+        public async Task<ActionResult<ApiProposalDetails>> Submit(int id)
         {
-            if (!TryGetUserId(out int userId))
+            string? userId = _userManager.GetUserId(User);
+            if (userId == null)
                 return Unauthorized();
 
-            var proposal = await _db.Proposals.SingleOrDefaultAsync(
-                p => p.Id == id && p.ProducerId == userId,
-                cancellationToken);
+            var proposal = await _db.ProducerProposals
+                .SingleOrDefaultAsync(p => p.Id == id && p.OwnerUserId == userId);
 
-            if (proposal is null)
+            if (proposal == null)
                 return NotFound();
 
-            if (proposal.ProposalStatus != "Draft")
-                return Conflict("Only drafts can be submitted.");
-
-            var errors = new List<ValidationResult>();
-            var context = new ValidationContext(proposal);
-
-            bool valid = Validator.TryValidateObject(
-                proposal,
-                context,
-                errors,
-                validateAllProperties: true);
-
-            if (!valid)
+            if (proposal.CompletedSteps < 4 || string.IsNullOrWhiteSpace(proposal.ProposalDocumentStoredName))
             {
-                foreach (var error in errors)
-                {
-                    foreach (var field in error.MemberNames.DefaultIfEmpty(""))
-                        ModelState.AddModelError(
-                            field,
-                            error.ErrorMessage ?? "Invalid value.");
-                }
-
-                return ValidationProblem(ModelState);
+                return BadRequest("Complete all proposal steps and upload the proposal document before submitting.");
             }
 
-            var now = DateTime.UtcNow;
-            proposal.ProposalStatus = "Pending";
-            proposal.SubmittedAtUtc ??= now;
-            proposal.UpdatedAtUtc = now;
-            proposal.LastChangerId = userId;
-            proposal.LastAction = "Submitted";
+            if (!ProposalWorkflow.TryMove(proposal, ProposalStatuses.InReview, out string moveError))
+            {
+                return Conflict(moveError);
+            }
 
-            await _db.SaveChangesAsync(cancellationToken);
-            return Ok(ToDetailsResponse(proposal));
+            DateTime now = DateTime.UtcNow;
+            proposal.CompletedSteps = 5;
+            proposal.SubmittedAtUtc = now;
+            proposal.Reference ??= $"CTV-{SouthAfricaTime.ToLocal(now).Year}-{proposal.Id:D4}";
+
+            await _db.SaveChangesAsync();
+
+            var review = ProposalReviewStore.Load(_environment.ContentRootPath, id);
+            return Ok(ApiProposalMapper.ToDetails(proposal, review));
         }
-
-        private bool TryGetUserId(out int userId) =>
-            int.TryParse(
-                User.FindFirstValue(ClaimTypes.NameIdentifier),
-                out userId);
-
-        private static void ApplyFields(
-            Proposal proposal,
-            SaveProposalRequest request)
-        {
-            proposal.ProposalType = request.ProposalType.Trim().ToUpperInvariant();
-            proposal.PhysicalAddress = request.PhysicalAddress;
-            proposal.ProgrammeTitle = request.ProgrammeTitle;
-            proposal.Partner = request.Partner;
-            proposal.TdlaFileUrl = request.TdlaFileUrl;
-            proposal.Publisher = request.Publisher;
-            proposal.Duration = request.Duration;
-            proposal.Episodes = request.Episodes;
-            proposal.Introduction = request.Introduction;
-            proposal.Background = request.Background;
-            proposal.Motivation = request.Motivation;
-            proposal.Synopsis = request.Synopsis;
-            proposal.Treatment = request.Treatment;
-            proposal.Language = request.Language;
-            proposal.FinancePlan = request.FinancePlan;
-            proposal.ResourceSkills = request.ResourceSkills;
-            proposal.Content = request.Content;
-            proposal.TargetAudience = request.TargetAudience;
-            proposal.MediaHandles = request.MediaHandles;
-            proposal.Genre = request.Genre;
-            proposal.Copyright = request.Copyright;
-            proposal.WebsiteUrl = request.WebsiteUrl;
-            proposal.CTTVSupport = request.CTTVSupport;
-            proposal.Sponsors = request.Sponsors;
-            proposal.LicenceDuration = request.LicenceDuration;
-            proposal.IsTdlaRead = request.IsTdlaRead;
-        }
-
-        private static ProposalDetailsResponse ToDetailsResponse(
-            Proposal proposal) =>
-            new(
-                proposal.Id,
-                proposal.ProducerId,
-                proposal.ProposalStatus,
-                proposal.CreatedAtUtc,
-                proposal.SubmittedAtUtc,
-                proposal.UpdatedAtUtc,
-                new SaveProposalRequest
-                {
-                    ProposalType = proposal.ProposalType,
-                    PhysicalAddress = proposal.PhysicalAddress,
-                    ProgrammeTitle = proposal.ProgrammeTitle,
-                    Partner = proposal.Partner,
-                    TdlaFileUrl = proposal.TdlaFileUrl,
-                    Publisher = proposal.Publisher,
-                    Duration = proposal.Duration,
-                    Episodes = proposal.Episodes,
-                    Introduction = proposal.Introduction,
-                    Background = proposal.Background,
-                    Motivation = proposal.Motivation,
-                    Synopsis = proposal.Synopsis,
-                    Treatment = proposal.Treatment,
-                    Language = proposal.Language,
-                    FinancePlan = proposal.FinancePlan,
-                    ResourceSkills = proposal.ResourceSkills,
-                    Content = proposal.Content,
-                    TargetAudience = proposal.TargetAudience,
-                    MediaHandles = proposal.MediaHandles,
-                    Genre = proposal.Genre,
-                    Copyright = proposal.Copyright,
-                    WebsiteUrl = proposal.WebsiteUrl,
-                    CTTVSupport = proposal.CTTVSupport,
-                    Sponsors = proposal.Sponsors,
-                    LicenceDuration = proposal.LicenceDuration,
-                    IsTdlaRead = proposal.IsTdlaRead
-                });
     }
 
-    public record ProposalResponse(
+    // Mapping and response shapes used by the API controllers
+    public record ApiProposalSummary(
         int Id,
-        int ProducerId,
-        string ProposalType,
+        string? Reference,
         string ProgrammeTitle,
-        string ProposalStatus,
+        string Category,
+        string Status,
+        string StatusLabel,
+        int ProgressPercent,
         DateTime CreatedAtUtc,
         DateTime? SubmittedAtUtc,
         DateTime UpdatedAtUtc);
 
-    public record ProposalDetailsResponse(
+    public record ApiProposalDetails(
         int Id,
-        int ProducerId,
-        string ProposalStatus,
+        string? Reference,
+        string ProgrammeTitle,
+        string Category,
+        string Status,
+        string StatusLabel,
+        int ProgressPercent,
         DateTime CreatedAtUtc,
         DateTime? SubmittedAtUtc,
         DateTime UpdatedAtUtc,
-        SaveProposalRequest Fields);
+        string ProgrammeFormat,
+        string EpisodeDuration,
+        string PrimaryLanguage,
+        int CompletedSteps,
+        string? ReviewerName,
+        DateTime? ReviewDeadline,
+        string? Decision,
+        string? ReviewerComments,
+        DateTime? DecidedAtUtc);
 
-    public class SaveProposalRequest
+    public static class ApiProposalMapper
     {
-        public string ProposalType { get; set; } = string.Empty;
-        public string PhysicalAddress { get; set; } = string.Empty;
-        public string ProgrammeTitle { get; set; } = string.Empty;
-        public string? Partner { get; set; }
-        public string? TdlaFileUrl { get; set; }
-        public string? Publisher { get; set; }
-        public int Duration { get; set; }
-        public int? Episodes { get; set; }
-        public string Introduction { get; set; } = string.Empty;
-        public string Background { get; set; } = string.Empty;
-        public string Motivation { get; set; } = string.Empty;
-        public string Synopsis { get; set; } = string.Empty;
-        public string Treatment { get; set; } = string.Empty;
-        public string Language { get; set; } = string.Empty;
-        public string FinancePlan { get; set; } = string.Empty;
-        public string ResourceSkills { get; set; } = string.Empty;
-        public string Content { get; set; } = string.Empty;
-        public string TargetAudience { get; set; } = string.Empty;
-        public string? MediaHandles { get; set; }
-        public string? Genre { get; set; }
-        public string Copyright { get; set; } = string.Empty;
-        public string? WebsiteUrl { get; set; }
-        public string? CTTVSupport { get; set; }
-        public string? Sponsors { get; set; }
-        public string LicenceDuration { get; set; } = string.Empty;
-        public bool IsTdlaRead { get; set; }
+        public static ApiProposalSummary ToSummary(ProducerProposal p, RESK.WIL.Services.ProposalReview? review)
+        {
+            return new ApiProposalSummary(
+                p.Id,
+                p.Reference,
+                p.DisplayTitle,
+                p.Category ?? string.Empty,
+                p.Status,
+                ProposalStatuses.Label(p.Status),
+                p.ProgressPercent,
+                p.CreatedAtUtc,
+                p.SubmittedAtUtc,
+                p.UpdatedAtUtc);
+        }
+
+        public static ApiProposalDetails ToDetails(ProducerProposal p, RESK.WIL.Services.ProposalReview? review)
+        {
+            return new ApiProposalDetails(
+                p.Id,
+                p.Reference,
+                p.DisplayTitle,
+                p.Category ?? string.Empty,
+                p.Status,
+                ProposalStatuses.Label(p.Status),
+                p.ProgressPercent,
+                p.CreatedAtUtc,
+                p.SubmittedAtUtc,
+                p.UpdatedAtUtc,
+                p.ProgrammeFormat ?? string.Empty,
+                p.EpisodeDuration ?? string.Empty,
+                p.PrimaryLanguage ?? string.Empty,
+                p.CompletedSteps,
+                review?.ReviewerName,
+                review?.Deadline,
+                review?.Decision,
+                review?.Comments,
+                review?.DecidedAtUtc);
+        }
     }
 }

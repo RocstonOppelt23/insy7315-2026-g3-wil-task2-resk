@@ -1,0 +1,107 @@
+﻿@model RESK.WIL.Models.ReskSettingsViewModel
+
+@{
+    var s = Model.Settings;
+    var timeouts = RESK.WIL.Services.ReskSettingsStore.SessionTimeouts;
+    var limits = RESK.WIL.Services.ReskSettingsStore.LoginLimits;
+    var lockouts = RESK.WIL.Services.ReskSettingsStore.LockoutDurations;
+    var retention = RESK.WIL.Services.ReskSettingsStore.RetentionChoices;
+    var expiry = RESK.WIL.Services.ReskSettingsStore.ExpiryChoices;
+
+    string Timeout(int minutes) => minutes < 60 ? minutes + " minutes of inactivity" : minutes == 60 ? "1 hour of inactivity" : (minutes / 60) + " hours of inactivity";
+}
+
+<h2 class="card-title">Security settings</h2>
+<p class="card-subtitle">Configure login protection, session limits and audit retention.</p>
+
+<h3 class="block-title" style="margin-top:22px;">Authentication</h3>
+
+<div class="toggles">
+    <div class="toggle">
+        <label class="toggle-main">
+            <input type="checkbox" name="RequireMfa" value="true" checked="@s.RequireMfa" />
+            <span class="switch"></span>
+            <span>
+                <strong>Require multi-factor authentication for administrators <span class="soon">Not active yet</span></strong>
+                <small>Saved for later: the sign-in page has no second verification step yet, so this does not protect accounts today.</small>
+            </span>
+        </label>
+    </div>
+
+    <div class="toggle">
+        <label class="toggle-main">
+            <input type="checkbox" name="LockoutEnabled" value="true" checked="@s.LockoutEnabled" />
+            <span class="switch"></span>
+            <span>
+                <strong>Lock accounts after repeated failed login attempts</strong>
+                <small>Temporary lockout protects accounts from password guessing.</small>
+            </span>
+        </label>
+    </div>
+</div>
+
+<h3 class="block-title">Session controls</h3>
+
+<div class="grid-3">
+    <div>
+        <label class="section-label" for="SessionTimeoutMinutes">Session timeout</label>
+        <select class="input" id="SessionTimeoutMinutes" name="SessionTimeoutMinutes">
+            @foreach (var minutes in timeouts)
+            {
+                <option value="@minutes" selected="@(minutes == s.SessionTimeoutMinutes)">@Timeout(minutes)</option>
+            }
+        </select>
+    </div>
+    <div>
+        <label class="section-label" for="FailedLoginLimit">Failed login limit</label>
+        <select class="input" id="FailedLoginLimit" name="FailedLoginLimit">
+            @foreach (var attempts in limits)
+            {
+                <option value="@attempts" selected="@(attempts == s.FailedLoginLimit)">@attempts attempts</option>
+            }
+        </select>
+    </div>
+    <div>
+        <label class="section-label" for="LockoutMinutes">Lockout duration</label>
+        <select class="input" id="LockoutMinutes" name="LockoutMinutes">
+            @foreach (var minutes in lockouts)
+            {
+                <option value="@minutes" selected="@(minutes == s.LockoutMinutes)">@(minutes == 60 ? "1 hour" : minutes + " minutes")</option>
+            }
+        </select>
+    </div>
+</div>
+
+@if (!Model.LockoutReady)
+{
+    <p class="foot-note">The lockout starts working after the next successful sign-in: the system first makes sure it can tell a successful sign-in from a failed one.</p>
+}
+
+<h3 class="block-title">Audit and data protection</h3>
+
+<div class="grid-3">
+    <div>
+        <label class="section-label" for="AuditRetentionYears">Audit log retention</label>
+        <select class="input" id="AuditRetentionYears" name="AuditRetentionYears">
+            @foreach (var years in retention)
+            {
+                <option value="@years" selected="@(years == s.AuditRetentionYears)">@(years == 1 ? "1 year" : years + " years")</option>
+            }
+        </select>
+    </div>
+    <div>
+        <label class="section-label" for="PasswordExpiryDays">Password expiry</label>
+        <select class="input" id="PasswordExpiryDays" name="PasswordExpiryDays">
+            @foreach (var days in expiry)
+            {
+                <option value="@days" selected="@(days == s.PasswordExpiryDays)">@(days == 0 ? "Never" : days + " days")</option>
+            }
+        </select>
+    </div>
+    <div class="info-box" style="margin-top:0;">
+        <strong>Audit records are read-only</strong>
+        <span>They cannot be edited or deleted by users.</span>
+    </div>
+</div>
+
+<div class="warn-bar">Security changes are recorded in the audit log and may sign users out.</div>

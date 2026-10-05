@@ -1,0 +1,264 @@
+﻿@model RESK.WIL.Models.AdminUsersIndexViewModel
+@inject Microsoft.AspNetCore.Hosting.IWebHostEnvironment Env
+
+@{
+    Layout = "~/Views/AdminProposals/_AdminLayout.cshtml";
+    ViewData["Title"] = "Users";
+
+    var exportUrl = "/Admin/Users/Export" + Context.Request.QueryString;
+
+    var roles = new[] { ("", "All roles"), ("Producer", "Producer"), ("Reviewer", "Reviewer"), ("Admin", "Admin"), ("none", "No role yet") };
+    var statuses = new[] { ("", "All statuses"), ("active", "Active"), ("pending", "Pending"), ("suspended", "Suspended / locked"), ("banned", "Banned") };
+    var dates = new[] { ("", "Any date"), ("7", "Last 7 days"), ("30", "Last 30 days"), ("year", "This year") };
+}
+
+@section Styles {
+    <style>
+        .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+        .stat { padding: 20px; border: 1px solid #d9e1ec; border-radius: 13px; background: white; }
+        .stat-label { color: #5d6d87; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+        .stat-value { margin-top: 12px; color: #12213b; font-size: 32px; font-weight: 800; line-height: 1; }
+
+        .filters { margin-top: 22px; }
+        .filter-grid { display: grid; grid-template-columns: minmax(0, 1.5fr) repeat(3, minmax(0, 1fr)) auto; gap: 16px; align-items: end; margin-top: 18px; }
+        .filter-grid .primary-button { height: 42px; min-height: 42px; padding: 0 40px; }
+
+        .list-card { margin-top: 18px; }
+        table { width: 100%; margin-top: 18px; border-collapse: collapse; }
+        thead th { padding: 12px 14px; background: #f4f7fb; color: #5d6d87; font-size: 11px; font-weight: 800; text-align: left; text-transform: uppercase; }
+        thead th:first-child { border-radius: 8px 0 0 8px; }
+        thead th:last-child { border-radius: 0 8px 8px 0; }
+        tbody td { padding: 13px 14px; border-bottom: 1px solid #edf1f6; color: #52637e; font-size: 12px; vertical-align: middle; }
+        tbody tr:last-child td { border-bottom: none; }
+
+        .user-cell { display: flex; align-items: center; gap: 14px; }
+        .user-cell .avatar { width: 36px; height: 36px; margin: 0; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: #ffffff; font-size: 12px; font-weight: 800; line-height: 1; letter-spacing: 0.5px; text-transform: uppercase; }
+        .user-cell strong { display: block; color: #14233e; font-size: 13px; }
+        .user-cell div span { display: block; margin-top: 3px; color: #6d7e99; font-size: 11px; }
+
+        .pill-active { background: #e3f5ec; color: #1f8a5c; }
+        .pill-pending { background: #fdf1d6; color: #b07200; }
+        .pill-suspended, .pill-rejected { background: #fde7e8; color: #c9444d; }
+        .pill-locked { background: #fff4dc; color: #c77c00; }
+        .pill-banned { background: #c9444d; color: #ffffff; }
+        .until { display: block; margin-top: 5px; color: #8493aa; font-size: 10px; }
+        .more-menu .warn-link { color: #8a5d00; }
+        .more-menu .danger-link { color: #c9444d; }
+        .more-menu hr { margin: 5px 4px; border: none; border-top: 1px solid #edf1f6; }
+
+        .actions { display: flex; align-items: center; gap: 18px; }
+        .action-link { color: #00a9bd; font-size: 12px; font-weight: 800; text-decoration: none; }
+        .action-link:hover { text-decoration: underline; }
+
+        .more { position: relative; }
+        .more summary { list-style: none; cursor: pointer; padding: 2px 6px; color: #5d6d87; font-size: 16px; font-weight: 800; letter-spacing: 1px; border-radius: 6px; }
+        .more summary::-webkit-details-marker { display: none; }
+        .more summary:hover { background: #eef2f7; }
+        .more-menu { position: absolute; right: 0; top: calc(100% + 6px); z-index: 20; min-width: 170px; padding: 6px; border: 1px solid #dde4ee; border-radius: 9px; background: white; box-shadow: 0 14px 30px rgba(12,26,51,0.12); }
+        .more-menu a { display: block; padding: 9px 11px; border-radius: 6px; color: #14233e; font-size: 12px; font-weight: 600; text-decoration: none; }
+        .more-menu a:hover { background: #f4f7fb; }
+
+        .empty-row { padding: 30px 14px; color: #8493aa; text-align: center; }
+        .footnote { margin-top: 14px; color: #6d7e99; font-size: 11px; }
+
+        @@media (max-width: 1150px) {
+            .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .filter-grid { grid-template-columns: 1fr 1fr; }
+        }
+
+        @@media (max-width: 800px) {
+            table { display: block; overflow-x: auto; }
+        }
+    </style>
+}
+
+<header class="page-header">
+    <div>
+        <h1>Users</h1>
+        <p>Manage user accounts, approvals, roles and account access.</p>
+    </div>
+    <div class="header-actions">
+        <a href="/Admin/Users/Create" class="primary-button">Add user</a>
+        <a href="@exportUrl" class="secondary-button" download>Export users</a>
+    </div>
+</header>
+
+<!-- ===== STATS ===== -->
+<section class="stats" aria-label="User totals">
+    <div class="stat">
+        <div class="stat-label">Total users</div>
+        <div class="stat-value">@Model.Total</div>
+    </div>
+    <div class="stat">
+        <div class="stat-label">Pending approval</div>
+        <div class="stat-value">@Model.Pending</div>
+    </div>
+    <div class="stat">
+        <div class="stat-label">Active</div>
+        <div class="stat-value">@Model.Active</div>
+    </div>
+    <div class="stat">
+        <div class="stat-label">Suspended</div>
+        <div class="stat-value">@Model.Suspended</div>
+    </div>
+</section>
+
+<!-- ===== FILTERS ===== -->
+<section class="card filters">
+
+    <h2 class="card-title" style="font-size:16px;">Filter users</h2>
+
+    <form method="get" action="/Admin/Users" class="filter-grid">
+
+        <div>
+            <label class="section-label" for="search">Search</label>
+            <input class="input" id="search" name="search" type="search" value="@Model.Search"
+                   placeholder="Name, email or organisation..." autocomplete="off" />
+        </div>
+
+        <div>
+            <label class="section-label" for="role">Role</label>
+            <select class="input" id="role" name="role">
+                @foreach (var (value, text) in roles)
+                {
+                    if (value == (Model.Role ?? "")) { <option value="@value" selected>@text</option> }
+                    else { <option value="@value">@text</option> }
+                }
+            </select>
+        </div>
+
+        <div>
+            <label class="section-label" for="status">Status</label>
+            <select class="input" id="status" name="status">
+                @foreach (var (value, text) in statuses)
+                {
+                    if (value == (Model.Status ?? "")) { <option value="@value" selected>@text</option> }
+                    else { <option value="@value">@text</option> }
+                }
+            </select>
+        </div>
+
+        <div>
+            <label class="section-label" for="joined">Registration date</label>
+            <select class="input" id="joined" name="joined">
+                @foreach (var (value, text) in dates)
+                {
+                    if (value == (Model.Joined ?? "")) { <option value="@value" selected>@text</option> }
+                    else { <option value="@value">@text</option> }
+                }
+            </select>
+        </div>
+
+        <button type="submit" class="primary-button">Apply filters</button>
+
+    </form>
+
+</section>
+
+<!-- ===== LIST ===== -->
+<section class="card list-card">
+
+    <h2 class="card-title">User accounts</h2>
+    <p class="card-subtitle">Showing @Model.Rows.Count of @Model.Total users</p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>User</th>
+                <th>Role</th>
+                <th>Organisation</th>
+                <th>Status</th>
+                <th>Joined</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.Rows.Count == 0)
+            {
+                <tr>
+                    <td colspan="6" class="empty-row">No users match these filters.</td>
+                </tr>
+            }
+
+            @foreach (var row in Model.Rows)
+            {
+                <tr>
+                    <td>
+                        <div class="user-cell">
+                            <span class="avatar" style="background:@row.AvatarColour;">@row.Initials</span>
+                            <div>
+                                <strong>@row.Name</strong>
+                                <span>@row.Email</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td>@row.RoleLabel</td>
+                    <td>@row.Organisation</td>
+                    <td>
+                        <span class="pill pill-@row.StatusKey">@row.StatusLabel</span>
+                        @if (row.StatusKey == "suspended")
+                        {
+                            var acct = RESK.WIL.Services.ReskAccountStore.Load(Env.ContentRootPath, row.Id);
+                            <span class="until">
+                                @(acct.SuspendedUntilUtc.HasValue
+                                    ? "Until " + RESK.WIL.Controllers.AdminUserRestrictionsController.LocalText(acct.SuspendedUntilUtc.Value)
+                                    : "Until lifted")
+                            </span>
+                        }
+                    </td>
+                    <td>@row.JoinedText</td>
+                    <td>
+                        <div class="actions">
+                            @if (row.StatusKey == "pending")
+                            {
+                                <a href="/Admin/Users/@row.Id/Pending" class="action-link">Review</a>
+                            }
+                            else
+                            {
+                                <a href="/Admin/Users/@row.Id" class="action-link">View</a>
+                            }
+
+                            <details class="more">
+                                <summary aria-label="More actions for @row.Name">•••</summary>
+                                <div class="more-menu">
+                                    <a href="/Admin/Users/@row.Id">View details</a>
+                                    <a href="/Admin/Users/@row.Id/Edit">Edit user</a>
+                                    <a href="/Admin/Users/@(row.Id)?tab=proposals">Proposals</a>
+                                    <a href="/Admin/Users/@(row.Id)?tab=activity">Activity</a>
+                                    <a href="/Admin/Users/@(row.Id)?tab=security">Security</a>
+                                    <hr />
+                                    @if (row.StatusKey is "suspended" or "banned")
+                                    {
+                                        <a href="/Admin/Users/@row.Id" class="warn-link">@(row.StatusKey == "banned" ? "Lift ban…" : "Lift suspension…")</a>
+                                    }
+                                    else
+                                    {
+                                        <a href="/Admin/Users/@row.Id/Restrict?mode=suspend" class="warn-link">Suspend temporarily</a>
+                                    }
+                                    @if (row.StatusKey != "banned")
+                                    {
+                                        <a href="/Admin/Users/@row.Id/Restrict?mode=ban" class="danger-link">Ban user</a>
+                                    }
+                                </div>
+                            </details>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <p class="footnote">Admins can approve registrations, assign roles, suspend or ban accounts and review position-change requests.</p>
+
+</section>
+
+@section Scripts {
+    <script>
+        // Close any open "•••" menu when clicking elsewhere.
+        document.addEventListener("click", function (event) {
+            document.querySelectorAll("details.more[open]").forEach(function (menu) {
+                if (!menu.contains(event.target)) { menu.removeAttribute("open"); }
+            });
+        });
+    </script>
+}

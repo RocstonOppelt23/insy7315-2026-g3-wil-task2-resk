@@ -1,0 +1,36 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - R.E.S.K</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px 16px; font-family: Inter, "Segoe UI", Arial, sans-serif; background: #0c1a33; color: #13223c; }
+        button, input, a { font-family: inherit; }
+        .box { width: 100%; max-width: 460px; padding: 40px 36px; border-radius: 16px; background: #ffffff; text-align: center; box-shadow: 0 24px 60px rgba(0,0,0,0.25); }
+        .box.wide { max-width: 560px; text-align: left; }
+        .logo { width: 58px; height: 58px; margin: 0 auto 26px; display: flex; align-items: center; justify-content: center; border: 2px solid #12b8ce; border-radius: 14px; color: #12b8ce; font-size: 26px; font-weight: 800; }
+        h1 { color: #14233e; font-size: 22px; font-weight: 800; }
+        p { margin-top: 12px; color: #5d6d87; font-size: 14px; line-height: 1.6; }
+        .primary-button, .secondary-button { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 24px; border-radius: 8px; font-size: 13px; font-weight: 800; text-decoration: none; cursor: pointer; }
+        .primary-button { border: none; background: #12b8ce; color: #ffffff; }
+        .primary-button:hover { background: #0faabd; }
+        .primary-button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .secondary-button { border: 1px solid #d3dce8; background: #ffffff; color: #14233e; }
+        .secondary-button:hover { border-color: #b9c6d8; background: #f8fafc; }
+        .section-label { display: block; margin-bottom: 8px; color: #5d6d87; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+        .input { width: 100%; height: 44px; padding: 0 14px; border: 1px solid #cfdae8; border-radius: 8px; outline: none; background: #ffffff; color: #14233e; font-size: 14px; }
+        .input:focus { border-color: #12b8ce; box-shadow: 0 0 0 3px rgba(18,184,206,0.12); }
+    </style>
+    @await RenderSectionAsync("Styles", required: false)
+    <link rel="icon" type="image/x-icon" href="/favicon.ico?v=resk2" />
+</head>
+<body>
+    <main class="box @(ViewData["BoxClass"] as string)">
+        <div class="logo">R</div>
+        @RenderBody()
+    </main>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

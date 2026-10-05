@@ -1,0 +1,94 @@
+﻿@model RESK.WIL.Models.AdminUserForm
+
+@{
+    Layout = "~/Views/AdminProposals/_AdminLayout.cshtml";
+    ViewData["Title"] = "Edit user";
+
+    var userId = ViewData["UserId"] as string;
+    var roles = RESK.WIL.Controllers.AdminUsersController.SystemRoles;
+    bool pending = Model.Status == "Pending";
+}
+
+@section Styles {
+    <style>
+        .field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px 24px; margin-top: 26px; }
+        .field-error { display: block; margin-top: 6px; color: #c9444d; font-size: 11px; font-weight: 600; }
+        .hint { margin-top: 8px; color: #6d7e99; font-size: 11px; line-height: 1.5; }
+
+        @@media (max-width: 800px) {
+            .field-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+}
+
+<header class="page-header">
+    <div>
+        <h1>Edit user</h1>
+        <p>Update account details and the assigned role.</p>
+    </div>
+    <div class="header-actions">
+        <a href="/Admin/Users/@userId" class="secondary-button">Cancel</a>
+        <button type="submit" form="userForm" class="primary-button">Save changes</button>
+    </div>
+</header>
+
+<section class="card">
+
+    <h2 class="card-title">Account details</h2>
+
+    @Html.ValidationSummary(true, "", new { @class = "field-error" })
+
+    <form id="userForm" method="post" action="/Admin/Users/@userId/Edit" novalidate>
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="Status" value="@Model.Status" />
+
+        <div class="field-grid">
+
+            <div>
+                <label class="section-label" for="FullName">Full name</label>
+                <input class="input" id="FullName" name="FullName" value="@Model.FullName" maxlength="100" />
+                @Html.ValidationMessage("FullName", new { @class = "field-error" })
+            </div>
+
+            <div>
+                <label class="section-label" for="Email">Email address</label>
+                <input class="input" id="Email" name="Email" type="email" value="@Model.Email" />
+                @Html.ValidationMessage("Email", new { @class = "field-error" })
+                <p class="hint">This is also the address the user signs in with.</p>
+            </div>
+
+            <div>
+                <label class="section-label" for="Phone">Phone number</label>
+                <input class="input" id="Phone" name="Phone" type="tel" value="@Model.Phone" maxlength="30" />
+                @Html.ValidationMessage("Phone", new { @class = "field-error" })
+            </div>
+
+            <div>
+                <label class="section-label" for="Organisation">Organisation</label>
+                <input class="input" id="Organisation" name="Organisation" value="@Model.Organisation" maxlength="150" />
+            </div>
+
+            <div id="role">
+                <label class="section-label" for="Role">Assigned role</label>
+                <select class="input" id="Role" name="Role">
+                    @foreach (var role in roles)
+                    {
+                        if (role == Model.Role) { <option value="@role" selected>@role</option> }
+                        else { <option value="@role">@role</option> }
+                    }
+                </select>
+                @Html.ValidationMessage("Role", new { @class = "field-error" })
+                @if (pending)
+                {
+                    <p class="hint">This account is waiting for approval. The role is given when you approve it.</p>
+                }
+                else
+                {
+                    <p class="hint">Changing the role signs the user out so their new access takes effect.</p>
+                }
+            </div>
+
+        </div>
+    </form>
+
+</section>

@@ -1,0 +1,502 @@
+﻿@{
+    Layout = null;
+    int currentStep = ViewBag.CurrentStep ?? 1;
+    string pageTitle = ViewData["Title"]?.ToString() ?? "Proposal";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>@pageTitle | R.E.S.K</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        html, body {
+            margin: 0;
+            min-height: 100%;
+            font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+
+        body {
+            background: #f4f7fb;
+            color: #14233c;
+
+            opacity: 0;
+            transform: translateY(7px);
+
+            animation: pageEnter .28s ease forwards;
+        }
+
+        @@keyframes pageEnter {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        body.page-leaving {
+            opacity: 0;
+            transform: translateY(-5px);
+
+            transition:
+                opacity .16s ease,
+                transform .16s ease;
+        }
+
+        .app {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* SIDEBAR */
+
+        .sidebar {
+            width: 290px;
+            min-height: 100vh;
+
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+
+            background: #0c1d35;
+            color: white;
+
+            padding: 38px 24px;
+
+            display: flex;
+            flex-direction: column;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+
+            margin: 0 12px 38px;
+        }
+
+        .brand-logo {
+            width: 58px;
+            height: 58px;
+
+            border: 1.5px solid #18b7ca;
+            border-radius: 15px;
+
+            display: grid;
+            place-items: center;
+
+            color: #18b7ca;
+
+            font-size: 28px;
+            font-weight: 800;
+        }
+
+        .brand-name {
+            font-size: 25px;
+            font-weight: 750;
+            letter-spacing: 2px;
+        }
+
+        .brand-small {
+            color: #a9b6ca;
+            font-size: 9px;
+            margin-top: 3px;
+        }
+
+        .sidebar-label {
+            color: #7588a5;
+
+            font-size: 11px;
+            font-weight: 700;
+
+            margin: 0 14px 12px;
+        }
+
+        .nav-item {
+            display: block;
+
+            padding: 13px 18px;
+            margin-bottom: 4px;
+
+            border-radius: 10px;
+
+            color: #b8c4d6;
+
+            text-decoration: none;
+
+            transition:
+                background .18s ease,
+                color .18s ease,
+                transform .18s ease;
+        }
+
+        .nav-item:hover {
+            background: #142b4c;
+            color: white;
+
+            transform: translateX(3px);
+        }
+
+        .nav-item.active {
+            background: #172e50;
+            color: white;
+            font-weight: 650;
+        }
+
+        /* PROGRESS */
+
+        .progress-title {
+            margin-top: 34px;
+        }
+
+        .step {
+            position: relative;
+
+            display: flex;
+            align-items: center;
+
+            min-height: 52px;
+
+            margin-left: 15px;
+
+            color: #91a1b9;
+
+            font-size: 13px;
+        }
+
+        .step:not(:last-child)::after {
+            content: "";
+
+            position: absolute;
+
+            left: 14px;
+            top: 33px;
+
+            height: 34px;
+
+            border-left: 1px solid #42546f;
+        }
+
+        .step-circle {
+            width: 29px;
+            height: 29px;
+
+            flex: 0 0 29px;
+
+            border: 1px solid #506680;
+            border-radius: 50%;
+
+            display: grid;
+            place-items: center;
+
+            margin-right: 13px;
+
+            font-size: 11px;
+
+            transition:
+                background .2s ease,
+                transform .2s ease;
+        }
+
+        .step.current {
+            color: white;
+            font-weight: 650;
+        }
+
+        .step.current .step-circle,
+        .step.complete .step-circle {
+            background: #18b7ca;
+            border-color: #18b7ca;
+            color: #062039;
+        }
+
+        .step.current .step-circle {
+            transform: scale(1.06);
+        }
+
+        /* MAIN */
+
+        .main {
+            width: calc(100% - 290px);
+            margin-left: 290px;
+
+            padding: 42px 52px;
+
+            animation: contentEnter .38s ease forwards;
+        }
+
+        @@keyframes contentEnter {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .page-header {
+            margin-bottom: 28px;
+        }
+
+        .page-header h1 {
+            margin: 0 0 7px;
+
+            font-size: 31px;
+            font-weight: 750;
+        }
+
+        .page-header p {
+            margin: 0;
+
+            color: #74849c;
+            font-size: 14px;
+        }
+
+        /* CARD */
+
+        .proposal-card {
+            background: white;
+
+            border-radius: 18px;
+
+            padding: 36px;
+
+            box-shadow:
+                0 2px 8px rgba(20, 35, 60, .03);
+        }
+
+        /* BUTTONS */
+
+        .btn {
+            border: 0;
+
+            border-radius: 9px;
+
+            padding: 12px 26px;
+
+            font: inherit;
+            font-weight: 650;
+
+            cursor: pointer;
+
+            text-decoration: none;
+
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+
+            transition:
+                transform .18s ease,
+                box-shadow .18s ease,
+                background .18s ease;
+        }
+
+        .btn-primary {
+            background: #18b7ca;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #11aabc;
+
+            transform: translateY(-2px);
+
+            box-shadow:
+                0 7px 18px rgba(24, 183, 202, .22);
+        }
+
+        .btn-secondary {
+            background: white;
+
+            color: #263a57;
+
+            border: 1px solid #d7e0ea;
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+
+            background: #f7f9fc;
+        }
+
+        .btn:active {
+            transform: scale(.98);
+        }
+
+        /* MOBILE */
+
+        @@media (max-width: 900px) {
+            .sidebar {
+                display: none;
+            }
+
+            .main {
+                width: 100%;
+                margin-left: 0;
+                padding: 25px;
+            }
+        }
+    </style>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico?v=resk2" />
+</head>
+
+<body>
+
+<div class="app">
+
+    <aside class="sidebar">
+
+        <div class="brand">
+
+            <div class="brand-logo">
+                R
+            </div>
+
+            <div>
+                <div class="brand-name">
+                    R.E.S.K
+                </div>
+
+                <div class="brand-small">
+                    SOFTWARE STUDIO
+                </div>
+            </div>
+
+        </div>
+
+        <div class="sidebar-label">
+            PROPOSAL WORKSPACE
+        </div>
+
+        <a asp-controller="Proposal"
+           asp-action="ProducerDetails"
+           class="nav-item active">
+
+            New proposal
+
+        </a>
+
+        <a asp-controller="Producer"
+           asp-action="Index"
+           class="nav-item">
+
+            Dashboard
+
+        </a>
+
+        <div class="sidebar-label progress-title">
+            SUBMISSION PROGRESS
+        </div>
+
+        <div class="step @(currentStep > 1 ? "complete" : currentStep == 1 ? "current" : "")">
+
+            <div class="step-circle">
+                1
+            </div>
+
+            Producer details
+
+        </div>
+
+        <div class="step @(currentStep > 2 ? "complete" : currentStep == 2 ? "current" : "")">
+
+            <div class="step-circle">
+                2
+            </div>
+
+            Programme details
+
+        </div>
+
+        <div class="step @(currentStep > 3 ? "complete" : currentStep == 3 ? "current" : "")">
+
+            <div class="step-circle">
+                3
+            </div>
+
+            Production details
+
+        </div>
+
+        <div class="step @(currentStep > 4 ? "complete" : currentStep == 4 ? "current" : "")">
+
+            <div class="step-circle">
+                4
+            </div>
+
+            Attachments
+
+        </div>
+
+        <div class="step @(currentStep == 5 ? "current" : "")">
+
+            <div class="step-circle">
+                5
+            </div>
+
+            Review & submit
+
+        </div>
+
+    </aside>
+
+    <main class="main">
+
+        @RenderBody()
+
+    </main>
+
+</div>
+
+<script>
+
+    document
+        .querySelectorAll("a[href]")
+        .forEach(function (link) {
+
+            link.addEventListener(
+                "click",
+                function (event) {
+
+                    if (link.target === "_blank") {
+                        return;
+                    }
+
+                    const destination = link.href;
+
+                    if (!destination) {
+                        return;
+                    }
+
+                    event.preventDefault();
+
+                    document.body
+                        .classList
+                        .add("page-leaving");
+
+                    setTimeout(
+                        function () {
+                            window.location.href =
+                                destination;
+                        },
+                        150
+                    );
+                }
+            );
+
+        });
+
+</script>
+
+</body>
+</html>

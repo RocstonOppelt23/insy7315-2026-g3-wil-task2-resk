@@ -1,0 +1,95 @@
+﻿@model RESK.WIL.Models.AdminCategoryForm
+
+@{
+    Layout = "~/Views/AdminProposals/_AdminLayout.cshtml";
+    ViewData["Title"] = "Edit category";
+
+    int categoryId = (int)(ViewData["CategoryId"] ?? 0);
+    string categoryName = ViewData["CategoryName"] as string ?? Model.Name;
+    bool isActive = (bool)(ViewData["IsActive"] ?? true);
+    int proposalCount = (int)(ViewData["ProposalCount"] ?? 0);
+    string updatedText = ViewData["UpdatedText"] as string ?? "";
+    string returnUrl = "/Admin/Categories/" + categoryId + "/Edit";
+}
+
+@section Styles {
+    @await Html.PartialAsync("~/Views/AdminCategories/_CategoryStyles.cshtml")
+    <style>
+        .usage { margin-top: 14px; padding: 18px 20px; border: 1px solid #dde4ee; border-radius: 10px; background: #f7f9fc; }
+        .usage strong { display: block; color: #14233e; font-size: 13px; }
+        .usage span { display: block; margin-top: 6px; color: #6d7e99; font-size: 11px; }
+        .usage a { color: #00a9bd; font-weight: 800; text-decoration: none; }
+        .usage a:hover { text-decoration: underline; }
+        .danger-zone { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin-top: 26px; }
+        .danger-zone form { margin: 0; }
+        .plain-button { min-height: 42px; padding: 0 24px; border: 1px solid #d3dce8; border-radius: 8px; background: white; color: #14233e; font-size: 13px; font-weight: 800; cursor: pointer; }
+        .plain-button:hover { border-color: #b9c6d8; background: #f8fafc; }
+        .plain-button.red { border-color: #f0c2c5; color: #c9444d; }
+        .plain-button.red:hover { background: #fde9ea; }
+        .updated { margin-left: auto; color: #8493aa; font-size: 11px; }
+    </style>
+}
+
+<header class="page-header">
+    <div>
+        <h1>Edit category</h1>
+        <p>Update category details and availability.</p>
+    </div>
+    <div class="header-actions">
+        <a href="/Admin/Categories" class="secondary-button">Cancel</a>
+        <button type="submit" form="categoryForm" class="primary-button">Save changes</button>
+    </div>
+</header>
+
+<section class="card">
+
+    <form id="categoryForm" method="post" action="/Admin/Categories/@categoryId/Edit" novalidate>
+        @Html.AntiForgeryToken()
+
+        @await Html.PartialAsync("~/Views/AdminCategories/_CategoryFields.cshtml", Model)
+    </form>
+
+    <h3 class="block-title">Usage</h3>
+    <div class="usage">
+        @if (proposalCount == 0)
+        {
+            <strong>No proposals use this category yet</strong>
+            <span>It can be deleted safely. Renaming it changes the name producers see.</span>
+        }
+        else
+        {
+            <strong>@proposalCount @(proposalCount == 1 ? "proposal uses" : "proposals use") this category</strong>
+            <span>
+                Deactivate instead of deleting to preserve historical records.
+                Renaming it also renames it on these proposals.
+                <a href="/Admin/Proposals?category=@Uri.EscapeDataString(categoryName)">View proposals</a>
+            </span>
+        }
+    </div>
+
+    <div class="danger-zone">
+        <form method="post" action="/Admin/Categories/@categoryId/Status"
+              onsubmit="return confirm('@(isActive ? "Deactivate this category? Producers will no longer be able to choose it." : "Activate this category again?")');">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="to" value="@(isActive ? "inactive" : "active")" />
+            <input type="hidden" name="returnUrl" value="@returnUrl" />
+            <button type="submit" class="plain-button">@(isActive ? "Deactivate category" : "Activate category")</button>
+        </form>
+
+        @if (proposalCount == 0)
+        {
+            <form method="post" action="/Admin/Categories/@categoryId/Delete"
+                  onsubmit="return confirm('Delete this category permanently?');">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="plain-button red">Delete category</button>
+            </form>
+        }
+
+        <span class="updated">@updatedText</span>
+    </div>
+
+</section>
+
+@section Scripts {
+    @await Html.PartialAsync("~/Views/AdminCategories/_CategoryScripts.cshtml")
+}

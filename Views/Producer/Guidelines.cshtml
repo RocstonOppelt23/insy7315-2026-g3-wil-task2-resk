@@ -1,0 +1,1423 @@
+﻿@{
+    Layout = null;
+    ViewData["Title"] = "Proposal Guidelines";
+
+    var producerUsername =
+        User?.Identity?.Name ?? "Producer";
+
+    var initial =
+        !string.IsNullOrWhiteSpace(producerUsername)
+            ? producerUsername.Substring(0, 1).ToUpper()
+            : "P";
+}
+
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="utf-8" />
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0" />
+
+    <title>Proposal Guidelines - R.E.S.K</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body {
+            min-height: 100%;
+        }
+
+        body {
+            font-family: Inter, "Segoe UI", Arial, sans-serif;
+            background: #f4f7fb;
+            color: #14233e;
+        }
+
+        button,
+        a {
+            font-family: inherit;
+        }
+
+
+        /* =========================================================
+           SIDEBAR
+        ========================================================= */
+
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+
+            width: 260px;
+
+            display: flex;
+            flex-direction: column;
+
+            padding: 37px 20px 38px;
+
+            background: #0c1a33;
+            color: white;
+
+            z-index: 100;
+        }
+
+
+        /* =========================================================
+           BRAND
+        ========================================================= */
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+
+            padding-left: 13px;
+            margin-bottom: 43px;
+        }
+
+        .brand-icon {
+            width: 56px;
+            height: 56px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            border: 2px solid #00b9d0;
+            border-radius: 17px;
+
+            color: #00bfd7;
+
+            font-size: 28px;
+            font-weight: 800;
+        }
+
+        .brand-name {
+            color: white;
+
+            font-size: 24px;
+            font-weight: 800;
+
+            letter-spacing: 1.5px;
+        }
+
+        .brand-subtitle {
+            margin-top: 5px;
+
+            color: #d3dae7;
+
+            font-size: 9px;
+        }
+
+
+        /* =========================================================
+           NAVIGATION
+        ========================================================= */
+
+        .nav-label {
+            margin: 0 12px 8px;
+
+            color: #72809a;
+
+            font-size: 10px;
+            font-weight: 800;
+        }
+
+        .sidebar-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .sidebar-link {
+            min-height: 43px;
+
+            display: flex;
+            align-items: center;
+
+            padding: 0 32px;
+
+            border-radius: 10px;
+
+            color: #b9c2d1;
+
+            font-size: 14px;
+            font-weight: 500;
+
+            text-decoration: none;
+
+            transition:
+                background 0.2s ease,
+                color 0.2s ease;
+        }
+
+        .sidebar-link:hover {
+            color: white;
+            background: rgba(255,255,255,0.05);
+        }
+
+        .sidebar-link.active {
+            background: #142a4b;
+            color: white;
+
+            font-weight: 700;
+        }
+
+
+        /* =========================================================
+           USER
+        ========================================================= */
+
+        .producer-account {
+            margin-top: auto;
+            padding: 0 8px;
+        }
+
+        .producer-profile {
+            width: 100%;
+
+            display: flex;
+            align-items: center;
+            gap: 11px;
+
+            padding: 12px 10px;
+
+            border-radius: 11px;
+
+            background: #142a4b;
+        }
+
+        .producer-avatar {
+            width: 34px;
+            height: 34px;
+
+            flex-shrink: 0;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            border-radius: 50%;
+
+            background: #0bb6ca;
+            color: white;
+
+            font-size: 11px;
+            font-weight: 800;
+        }
+
+        .producer-text {
+            min-width: 0;
+        }
+
+        .producer-name {
+            overflow: hidden;
+
+            color: white;
+
+            font-size: 12px;
+            font-weight: 700;
+
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+
+        .producer-role {
+            margin-top: 4px;
+
+            color: #b5c0d1;
+
+            font-size: 10px;
+        }
+
+
+        /* =========================================================
+           MAIN
+        ========================================================= */
+
+        .main {
+            min-height: 100vh;
+
+            margin-left: 260px;
+
+            padding: 29px 48px 45px;
+
+            background: #f4f7fb;
+        }
+
+        .page {
+            width: 100%;
+            max-width: 1070px;
+
+            margin: 0 auto;
+        }
+
+
+        /* =========================================================
+           HEADER
+        ========================================================= */
+
+        .page-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+
+            gap: 20px;
+
+            margin-bottom: 25px;
+        }
+
+        .page-title {
+            color: #14233e;
+
+            font-size: 31px;
+            line-height: 1.15;
+            font-weight: 800;
+        }
+
+        .page-subtitle {
+            margin-top: 9px;
+
+            color: #687995;
+
+            font-size: 14px;
+        }
+
+
+        /* =========================================================
+           START BUTTON
+        ========================================================= */
+
+        .top-start-button {
+            min-width: 194px;
+
+            padding: 14px 22px;
+
+            border: 0;
+            border-radius: 9px;
+
+            background: #b9dfe4;
+            color: white;
+
+            font-size: 13px;
+            font-weight: 800;
+
+            cursor: not-allowed;
+
+            transition:
+                background 0.2s ease,
+                transform 0.2s ease;
+        }
+
+        .top-start-button.enabled {
+            background: #15b4c8;
+            cursor: pointer;
+        }
+
+        .top-start-button.enabled:hover {
+            background: #0ea7ba;
+            transform: translateY(-1px);
+        }
+
+
+        /* =========================================================
+           BEFORE YOU BEGIN
+        ========================================================= */
+
+        .before-box {
+            display: flex;
+            align-items: center;
+            gap: 17px;
+
+            margin-bottom: 21px;
+
+            padding: 20px 23px;
+
+            border: 1px solid #8edee8;
+            border-radius: 13px;
+
+            background: #eefbfc;
+        }
+
+        .info-circle {
+            width: 41px;
+            height: 41px;
+
+            flex-shrink: 0;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            border-radius: 50%;
+
+            background: #13b3c7;
+            color: white;
+
+            font-size: 20px;
+            font-weight: 800;
+        }
+
+        .before-title {
+            color: #14233e;
+
+            font-size: 17px;
+            font-weight: 800;
+        }
+
+        .before-description {
+            margin-top: 7px;
+
+            color: #647691;
+
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .completion-time {
+            margin-top: 5px;
+
+            color: #00899a;
+
+            font-size: 12px;
+            font-weight: 800;
+        }
+
+
+        /* =========================================================
+           GRID
+        ========================================================= */
+
+        .content-grid {
+            display: grid;
+
+            grid-template-columns:
+                minmax(0, 2.15fr)
+                minmax(285px, 1fr);
+
+            gap: 19px;
+        }
+
+
+        /* =========================================================
+           PANELS
+        ========================================================= */
+
+        .panel {
+            border: 1px solid #d8e1ec;
+            border-radius: 13px;
+
+            background: white;
+        }
+
+        .main-panel {
+            padding: 20px 27px 24px;
+        }
+
+        .side-panel {
+            padding: 21px 23px 26px;
+        }
+
+        .panel-title {
+            color: #14233e;
+
+            font-size: 20px;
+            font-weight: 800;
+        }
+
+        .panel-description {
+            margin-top: 7px;
+
+            color: #6b7c96;
+
+            font-size: 12px;
+        }
+
+
+        /* =========================================================
+           REQUIREMENTS
+        ========================================================= */
+
+        .requirements {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+
+            margin-top: 21px;
+        }
+
+        .requirement {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+
+            min-height: 73px;
+
+            padding: 12px 14px;
+
+            border: 1px solid #dce4ee;
+            border-radius: 10px;
+
+            background: #f7f9fc;
+        }
+
+        .requirement-number {
+            width: 37px;
+            height: 37px;
+
+            flex-shrink: 0;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            border-radius: 50%;
+
+            background: #15b4c8;
+            color: white;
+
+            font-size: 12px;
+            font-weight: 800;
+        }
+
+        .requirement-title {
+            color: #14233e;
+
+            font-size: 13px;
+            font-weight: 800;
+        }
+
+        .requirement-description {
+            margin-top: 6px;
+
+            color: #687995;
+
+            font-size: 11px;
+            line-height: 1.4;
+        }
+
+
+        /* =========================================================
+           WARNING
+        ========================================================= */
+
+        .warning {
+            margin-top: 24px;
+
+            padding: 15px 19px;
+
+            border: 1px solid #f0c76e;
+            border-radius: 9px;
+
+            background: #fff7e8;
+            color: #956200;
+
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+
+        /* =========================================================
+           DOCUMENT CHECKLIST
+        ========================================================= */
+
+        .checklist {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+
+            margin-top: 21px;
+        }
+
+        .check-item {
+            min-height: 50px;
+
+            display: flex;
+            align-items: center;
+            gap: 12px;
+
+            padding: 11px 15px;
+
+            border: 1px solid #dce4ee;
+            border-radius: 9px;
+
+            background: #f7f9fc;
+
+            color: #253650;
+
+            font-size: 12px;
+        }
+
+        .check-box {
+            width: 18px;
+            height: 18px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            border: 1px solid #ccd6e2;
+            border-radius: 4px;
+
+            background: white;
+
+            color: white;
+
+            font-size: 11px;
+            font-weight: 800;
+        }
+
+        .check-box.checked {
+            border-color: #15b4c8;
+            background: #15b4c8;
+        }
+
+
+        /* =========================================================
+           TIPS
+        ========================================================= */
+
+        .tips-title {
+            margin-top: 28px;
+
+            color: #14233e;
+
+            font-size: 18px;
+            font-weight: 800;
+        }
+
+        .tips {
+            margin-top: 15px;
+
+            color: #657791;
+
+            font-size: 11px;
+            line-height: 2.2;
+        }
+
+
+        /* =========================================================
+           SUPPORT
+        ========================================================= */
+
+        .support-box {
+            margin-top: 24px;
+
+            padding: 13px 16px;
+
+            border: 1px solid #8edee8;
+            border-radius: 9px;
+
+            background: #eefbfc;
+        }
+
+        .support-title {
+            color: #14233e;
+
+            font-size: 11px;
+            font-weight: 800;
+        }
+
+        .support-link {
+            display: inline-block;
+
+            margin-top: 6px;
+
+            color: #009cb0;
+
+            font-size: 11px;
+
+            text-decoration: none;
+        }
+
+
+        /* =========================================================
+           AGREEMENT
+        ========================================================= */
+
+        .agreement-box {
+            margin-top: 20px;
+
+            padding: 18px 20px;
+
+            border: 1px solid #d8e1ec;
+            border-radius: 12px;
+
+            background: white;
+        }
+
+        .agreement-label {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+
+            cursor: pointer;
+        }
+
+        .agreement-label input {
+            width: 19px;
+            height: 19px;
+
+            margin-top: 1px;
+
+            accent-color: #15b4c8;
+
+            cursor: pointer;
+        }
+
+        .agreement-text {
+            color: #263751;
+
+            font-size: 12px;
+            line-height: 1.55;
+        }
+
+        .agreement-text strong {
+            display: block;
+
+            margin-bottom: 3px;
+
+            color: #14233e;
+
+            font-size: 13px;
+        }
+
+        .error-message {
+            margin-top: 12px;
+
+            color: #c74343;
+
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+
+        /* =========================================================
+           BOTTOM BUTTON
+        ========================================================= */
+
+        .bottom-actions {
+            display: flex;
+            justify-content: flex-end;
+
+            margin-top: 15px;
+        }
+
+        .start-button {
+            min-width: 190px;
+
+            padding: 13px 20px;
+
+            border: 0;
+            border-radius: 9px;
+
+            background: #b9dfe4;
+            color: white;
+
+            font-size: 12px;
+            font-weight: 800;
+
+            cursor: not-allowed;
+        }
+
+        .start-button.enabled {
+            background: #15b4c8;
+            cursor: pointer;
+        }
+
+        .start-button.enabled:hover {
+            background: #0ea7ba;
+        }
+
+
+        /* =========================================================
+           RESPONSIVE
+        ========================================================= */
+
+        @@media (max-width: 1000px) {
+
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+
+        }
+
+        @@media (max-width: 760px) {
+
+            .sidebar {
+                position: relative;
+
+                width: 100%;
+            }
+
+            .main {
+                margin-left: 0;
+
+                padding: 25px 20px;
+            }
+
+            .page-header {
+                flex-direction: column;
+            }
+
+            .top-start-button {
+                width: 100%;
+            }
+
+        }
+
+    </style>
+
+    <link rel="icon" type="image/x-icon" href="/favicon.ico?v=resk2" />
+</head>
+
+
+<body>
+
+
+    <!-- =========================================================
+         SIDEBAR
+    ========================================================= -->
+
+    <aside class="sidebar">
+
+
+        <div class="brand">
+
+            <div class="brand-icon">
+                R
+            </div>
+
+            <div>
+
+                <div class="brand-name">
+                    R.E.S.K
+                </div>
+
+                <div class="brand-subtitle">
+                    SOFTWARE STUDIO
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="nav-label">
+            PROPOSAL WORKSPACE
+        </div>
+
+
+        <nav class="sidebar-nav">
+
+            <a asp-controller="Producer"
+               asp-action="Index"
+               class="sidebar-link">
+                Dashboard
+            </a>
+
+            <!--
+                IMPORTANT:
+                New Proposal deliberately goes to Guidelines.
+            -->
+            <a asp-controller="Producer"
+               asp-action="Guidelines"
+               class="sidebar-link">
+                New proposal
+            </a>
+
+            <a href="/Producer/MyProposals"
+               class="sidebar-link">
+                My proposals
+            </a>
+
+            <a href="/Producer/Drafts"
+               class="sidebar-link">
+                Drafts
+            </a>
+
+            <a asp-controller="Producer"
+               asp-action="Guidelines"
+               class="sidebar-link active">
+                Guidelines
+            </a>
+
+            <a href="/Producer/Settings"
+               class="sidebar-link">
+                Settings
+            </a>
+</nav>
+
+
+        <div class="producer-account">
+
+            <div class="producer-profile">
+
+                <div class="producer-avatar">@await Component.InvokeAsync("ProducerAvatar", new { part = "avatar" })</div>
+
+                <div class="producer-text">
+
+                    <div class="producer-name">@await Component.InvokeAsync("ProducerAvatar", new { part = "name" })</div>
+
+                    <div class="producer-role">
+                        Community Producer
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    
+        <!-- ===== PRODUCER ACCOUNT (photo, name, Account settings, Log out) ===== -->
+        <style>
+            .producer-account:not(.resk-account), .sidebar > .producer-profile { display: none !important; }
+            .resk-account { position: relative; margin-top: auto; padding: 0 8px; }
+            .resk-profile { width: 100%; display: flex; align-items: center; gap: 11px; padding: 12px 10px; border: none; border-radius: 11px; background: #142a4b; color: #ffffff; cursor: pointer; text-align: left; font-family: inherit; }
+            .resk-profile:hover { background: #193456; }
+            .resk-avatar { width: 34px; height: 34px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 50%; background: #0bb6ca; color: #ffffff; font-size: 11px; font-weight: 800; }
+            .resk-text { min-width: 0; flex: 1; }
+            .resk-name { overflow: hidden; color: #ffffff; font-size: 13px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+            .resk-role { margin-top: 4px; color: #b5c0d1; font-size: 10px; }
+            .resk-menu { position: absolute; left: 8px; right: 8px; bottom: calc(100% + 9px); z-index: 10; padding: 7px; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; background: #142a4b; box-shadow: 0 18px 35px rgba(0,0,0,0.25); opacity: 0; visibility: hidden; transform: translateY(8px); transition: 0.2s; }
+            .resk-account.open .resk-menu { opacity: 1; visibility: visible; transform: translateY(0); }
+            .resk-menu-link, .resk-logout { width: 100%; display: block; padding: 10px 11px; border: none; border-radius: 7px; background: transparent; color: #d6deea; font-family: inherit; font-size: 12px; font-weight: 600; text-align: left; text-decoration: none; cursor: pointer; }
+            .resk-menu-link:hover, .resk-logout:hover { background: rgba(255,255,255,0.06); color: #ffffff; }
+            .resk-logout { color: #ff9e9e; }
+            .resk-divider { height: 1px; margin: 5px 4px; background: rgba(255,255,255,0.08); }
+        </style>
+
+        <div class="resk-account" id="reskAccount">
+
+            <div class="resk-menu">
+                <a href="/Producer/Settings" class="resk-menu-link">Account settings</a>
+                <div class="resk-divider"></div>
+                <form method="post" action="/Producer/Logout" style="margin:0;">
+                    <button type="submit" class="resk-logout">Log out</button>
+                </form>
+            </div>
+
+            <button type="button" class="resk-profile" id="reskProfileButton" aria-expanded="false">
+                <div class="resk-avatar">@await Component.InvokeAsync("ProducerAvatar", new { part = "avatar" })</div>
+                <div class="resk-text">
+                    <div class="resk-name">@await Component.InvokeAsync("ProducerAvatar", new { part = "name" })</div>
+                    <div class="resk-role">Community Producer</div>
+                </div>
+            </button>
+
+        </div>
+
+        <script>
+            (function () {
+                var account = document.getElementById("reskAccount");
+                var button = document.getElementById("reskProfileButton");
+
+                button.addEventListener("click", function (event) {
+                    event.stopPropagation();
+                    var isOpen = account.classList.toggle("open");
+                    button.setAttribute("aria-expanded", isOpen ? "true" : "false");
+                });
+
+                document.addEventListener("click", function (event) {
+                    if (!account.contains(event.target)) {
+                        account.classList.remove("open");
+                        button.setAttribute("aria-expanded", "false");
+                    }
+                });
+
+                document.addEventListener("keydown", function (event) {
+                    if (event.key === "Escape") {
+                        account.classList.remove("open");
+                        button.setAttribute("aria-expanded", "false");
+                    }
+                });
+            })();
+        </script>
+</aside>
+
+
+    <!-- =========================================================
+         MAIN
+    ========================================================= -->
+
+    <main class="main">
+
+        <div class="page">
+
+
+            <!-- =================================================
+                 FORM
+            ================================================== -->
+
+            <form asp-controller="Producer"
+                  asp-action="AcceptGuidelines"
+                  method="post"
+                  id="guidelinesForm">
+
+                @Html.AntiForgeryToken()
+
+
+                <!-- =============================================
+                     HEADER
+                ============================================== -->
+
+                <header class="page-header">
+
+                    <div>
+
+                        <h1 class="page-title">
+                            Proposal guidelines
+                        </h1>
+
+                        <p class="page-subtitle">
+                            Review the requirements before starting or
+                            submitting a programme proposal.
+                        </p>
+
+                    </div>
+
+
+                    <button type="submit"
+                            class="top-start-button"
+                            id="topStartButton"
+                            disabled>
+
+                        Start new proposal
+
+                    </button>
+
+                </header>
+
+
+                <!-- =============================================
+                     BEFORE YOU BEGIN
+                ============================================== -->
+
+                <section class="before-box">
+
+                    <div class="info-circle">
+                        i
+                    </div>
+
+
+                    <div>
+
+                        <div class="before-title">
+                            Before you begin
+                        </div>
+
+                        <div class="before-description">
+                            Prepare your programme idea, production
+                            details and supporting documents. You can
+                            save your proposal as a draft at any time.
+                        </div>
+
+                        <div class="completion-time">
+                            Estimated completion time: 15–20 minutes
+                        </div>
+
+                    </div>
+
+                </section>
+
+
+                <!-- =============================================
+                     CONTENT
+                ============================================== -->
+
+                <div class="content-grid">
+
+
+                    <!-- =========================================
+                         LEFT
+                    ========================================== -->
+
+                    <section class="panel main-panel">
+
+                        <h2 class="panel-title">
+                            Submission requirements
+                        </h2>
+
+                        <p class="panel-description">
+                            Complete all five sections before submitting
+                            your proposal.
+                        </p>
+
+
+                        <div class="requirements">
+
+
+                            <div class="requirement">
+
+                                <div class="requirement-number">
+                                    1
+                                </div>
+
+                                <div>
+
+                                    <div class="requirement-title">
+                                        Producer details
+                                    </div>
+
+                                    <div class="requirement-description">
+                                        Provide your contact information,
+                                        organisation and preferred
+                                        contact method.
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+
+                            <div class="requirement">
+
+                                <div class="requirement-number">
+                                    2
+                                </div>
+
+                                <div>
+
+                                    <div class="requirement-title">
+                                        Programme details
+                                    </div>
+
+                                    <div class="requirement-description">
+                                        Describe the title, category,
+                                        format, language, duration and
+                                        target audience.
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+
+                            <div class="requirement">
+
+                                <div class="requirement-number">
+                                    3
+                                </div>
+
+                                <div>
+
+                                    <div class="requirement-title">
+                                        Production details
+                                    </div>
+
+                                    <div class="requirement-description">
+                                        Explain your production plan,
+                                        team, equipment, schedule and
+                                        estimated budget.
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+
+                            <div class="requirement">
+
+                                <div class="requirement-number">
+                                    4
+                                </div>
+
+                                <div>
+
+                                    <div class="requirement-title">
+                                        Attachments
+                                    </div>
+
+                                    <div class="requirement-description">
+                                        Upload required documents such
+                                        as a treatment, script sample
+                                        or budget.
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+
+                            <div class="requirement">
+
+                                <div class="requirement-number">
+                                    5
+                                </div>
+
+                                <div>
+
+                                    <div class="requirement-title">
+                                        Review and submit
+                                    </div>
+
+                                    <div class="requirement-description">
+                                        Check your information, correct
+                                        missing fields and submit the
+                                        final proposal.
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="warning">
+                            Submitting a proposal does not guarantee
+                            approval or broadcast.
+                        </div>
+
+                    </section>
+
+
+                    <!-- =========================================
+                         RIGHT
+                    ========================================== -->
+
+                    <aside class="panel side-panel">
+
+
+                        <h2 class="panel-title">
+                            Document checklist
+                        </h2>
+
+                        <p class="panel-description">
+                            Accepted formats: PDF, DOCX, JPG or PNG
+                        </p>
+
+
+                        <div class="checklist">
+
+
+                            <div class="check-item">
+
+                                <span class="check-box checked">
+                                    ✓
+                                </span>
+
+                                <strong>
+                                    Programme treatment
+                                </strong>
+
+                            </div>
+
+
+                            <div class="check-item">
+
+                                <span class="check-box"></span>
+
+                                <span>
+                                    Script or episode outline
+                                </span>
+
+                            </div>
+
+
+                            <div class="check-item">
+
+                                <span class="check-box"></span>
+
+                                <span>
+                                    Estimated budget
+                                </span>
+
+                            </div>
+
+
+                            <div class="check-item">
+
+                                <span class="check-box"></span>
+
+                                <span>
+                                    Production schedule
+                                </span>
+
+                            </div>
+
+                        </div>
+
+
+                        <h3 class="tips-title">
+                            Helpful tips
+                        </h3>
+
+
+                        <div class="tips">
+
+                            <div>
+                                • Keep your synopsis clear and concise.
+                            </div>
+
+                            <div>
+                                • Explain how the programme benefits viewers.
+                            </div>
+
+                            <div>
+                                • Use realistic production dates and costs.
+                            </div>
+
+                            <div>
+                                • Check all contact details before submitting.
+                            </div>
+
+                        </div>
+
+
+                        <div class="support-box">
+
+                            <div class="support-title">
+                                Need assistance?
+                            </div>
+
+                            <a href="#"
+                               class="support-link">
+                                Contact the proposal support team
+                            </a>
+
+                        </div>
+
+                    </aside>
+
+                </div>
+
+
+                <!-- =============================================
+                     AGREEMENT
+                ============================================== -->
+
+                <section class="agreement-box">
+
+                    <label class="agreement-label">
+
+                        <input type="checkbox"
+                               id="agreeToGuidelines"
+                               name="agreeToGuidelines"
+                               value="true" />
+
+
+                        <span class="agreement-text">
+
+                            <strong>
+                                I have read and agree to the proposal
+                                guidelines.
+                            </strong>
+
+                            I understand the submission requirements and
+                            confirm that I must provide accurate
+                            information and appropriate supporting
+                            documents before submitting my proposal.
+
+                        </span>
+
+                    </label>
+
+
+                    @if (TempData["GuidelinesError"] != null)
+                    {
+                        <div class="error-message">
+                            @TempData["GuidelinesError"]
+                        </div>
+                    }
+
+                </section>
+
+
+                <!-- =============================================
+                     BOTTOM ACTION
+                ============================================== -->
+
+                <div class="bottom-actions">
+
+                    <button type="submit"
+                            class="start-button"
+                            id="bottomStartButton"
+                            disabled>
+
+                        Start new proposal
+
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </main>
+
+
+    <!-- =========================================================
+         JAVASCRIPT
+    ========================================================= -->
+
+    <script>
+
+        const agreementCheckbox =
+            document.getElementById(
+                "agreeToGuidelines"
+            );
+
+        const topStartButton =
+            document.getElementById(
+                "topStartButton"
+            );
+
+        const bottomStartButton =
+            document.getElementById(
+                "bottomStartButton"
+            );
+
+
+        function updateStartButtons() {
+
+            const accepted =
+                agreementCheckbox.checked;
+
+
+            topStartButton.disabled =
+                !accepted;
+
+            bottomStartButton.disabled =
+                !accepted;
+
+
+            topStartButton.classList.toggle(
+                "enabled",
+                accepted
+            );
+
+            bottomStartButton.classList.toggle(
+                "enabled",
+                accepted
+            );
+        }
+
+
+        agreementCheckbox.addEventListener(
+            "change",
+            updateStartButtons
+        );
+
+
+        updateStartButtons();
+
+    </script>
+
+
+</body>
+
+</html>

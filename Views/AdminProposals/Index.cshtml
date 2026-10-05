@@ -1,0 +1,213 @@
+﻿@model RESK.WIL.Models.AdminProposalsViewModel
+
+@{
+    Layout = "~/Views/AdminProposals/_AdminLayout.cshtml";
+    ViewData["Title"] = "Proposals";
+
+    var exportUrl = "/Admin/Proposals/Export" + Context.Request.QueryString;
+
+    var statuses = new[]
+    {
+        ("", "All statuses"),
+        ("assign", "Needs assignment"),
+        ("review", "In review"),
+        ("changes", "Changes needed"),
+        ("approved", "Approved"),
+        ("rejected", "Not approved")
+    };
+}
+
+@section Styles {
+    <style>
+        .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+        .stat { padding: 20px 20px; border: 1px solid #d9e1ec; border-radius: 13px; background: white; }
+        .stat-label { color: #5d6d87; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+        .stat-value { margin-top: 12px; color: #12213b; font-size: 32px; font-weight: 800; line-height: 1; }
+
+        .filters { margin-top: 22px; }
+        .filter-grid { display: grid; grid-template-columns: minmax(0, 1.5fr) repeat(3, minmax(0, 1fr)) auto; gap: 16px; align-items: end; margin-top: 18px; }
+        .filter-grid .primary-button { height: 42px; min-height: 42px; padding: 0 40px; }
+
+        .list-card { margin-top: 18px; }
+        table { width: 100%; margin-top: 18px; border-collapse: collapse; }
+        thead th { padding: 12px 14px; background: #f4f7fb; color: #5d6d87; font-size: 11px; font-weight: 800; text-align: left; text-transform: uppercase; }
+        thead th:first-child { border-radius: 8px 0 0 8px; }
+        thead th:last-child { border-radius: 0 8px 8px 0; }
+        tbody td { padding: 14px; border-bottom: 1px solid #edf1f6; color: #52637e; font-size: 12px; vertical-align: middle; }
+        tbody tr:last-child td { border-bottom: none; }
+        .cell-title strong { display: block; color: #14233e; font-size: 13px; }
+        .cell-title span { display: block; margin-top: 4px; color: #6d7e99; font-size: 11px; }
+        .action-link { color: #00a9bd; font-size: 12px; font-weight: 800; text-decoration: none; }
+        .action-link:hover { text-decoration: underline; }
+        .empty-row { padding: 30px 14px; color: #8493aa; text-align: center; }
+        .footnote { margin-top: 14px; color: #6d7e99; font-size: 11px; }
+
+        @@media (max-width: 1150px) {
+            .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .filter-grid { grid-template-columns: 1fr 1fr; }
+        }
+
+        @@media (max-width: 800px) {
+            table { display: block; overflow-x: auto; }
+        }
+    </style>
+}
+
+<header class="page-header">
+    <div>
+        <h1>Proposals</h1>
+        <p>Manage, assign and track all submitted programme proposals.</p>
+    </div>
+    <div class="header-actions">
+        <a href="@exportUrl" class="secondary-button" download>Export list</a>
+    </div>
+</header>
+
+<!-- ===== STATS ===== -->
+<section class="stats" aria-label="Proposal totals">
+    <div class="stat">
+        <div class="stat-label">Total</div>
+        <div class="stat-value">@Model.Total</div>
+    </div>
+    <div class="stat">
+        <div class="stat-label">Awaiting assignment</div>
+        <div class="stat-value">@Model.AwaitingAssignment</div>
+    </div>
+    <div class="stat">
+        <div class="stat-label">In review</div>
+        <div class="stat-value">@Model.InReview</div>
+    </div>
+    <div class="stat">
+        <div class="stat-label">Approved this month</div>
+        <div class="stat-value">@Model.ApprovedThisMonth</div>
+    </div>
+</section>
+
+<!-- ===== FILTERS ===== -->
+<section class="card filters">
+
+    <h2 class="card-title" style="font-size:16px;">Filter proposals</h2>
+
+    <form method="get" action="/Admin/Proposals" class="filter-grid">
+
+        <div>
+            <label class="section-label" for="search">Search</label>
+            <input class="input" id="search" name="search" type="search" value="@Model.Search"
+                   placeholder="Title, producer or proposal ID..." autocomplete="off" />
+        </div>
+
+        <div>
+            <label class="section-label" for="status">Status</label>
+            <select class="input" id="status" name="status">
+                @foreach (var (value, text) in statuses)
+                {
+                    if (value == (Model.Status ?? ""))
+                    {
+                        <option value="@value" selected>@text</option>
+                    }
+                    else
+                    {
+                        <option value="@value">@text</option>
+                    }
+                }
+            </select>
+        </div>
+
+        <div>
+            <label class="section-label" for="category">Category</label>
+            <select class="input" id="category" name="category">
+                <option value="">All categories</option>
+                @foreach (var category in Model.Categories)
+                {
+                    if (category == Model.Category)
+                    {
+                        <option value="@category" selected>@category</option>
+                    }
+                    else
+                    {
+                        <option value="@category">@category</option>
+                    }
+                }
+            </select>
+        </div>
+
+        <div>
+            <label class="section-label" for="reviewer">Reviewer</label>
+            <select class="input" id="reviewer" name="reviewer">
+                <option value="">All reviewers</option>
+                @foreach (var reviewer in Model.Reviewers)
+                {
+                    if (reviewer == Model.Reviewer)
+                    {
+                        <option value="@reviewer" selected>@reviewer</option>
+                    }
+                    else
+                    {
+                        <option value="@reviewer">@reviewer</option>
+                    }
+                }
+            </select>
+        </div>
+
+        <button type="submit" class="primary-button">Apply filters</button>
+
+    </form>
+
+</section>
+
+<!-- ===== LIST ===== -->
+<section class="card list-card">
+
+    <h2 class="card-title">All proposals</h2>
+    <p class="card-subtitle">Showing @Model.Rows.Count of @Model.Total proposals</p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Proposal</th>
+                <th>Producer</th>
+                <th>Category</th>
+                <th>Reviewer</th>
+                <th>Status</th>
+                <th>Updated</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.Rows.Count == 0)
+            {
+                <tr>
+                    <td colspan="7" class="empty-row">No proposals match these filters.</td>
+                </tr>
+            }
+
+            @foreach (var row in Model.Rows)
+            {
+                <tr>
+                    <td class="cell-title">
+                        <strong>@row.Title</strong>
+                        <span>@row.Reference</span>
+                    </td>
+                    <td>@row.Producer</td>
+                    <td>@row.Category</td>
+                    <td>@row.ReviewerName</td>
+                    <td><span class="pill @row.StatusCss">@row.StatusLabel</span></td>
+                    <td>@row.UpdatedText</td>
+                    <td>
+                        @if (row.StatusKey == "assign")
+                        {
+                            <a href="/Admin/Proposals/@row.Id/Assign" class="action-link">Assign</a>
+                        }
+                        else
+                        {
+                            <a href="/Admin/Proposals/@row.Id" class="action-link">View</a>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <p class="footnote">Admins can assign reviewers, change workflow status and open full proposal details.</p>
+
+</section>

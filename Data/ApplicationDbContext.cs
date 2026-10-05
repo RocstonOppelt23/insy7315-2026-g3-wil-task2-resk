@@ -16,6 +16,15 @@ namespace RESK.WIL.Data
         public DbSet<UserRole> UserRoles => Set<UserRole>();
         public DbSet<RoleScopeTarget> RoleScopeTargets
             => Set<RoleScopeTarget>();
+        public DbSet<SystemFeatureSettings> SystemFeatureSettings => Set<SystemFeatureSettings>();
+        public DbSet<MfaCode> MfaCodes => Set<MfaCode>();
+        public DbSet<ProposalComment> ProposalComments => Set<ProposalComment>();
+        public DbSet<ProposalReview> ProposalReviews => Set<ProposalReview>();
+
+        // Proposals created through the producer "New proposal"
+        // wizard, including drafts.
+        public DbSet<ProducerProposal> ProducerProposals
+            => Set<ProducerProposal>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -64,6 +73,19 @@ namespace RESK.WIL.Data
             modelBuilder.Entity<User>()
                 .HasIndex(u => u.Email)
                 .IsUnique();
+
+            // Producer wizard proposals: each producer only ever
+            // loads their own rows, usually filtered by status.
+            modelBuilder.Entity<ProducerProposal>()
+                .ToTable("ProducerProposals");
+
+            modelBuilder.Entity<ProducerProposal>()
+                .HasIndex(p => new { p.OwnerUserId, p.Status });
+
+            modelBuilder.Entity<ProducerProposal>()
+                .HasIndex(p => p.Reference)
+                .IsUnique()
+                .HasFilter("[Reference] IS NOT NULL");
         }
     }
 }

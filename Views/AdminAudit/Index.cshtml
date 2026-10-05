@@ -1,0 +1,214 @@
+﻿@model RESK.WIL.Models.ReskAuditIndexViewModel
+
+@{
+    Layout = "~/Views/AdminProposals/_AdminLayout.cshtml";
+    ViewData["Title"] = "Audit log";
+
+    var types = RESK.WIL.Services.ReskAuditLog.Types;
+    var modules = RESK.WIL.Services.ReskAuditLog.Modules;
+
+    string query = Model.Query.Length > 0 ? "?" + Model.Query : "";
+    string pageBase = "/Admin/Audit?" + (Model.Query.Length > 0 ? Model.Query + "&" : "") + "p=";
+
+    // Empty page: which message and button to show.
+    string emptyText =
+        Model.LogIsEmpty ? "Nothing has been recorded yet. Sign-ins, role changes and proposal actions will appear here." :
+        Model.HasFilters ? "No activity matches the selected filters." :
+        "No activity was recorded in the last 7 days.";
+    string emptyButton = Model.LogIsEmpty ? "Refresh" : Model.HasFilters ? "Clear filters" : "Show all dates";
+    string emptyUrl = !Model.LogIsEmpty && !Model.HasFilters ? "/Admin/Audit?range=all" : "/Admin/Audit";
+}
+
+@section Styles {
+    @await Html.PartialAsync("~/Views/AdminAudit/_AuditStyles.cshtml")
+}
+
+@if (Model.Total == 0)
+{
+    <header class="page-header">
+        <div>
+            <h1>No audit events found</h1>
+            <p>@emptyText</p>
+        </div>
+    </header>
+
+    <section class="card empty-card">
+        <div class="empty-zero" aria-hidden="true">0</div>
+        <h2>No audit events found</h2>
+        <p>@emptyText</p>
+        <a href="@emptyUrl" class="primary-button">@emptyButton</a>
+    </section>
+}
+else
+{
+    <header class="page-header">
+        <div>
+            <h1>Audit log</h1>
+            <p>Track important user activity, permission changes and proposal workflow actions.</p>
+        </div>
+        <div class="header-actions">
+            @if (Model.CanExport)
+            {
+                <a href="@("/Admin/Audit/Export" + query)" class="secondary-button" download>Export CSV</a>
+            }
+            <a href="@("/Admin/Audit" + query)" class="primary-button">Refresh</a>
+        </div>
+    </header>
+
+    <!-- ===== TODAY ===== -->
+    <div class="stats">
+        <div class="stat">
+            <div class="stat-label">Events today</div>
+            <div class="stat-value">@Model.EventsToday</div>
+        </div>
+        <div class="stat">
+            <div class="stat-label">Security events</div>
+            <div class="stat-value">@Model.SecurityToday</div>
+        </div>
+        <div class="stat">
+            <div class="stat-label">Role changes</div>
+            <div class="stat-value">@Model.RoleChangesToday</div>
+        </div>
+        <div class="stat">
+            <div class="stat-label">Proposal actions</div>
+            <div class="stat-value">@Model.ProposalActionsToday</div>
+        </div>
+    </div>
+
+    <!-- ===== FILTERS ===== -->
+    <section class="card filters">
+        <h2 class="card-title">Filter activity</h2>
+
+        <form method="get" action="/Admin/Audit" class="filter-grid">
+            <div>
+                <label class="section-label" for="search">Search</label>
+                <input class="input" id="search" name="search" type="search" value="@Model.Search" maxlength="80"
+                       placeholder="User, action or record..." autocomplete="off" />
+            </div>
+            <div>
+                <label class="section-label" for="type">Action type</label>
+                <select class="input" id="type" name="type">
+                    <option value="">All actions</option>
+                    @foreach (var t in types)
+                    {
+                        if (t.Key == Model.Type) { <option value="@t.Key" selected>@t.Label</option> }
+                        else { <option value="@t.Key">@t.Label</option> }
+                    }
+                </select>
+            </div>
+            <div>
+                <label class="section-label" for="module">Module</label>
+                <select class="input" id="module" name="module">
+                    <option value="">All modules</option>
+                    @foreach (var m in modules)
+                    {
+                        if (m == Model.Module) { <option value="@m" selected>@m</option> }
+                        else { <option value="@m">@m</option> }
+                    }
+                </select>
+            </div>
+            <div>
+                <span class="section-label" id="rangeLabel">Date range</span>
+                <div class="range" role="group" aria-labelledby="rangeLabel">
+                    <input type="date" name="from" value="@Model.From" max="@Model.To" aria-label="From date" />
+                    <span aria-hidden="true">&mdash;</span>
+                    <input type="date" name="to" value="@Model.To" aria-label="To date" />
+                </div>
+            </div>
+            <button type="submit" class="primary-button">Apply filters</button>
+        </form>
+
+        @if (Model.HasFilters)
+        {
+            <a href="/Admin/Audit" class="clear-link">Clear filters</a>
+        }
+    </section>
+
+    <!-- ===== RECORDS ===== -->
+    <section class="card list-card">
+        <h2 class="card-title">Activity records</h2>
+        <p class="card-subtitle">
+            Showing @(Model.FirstRow)&ndash;@(Model.LastRow) of @Model.Total recorded @(Model.Total == 1 ? "event" : "events")
+        </p>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th scope="col">Date &amp; time</th>
+                        <th scope="col">User</th>
+                        <th scope="col">Action</th>
+                        <th scope="col">Module</th>
+                        <th scope="col">Record</th>
+                        <th scope="col">Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in Model.Rows)
+                    {
+                        <tr>
+                            <td class="when">@row.When</td>
+                            <td><strong>@row.User</strong></td>
+                            <td class="action">@row.Action</td>
+                            <td><span class="mod @("mod-" + row.Module.ToLowerInvariant())">@row.Module</span></td>
+                            <td class="record" title="@row.Record">@row.Record</td>
+                            <td><a href="@("/Admin/Audit/" + row.Id)" class="view-link" aria-label="@("View " + row.Action + ", " + row.When)">View</a></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (Model.Pages > 1)
+        {
+            <nav class="pager" aria-label="Audit log pages">
+                @if (Model.Page > 1)
+                {
+                    <a href="@(pageBase + (Model.Page - 1))">&larr; Newer</a>
+                }
+                else
+                {
+                    <span class="off">&larr; Newer</span>
+                }
+
+                <span>Page @Model.Page of @Model.Pages</span>
+
+                @if (Model.Page < Model.Pages)
+                {
+                    <a href="@(pageBase + (Model.Page + 1))">Older &rarr;</a>
+                }
+                else
+                {
+                    <span class="off">Older &rarr;</span>
+                }
+            </nav>
+        }
+
+        <p class="footnote">Audit records are read-only and cannot be changed or deleted.</p>
+    </section>
+}
+
+@section Scripts {
+    <script>
+        (function () {
+            // Highlight "Audit log" in the sidebar.
+            document.querySelectorAll(".sidebar nav a").forEach(function (link) {
+                if ((link.textContent || "").trim().toLowerCase() === "audit log") {
+                    link.setAttribute("aria-current", "page");
+                } else {
+                    link.removeAttribute("aria-current");
+                }
+            });
+
+            // The "from" date can't be after the "to" date.
+            var from = document.querySelector("input[name=from]");
+            var to = document.querySelector("input[name=to]");
+
+            if (from && to) {
+                to.addEventListener("change", function () { from.max = to.value; });
+                from.addEventListener("change", function () { to.min = from.value; });
+                to.min = from.value;
+            }
+        })();
+    </script>
+}

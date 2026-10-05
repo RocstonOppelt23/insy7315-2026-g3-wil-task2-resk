@@ -1,0 +1,58 @@
+﻿@model RESK.WIL.Models.AdminReviewViewModel
+
+@{
+    Layout = "~/Views/AdminProposals/_AdminLayout.cshtml";
+    ViewData["Title"] = "Proposal decision";
+
+    var row = Model.Row;
+    string decision = RESK.WIL.Services.ProposalReviewStore.RecommendationText(Model.Review.Recommendation);
+}
+
+@section Styles {
+    <style>
+        /* Grey out the page behind the dialog (the sidebar stays as it is). */
+        .backdrop { position: fixed; top: 0; right: 0; bottom: 0; left: 260px; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(120, 132, 155, 0.38); }
+        .dialog { width: 100%; max-width: 620px; padding: 34px 40px 40px; border-radius: 14px; background: white; text-align: center; box-shadow: 0 30px 60px rgba(12, 26, 51, 0.18); animation: pop 0.25s ease-out both; }
+        @@keyframes pop { from { opacity: 0; transform: translateY(10px) scale(0.98); } to { opacity: 1; transform: none; } }
+        .dialog-icon { width: 56px; height: 56px; margin: 0 auto; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: #12b8ce; color: white; font-size: 22px; font-weight: 800; }
+        .dialog h2 { margin-top: 18px; color: #14233e; font-size: 22px; font-weight: 800; }
+        .dialog p { margin-top: 14px; color: #5d6d87; font-size: 13px; line-height: 1.6; }
+        .decision-line { margin-top: 18px !important; color: #14233e !important; font-weight: 700; }
+        .dialog-actions { display: flex; justify-content: center; gap: 34px; margin-top: 64px; }
+        .dialog-actions .secondary-button, .dialog-actions .primary-button { min-width: 140px; }
+
+        @@media (max-width: 800px) {
+            .backdrop { left: 0; }
+        }
+    </style>
+}
+
+<header class="page-header">
+    <div>
+        <h1>Proposal decision</h1>
+        <p>Confirm workflow action.</p>
+    </div>
+</header>
+
+<div class="backdrop">
+    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dialogTitle">
+
+        <div class="dialog-icon" aria-hidden="true">!</div>
+
+        <h2 id="dialogTitle">Confirm proposal decision</h2>
+
+        <p>This action will notify the producer and update the proposal status.</p>
+
+        <p class="decision-line">@row.Title — @decision</p>
+
+        <form method="post" action="/Admin/Proposals/@row.Id/Confirm">
+            @Html.AntiForgeryToken()
+
+            <div class="dialog-actions">
+                <a href="/Admin/Proposals/@row.Id/Review" class="secondary-button">Cancel</a>
+                <button type="submit" class="primary-button">Confirm decision</button>
+            </div>
+        </form>
+
+    </div>
+</div>

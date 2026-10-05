@@ -1,0 +1,87 @@
+﻿@model RESK.WIL.Models.AdminPendingViewModel
+
+@{
+    Layout = "~/Views/AdminProposals/_AdminLayout.cshtml";
+    ViewData["Title"] = "Pending registration";
+
+    var row = Model.Row;
+}
+
+@section Styles {
+    <style>
+        .applicant { margin-top: 24px; padding: 20px 22px; border: 1px solid #f3dca0; border-radius: 11px; background: #fff8e6; }
+        .applicant h2 { color: #14233e; font-size: 17px; font-weight: 800; }
+        .applicant p { margin-top: 8px; color: #5d6d87; font-size: 12px; }
+        .applicant .since { color: #9a6a00; font-size: 11px; }
+        .readonly { margin-top: 26px; }
+        .readonly .section-label { margin-top: 0; }
+        .value { height: 44px; display: flex; align-items: center; padding: 0 16px; border: 1px solid #e3e9f0; border-radius: 8px; background: #f7f9fc; color: #14233e; font-size: 13px; }
+        .value + .section-label, .group + .group { margin-top: 18px; }
+        .verified { color: #1f8a5c; font-weight: 700; }
+        .not-verified { color: #c77c00; font-weight: 700; }
+        .reject-button { border-color: #d3dce8; }
+    </style>
+}
+
+<header class="page-header">
+    <div>
+        <h1>Pending registration</h1>
+        <p>Review and approve a new user account.</p>
+    </div>
+    <div class="header-actions">
+        <button type="submit" form="decisionForm" name="decision" value="reject" class="secondary-button reject-button"
+                onclick="return confirm('Reject this registration? The person will not be able to sign in.');">Reject</button>
+        <button type="submit" form="decisionForm" name="decision" value="approve" class="primary-button">Approve account</button>
+    </div>
+</header>
+
+<section class="card">
+
+    <h2 class="card-title">Registration review</h2>
+
+    <div class="applicant">
+        <h2>@row.Name</h2>
+        <p>@row.Email • Requested role: @Model.RequestedRole</p>
+        <p class="since">Pending since @Model.PendingSince</p>
+    </div>
+
+    <form id="decisionForm" method="post" action="/Admin/Users/@row.Id/Pending" class="readonly">
+        @Html.AntiForgeryToken()
+
+        <div class="group">
+            <span class="section-label">Organisation</span>
+            <div class="value">@row.Organisation</div>
+        </div>
+
+        <div class="group">
+            <span class="section-label">Phone</span>
+            <div class="value">@row.Phone</div>
+        </div>
+
+        <div class="group">
+            <span class="section-label">Reason for registration</span>
+            <div class="value">@Model.Reason</div>
+        </div>
+
+        <div class="group">
+            <span class="section-label">Email verification</span>
+            <div class="value">
+                @if (Model.EmailVerified)
+                {
+                    <span class="verified">Verified</span>
+                }
+                else
+                {
+                    <span class="not-verified">Not verified</span>
+                }
+            </div>
+        </div>
+
+        <div class="group" style="margin-top:26px;">
+            <label class="section-label" for="note">Admin note</label>
+            <textarea class="input" id="note" name="note" maxlength="1000" style="min-height:90px;"
+                      placeholder="Add a note for the approval or rejection decision...">@Model.Note</textarea>
+        </div>
+    </form>
+
+</section>

@@ -1,0 +1,122 @@
+﻿@model RESK.WIL.Models.ReskSettingsViewModel
+
+@{
+    Layout = "~/Views/AdminProposals/_AdminLayout.cshtml";
+    ViewData["Title"] = "System settings";
+
+    var tabs = RESK.WIL.Controllers.AdminSettingsController.Tabs;
+
+    string subtitle = Model.Tab switch
+    {
+        "registration" => "Configure registration rules and account approval.",
+        "workflow" => "Configure the default proposal workflow and review rules.",
+        "languages" => "Manage interface languages and translation files.",
+        "notifications" => "Control system notifications and delivery preferences.",
+        "security" => "Configure authentication, sessions and audit protection.",
+        _ => "Configure organisation details, registration rules, language options and workflow defaults."
+    };
+
+    string part = "~/Views/AdminSettings/_" + char.ToUpperInvariant(Model.Tab[0]) + Model.Tab.Substring(1) + ".cshtml";
+}
+
+@section Styles {
+    @await Html.PartialAsync("~/Views/AdminSettings/_Styles.cshtml")
+}
+
+<header class="page-header">
+    <div>
+        <h1>System settings</h1>
+        <p>@subtitle</p>
+    </div>
+    <div class="header-actions">
+        @if (Model.CanEdit)
+        {
+            <a href="@("/Admin/Settings?tab=" + Model.Tab)" class="secondary-button" id="discardButton">Discard</a>
+            <button type="submit" form="settingsForm" class="primary-button">Save changes</button>
+        }
+    </div>
+</header>
+
+<nav class="card tabs" aria-label="Settings sections">
+    @foreach (var t in tabs)
+    {
+        if (t.Key == Model.Tab)
+        {
+            <a href="@("/Admin/Settings?tab=" + t.Key)" class="tab" aria-current="page">@t.Label</a>
+        }
+        else
+        {
+            <a href="@("/Admin/Settings?tab=" + t.Key)" class="tab">@t.Label</a>
+        }
+    }
+</nav>
+
+@if (Model.Errors.Count > 0)
+{
+    <ul class="form-errors" role="alert">
+        @foreach (var error in Model.Errors)
+        {
+            <li>@error</li>
+        }
+    </ul>
+}
+
+@if (!Model.CanEdit)
+{
+    <div class="notice notice-error" style="margin-top:18px;" role="status">Your role can view these settings but can't change them.</div>
+}
+
+<form id="settingsForm" method="post" action="/Admin/Settings/Save" novalidate>
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="Tab" value="@Model.Tab" />
+
+    <section class="card settings-card">
+        <fieldset disabled="@(!Model.CanEdit)">
+            @await Html.PartialAsync(part, Model)
+        </fieldset>
+    </section>
+</form>
+
+@if (Model.SavedText != null)
+{
+    <p class="saved-text">@Model.SavedText</p>
+}
+
+@section Scripts {
+    <script>
+        (function () {
+            // Highlight "System settings" in the sidebar.
+            document.querySelectorAll(".sidebar nav a").forEach(function (link) {
+                if ((link.textContent || "").trim().toLowerCase() === "system settings") {
+                    link.setAttribute("aria-current", "page");
+                } else {
+                    link.removeAttribute("aria-current");
+                }
+            });
+
+            // Warn before leaving a tab with changes that were not saved.
+            var form = document.getElementById("settingsForm");
+            var changed = @(Model.Errors.Count > 0 ? "true" : "false");
+
+            window.reskSettingsChanged = function () { changed = true; };
+            form.addEventListener("input", window.reskSettingsChanged);
+            form.addEventListener("change", window.reskSettingsChanged);
+            form.addEventListener("submit", function () { changed = false; });
+
+            var discard = document.getElementById("discardButton");
+            if (discard) { discard.addEventListener("click", function () { changed = false; }); }
+
+            window.addEventListener("beforeunload", function (event) {
+                if (changed) { event.preventDefault(); event.returnValue = ""; }
+            });
+
+            // A switch that has a text box next to it (registration key): grey it out when switched off.
+            document.querySelectorAll("[data-controls]").forEach(function (box) {
+                var target = document.getElementById(box.getAttribute("data-controls"));
+                function sync() { if (target) { target.readOnly = !box.checked; } }
+                box.addEventListener("change", sync);
+                sync();
+            });
+        })();
+    </script>
+}

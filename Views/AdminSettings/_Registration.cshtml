@@ -1,0 +1,99 @@
+﻿@model RESK.WIL.Models.ReskSettingsViewModel
+
+@{
+    var s = Model.Settings;
+    var roles = RESK.WIL.Services.ReskSettingsStore.RegistrationRoles;
+    var windows = RESK.WIL.Services.ReskSettingsStore.ApprovalWindows;
+    var lengths = RESK.WIL.Services.ReskSettingsStore.PasswordLengths;
+}
+
+<h2 class="card-title">Registration settings</h2>
+<p class="card-subtitle">Control who can register, which role they receive and how accounts are activated.</p>
+
+<div class="toggles">
+    <div class="toggle">
+        <label class="toggle-main">
+            <input type="checkbox" name="AllowRegistration" value="true" checked="@s.AllowRegistration" />
+            <span class="switch"></span>
+            <span>
+                <strong>Allow public registration</strong>
+                <small>Users can create producer accounts from the registration page.</small>
+            </span>
+        </label>
+    </div>
+
+    <div class="toggle">
+        <label class="toggle-main">
+            <input type="checkbox" name="RequireApproval" value="true" checked="@s.RequireApproval" />
+            <span class="switch"></span>
+            <span>
+                <strong>Require administrator approval</strong>
+                <small>New accounts remain pending until reviewed and activated.</small>
+            </span>
+        </label>
+    </div>
+</div>
+
+<div class="grid-2">
+    <div>
+        <label class="section-label" for="DefaultRole">Default registration role</label>
+        <select class="input" id="DefaultRole" name="DefaultRole">
+            @foreach (var role in roles)
+            {
+                <option value="@role" selected="@(role == s.DefaultRole)">@role</option>
+            }
+        </select>
+    </div>
+    <div>
+        <label class="section-label" for="ApprovalWindowDays">Account approval window</label>
+        <select class="input" id="ApprovalWindowDays" name="ApprovalWindowDays">
+            @foreach (var days in windows)
+            {
+                <option value="@days" selected="@(days == s.ApprovalWindowDays)">@(days == 1 ? "Within 1 working day" : "Within " + days + " working days")</option>
+            }
+        </select>
+    </div>
+</div>
+
+<h3 class="block-title">Administrator registration</h3>
+<p class="block-sub">Protect administrator account creation with a registration key.</p>
+
+<div class="toggles">
+    <div class="toggle highlight">
+        <label class="toggle-main">
+            <input type="checkbox" name="RequireAdminKey" value="true" checked="@s.RequireAdminKey" data-controls="AdminKey" />
+            <span class="switch"></span>
+            <span>
+                <strong>Require administrator registration key</strong>
+                <small>The key must match the value saved here. An admin registration without it is held for approval.</small>
+            </span>
+        </label>
+        <input class="input" id="AdminKey" name="AdminKey" value="@s.AdminKey" maxlength="40" autocomplete="off" spellcheck="false"
+               placeholder="Registration key" aria-label="Administrator registration key" />
+    </div>
+</div>
+
+<h3 class="block-title">Password requirements</h3>
+
+<div class="chips">
+    <label class="chip-box">
+        Minimum
+        <select name="PasswordMinLength" aria-label="Minimum password length">
+            @foreach (var length in lengths)
+            {
+                <option value="@length" selected="@(length == s.PasswordMinLength)">@length</option>
+            }
+        </select>
+        characters
+    </label>
+    <label class="chip-box">
+        <input type="checkbox" name="PasswordRequireNumber" value="true" checked="@s.PasswordRequireNumber" />
+        Require a number
+    </label>
+    <label class="chip-box">
+        <input type="checkbox" name="PasswordRequireSpecial" value="true" checked="@s.PasswordRequireSpecial" />
+        Require a special character
+    </label>
+</div>
+
+<p class="foot-note">Password requirements apply to new passwords from now on. Existing passwords keep working.</p>
