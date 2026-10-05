@@ -67,7 +67,7 @@ The demonstration can cover:
 
 ### Demonstration Video
 
-`https://youtu.be/ZFdtfRsbsn8`
+https://youtu.be/ZFdtfRsbsn8
 
 ---
 
