@@ -432,17 +432,6 @@ The proposed cloud architecture can include:
 - Application configuration.
 - Secure HTTPS communication.
 
-### Hosting Information
-
-**Application hosting:**  
-`[INSERT ACTUAL HOSTING SERVICE IF REQUIRED]`
-
-**Database:**  
-`[INSERT ACTUAL DATABASE TECHNOLOGY]`
-
-**Live application:**  
-`[INSERT LIVE APPLICATION URL]`
-
 ---
 
 ## 🐙 GitHub Repository
