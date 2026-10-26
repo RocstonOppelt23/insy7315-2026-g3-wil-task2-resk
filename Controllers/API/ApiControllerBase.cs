@@ -9,7 +9,7 @@ namespace RESK.WIL.Controllers.API
      * BASE CLASS FOR ALL /api CONTROLLERS
      * =========================================================
      *
-     * - JSON in and out.
+     * - JSON in and out (errors as application/problem+json).
      * - Rate limited (see Security/ReskRateLimiting.cs).
      * - Every error uses the same shape: RFC 7807 "problem details".
      *
@@ -26,7 +26,6 @@ namespace RESK.WIL.Controllers.API
      *   errors (see Program.cs).
      */
     [ApiController]
-    [Produces("application/json")]
     [EnableRateLimiting(ReskRateLimiting.Api)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]

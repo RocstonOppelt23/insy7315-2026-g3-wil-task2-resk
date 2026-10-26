@@ -71,6 +71,28 @@ https://youtu.be/ZFdtfRsbsn8
 
 ---
 
+## 🌐 Live Site and Test Logins
+
+| | |
+|---|---|
+| **Live site** | https://LIVE-URL-HERE |
+| **Health check** | https://LIVE-URL-HERE/health |
+| **API documentation** | https://LIVE-URL-HERE/swagger |
+
+The health check returns `"status": "Healthy"` when the site is running **and** connected to the database, so it can be used to confirm the data connection.
+
+### Test accounts
+
+These are demo accounts with test data only.
+
+| Role | Email | Password |
+|---|---|---|
+| Producer | PRODUCER-EMAIL | PRODUCER-PASSWORD |
+| Reviewer | REVIEWER-EMAIL | REVIEWER-PASSWORD |
+| Administrator | ADMIN-EMAIL | ADMIN-PASSWORD |
+
+---
+
 ## 🎯 Project Objectives
 
 The main objectives of the system are to:
@@ -98,11 +120,22 @@ Download the .NET 8 SDK from:
 
 https://dotnet.microsoft.com/download/dotnet/8.0
 
+The default connection string uses **SQL Server LocalDB**, which is installed with Visual Studio.
+
+Set the development Administrator account (stored in User Secrets, not in the code):
+
+```powershell
+dotnet user-secrets set "SeedAdmin:Email" "admin@resk.co.za"
+dotnet user-secrets set "SeedAdmin:Password" "<a strong password>"
+```
+
 Open a terminal in the project folder containing `Program.cs` and run:
 
 ```powershell
 dotnet run
 ```
+
+The database is created and updated automatically on startup (pending Entity Framework migrations are applied), so `dotnet ef database update` is not needed.
 
 Once the application starts, the terminal will display the address where the application is running.
 
@@ -120,10 +153,23 @@ The application may normally run on an address similar to:
 http://localhost:5261
 ```
 
+Useful addresses once it is running:
+
+| Address | What it shows |
+|---|---|
+| `/health` | Whether the app and database are healthy (JSON) |
+| `/swagger` | Interactive API documentation |
+
 To stop the application, press:
 
 ```text
 Ctrl + C
+```
+
+To run the automated tests:
+
+```powershell
+dotnet test RESK.WIL.Tests
 ```
 
 ---
@@ -259,6 +305,13 @@ The front end includes functionality such as:
 
 The application uses **ASP.NET Core MVC** and Razor views to organise the presentation layer.
 
+**One shared theme.** The colour palette is defined once in `wwwroot/css/theme.css` as CSS variables (for example `--resk-navy-800` and `--resk-cyan`). Every page links this file and uses the variables instead of repeating colour codes, so the look can be changed in one place.
+
+**Accessibility:**
+
+- A **Skip to main content** link appears when a keyboard user presses Tab, so they can jump past the navigation.
+- When a producer clicks **Submit proposal**, the button shows *Submitting…* and is disabled (no double submissions), and a status message is announced to screen readers. If the confirmation box isn't ticked, they are told before anything is sent. After submitting, the confirmation page shows the proposal's reference number.
+
 ---
 
 ## ⚙️ Back End
@@ -296,7 +349,21 @@ The system stores information such as:
 - System settings.
 - Audit information.
 
-The project uses **Entity Framework Core** to support communication between the application and database.
+The project uses **Entity Framework Core** with **SQL Server**. All application data is stored in the database (not in files on the web server):
+
+| Table(s) | Holds |
+|---|---|
+| `AspNetUsers`, `AspNetRoles`, ... | Sign-in accounts and roles (ASP.NET Core Identity) |
+| `ProducerProposals` | Proposals and drafts from the producer wizard |
+| `ReskProposalReviews` | Reviewer assignment, recommendation and decision per proposal |
+| `ReskAccounts`, `ReskAccountActivities` | Account status (pending, suspended, banned) and each user's activity history |
+| `ReskRoles`, `ReskRoleAssignments` | Custom roles, their permissions, and which user has which role |
+| `ReskAuditEvents`, `ReskAuditChanges` | The audit log and the before/after value of each change |
+| `ReskSystemValues` | Small system values (e.g. which account is the Administrator) |
+
+**Check constraints** stop invalid values being saved even if the application has a bug, for example a proposal status must be one of `Draft`, `InReview`, `Approved`, `ChangesRequested` or `Rejected`, and a proposal has between 0 and 5 completed steps.
+
+Earlier versions kept reviews, roles, accounts and the audit log in JSON files under `App_Data`. On startup, any of these files that still exist are imported into the database once and renamed with `.imported` as a backup.
 
 ---
 
@@ -419,18 +486,69 @@ This provides management with a clearer overview of proposal activity and workfl
 
 ---
 
+## 🔌 API
+
+The system has a JSON API under `/api`. Full, interactive documentation is generated from the code with **Swagger / OpenAPI** at `/swagger`.
+
+| Method | Endpoint | Who | What it does |
+|---|---|---|---|
+| GET | `/api/proposals` | Producer | The producer's own proposals |
+| GET | `/api/proposals/{id}` | Producer | One proposal with review details |
+| POST | `/api/proposals/{id}/submit` | Producer | Submit a finished draft for review |
+| GET | `/api/review/queue` | Reviewer, Admin | Proposals waiting for review |
+| GET | `/api/review/{id}` | Reviewer, Admin | One submitted proposal |
+| POST | `/api/review/{id}/approve` | Reviewer, Admin | Approve |
+| POST | `/api/review/{id}/reject` | Reviewer, Admin | Reject |
+| POST | `/api/review/{id}/request-changes` | Reviewer, Admin | Send back for changes |
+| GET | `/api/users` | Admin | All users |
+| POST | `/api/users/create` | Admin | Create a user |
+| PUT | `/api/users/{id}/update` | Admin | Update a user |
+| PATCH | `/api/users/{id}/change/status` | Admin | Change account status |
+| GET / PUT | `/api/system`, `/api/system/update` | Admin to change | Module on/off switches |
+
+The API uses the same sign-in cookie as the website, so sign in first.
+
+**Errors** always use the same format, [RFC 7807 problem details](https://www.rfc-editor.org/rfc/rfc7807):
+
+```json
+{
+  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+  "title": "Not Found",
+  "status": 404,
+  "detail": "Proposal 42 was not found.",
+  "traceId": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-00"
+}
+```
+
+Validation errors add an `errors` object listing the problem with each field.
+
+**Rate limiting** protects the system from floods and password guessing. Each IP address can make **60 API requests per minute** and **10 sign-in, register or forgot-password attempts per minute**. Going over returns HTTP `429 Too Many Requests` with a `Retry-After` header. The limits can be changed in `appsettings.json` under `RateLimiting`.
+
+---
+
 ## ☁️ Hosting and Deployment
 
-The project was designed with cloud hosting in mind, using **Microsoft Azure** as the proposed cloud platform.
+The system is hosted on **Microsoft Azure**:
 
-Azure App Service provides a managed environment for hosting web applications, including ASP.NET Core applications.
+| Part | Azure service | Notes |
+|---|---|---|
+| Web application | **Azure App Service** | Runs the ASP.NET Core 8 app over HTTPS |
+| Database | **Azure SQL Database** | Connection string is set in the App Service configuration, not in the code |
+| Proposal attachments | **Azure Blob Storage** | Container `proposal-attachments` |
 
-The proposed cloud architecture can include:
+**Deployment is automatic.** Every push to `main` runs the GitHub Actions pipeline in `.github/workflows/ci-cd.yml`:
 
-- Web application hosting.
-- Database hosting.
-- Application configuration.
-- Secure HTTPS communication.
+1. **Build** the solution in Release mode.
+2. **Test**: run the automated tests. A failing test stops the pipeline, so broken code is never deployed. Failed tests are shown directly on the pull request.
+3. **Publish** the app and upload it as a build artifact.
+4. **Deploy** the artifact to Azure App Service (using a publish profile stored as a GitHub secret).
+5. **Health check**: call `/health` on the live site and fail the pipeline if the site or its database connection isn't healthy.
+
+When the new version starts, it applies any pending database migrations automatically.
+
+**Monitoring:** `/health` reports the app and database status, and every request is logged (method, path, status code and time taken). These logs can be viewed in the App Service **Log stream**.
+
+**Settings** that differ between environments (connection strings, the seed Administrator account, rate limits) are stored in the App Service configuration and User Secrets, never in the source code.
 
 ---
 
@@ -441,6 +559,8 @@ The project source code is maintained using **GitHub**.
 GitHub provides version-control functionality that allows the development team to manage source-code changes and collaborate during development.
 
 The repository contains the project source code and supporting documentation required for the Task 2 submission.
+
+Work is done on feature branches (for example `feature/database`, `feature/security`) and merged into `main` through pull requests. Every pull request is built and tested by GitHub Actions before it can be merged.
 
 ---
 
@@ -499,6 +619,24 @@ Testing that information can be correctly stored and retrieved.
 
 Testing authentication, authorisation, password rules, lockout behaviour and inactivity timeouts.
 
+### Automated Tests
+
+The `RESK.WIL.Tests` project (xUnit) runs on every push and pull request. It covers:
+
+| Area | What is checked |
+|---|---|
+| Proposal workflow | Allowed and blocked status changes (Draft → In review → Approved / Changes / Rejected) |
+| Database stores | Reviews, accounts, activity history, roles, role assignments and the audit log are saved and loaded correctly |
+| Data import | Old `App_Data` JSON files are imported once and never overwrite database data |
+| Migrations | The migrations match the code's data model, so the database and code can't drift apart |
+| Health check | `/health` reports a healthy database |
+| API documentation | Swagger lists every API endpoint and no website pages |
+| Error format | API errors (401, 404, ...) use problem details |
+| Rate limiting | Too many requests get HTTP 429 with `Retry-After`; sign-in forms are limited |
+| Sign-in redirect | Signed-out users opening a page are sent to the login page |
+
+Run them with `dotnet test RESK.WIL.Tests`.
+
 
 ---
 
@@ -512,8 +650,8 @@ Future versions of the system could include:
 - More interface languages.
 - Additional reporting features.
 - Enhanced dashboard analytics.
-- Additional automated testing.
-- Further accessibility improvements.
+- More automated tests for the reviewer and admin screens.
+- A full accessibility audit (colour contrast and screen-reader testing).
 - Additional cloud scalability features.
 
 These improvements could further enhance the system and provide additional support for Cape Town TV's programme-management process.
@@ -525,13 +663,18 @@ These improvements could further enhance the system and provide additional suppo
 The project is organised into folders that separate different areas of the application.
 
 ```text
-Controllers/      The pages and application actions
-Models/           Data models and view models
-Services/         Roles, audit log, settings and other application rules
-Views/            User-interface screens
-Data/             Database context and data-related functionality
-wwwroot/          Static files such as CSS, JavaScript and images
-Program.cs        Application configuration and startup
+Controllers/        The pages and application actions
+Controllers/API/    The JSON API (documented at /swagger)
+Models/             Data models and view models
+Services/           Roles, audit log, settings and other application rules
+Security/           Sign-in claims and rate limiting
+Views/              User-interface screens
+Data/               Database context, migrations and startup database setup
+wwwroot/css/        theme.css (colour palette as CSS variables) and site styles
+wwwroot/js/         Shared scripts (submit feedback)
+RESK.WIL.Tests/     Automated tests
+.github/workflows/  CI/CD pipeline (build, test, deploy, health check)
+Program.cs          Application configuration and startup
 ```
 
 This structure helps keep the project organised and separates different areas of responsibility.
