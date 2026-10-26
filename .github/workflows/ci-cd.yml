@@ -32,7 +32,7 @@ jobs:
         run: dotnet build "RESK.WIL.slnx" --configuration Release --no-restore
 
       - name: Test
-        run: dotnet test "RESK.WIL.slnx" --configuration Release --no-build --verbosity normal
+        run: dotnet test "RESK.WIL.slnx" --configuration Release --no-build --verbosity normal --logger "GitHubActions;summary-include-passed=false"
 
       - name: Publish (artifact)
         run: |
