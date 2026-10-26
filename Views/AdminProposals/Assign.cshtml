@@ -10,16 +10,16 @@
 @section Styles {
     <style>
         .reviewers { display: flex; flex-direction: column; gap: 16px; }
-        .reviewer { position: relative; display: flex; align-items: center; gap: 16px; padding: 18px 18px; border: 1px solid #dde4ee; border-radius: 10px; background: white; cursor: pointer; transition: border-color 0.2s, box-shadow 0.2s; }
-        .reviewer:hover { border-color: #b9c6d8; }
+        .reviewer { position: relative; display: flex; align-items: center; gap: 16px; padding: 18px 18px; border: 1px solid var(--resk-border); border-radius: 10px; background: white; cursor: pointer; transition: border-color 0.2s, box-shadow 0.2s; }
+        .reviewer:hover { border-color: var(--resk-border-strong); }
         .reviewer input { position: absolute; opacity: 0; pointer-events: none; }
-        .reviewer:has(input:checked) { border: 2px solid #12b8ce; padding: 17px; box-shadow: 0 0 0 3px rgba(18,184,206,0.08); }
-        .reviewer:has(input:focus-visible) { outline: 2px solid #12b8ce; outline-offset: 2px; }
-        .reviewer-avatar { width: 36px; height: 36px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: #1d3557; color: white; font-size: 10px; font-weight: 800; }
-        .reviewer strong { display: block; color: #14233e; font-size: 14px; }
-        .reviewer small { display: block; margin-top: 5px; color: #6d7e99; font-size: 11px; }
+        .reviewer:has(input:checked) { border: 2px solid var(--resk-cyan); padding: 17px; box-shadow: 0 0 0 3px rgba(18,184,206,0.08); }
+        .reviewer:has(input:focus-visible) { outline: 2px solid var(--resk-cyan); outline-offset: 2px; }
+        .reviewer-avatar { width: 36px; height: 36px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--resk-navy-700); color: white; font-size: 10px; font-weight: 800; }
+        .reviewer strong { display: block; color: var(--resk-navy-800); font-size: 14px; }
+        .reviewer small { display: block; margin-top: 5px; color: var(--resk-text-muted); font-size: 11px; }
         .assign-grid { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1fr); gap: 30px; margin-top: 32px; }
-        .no-reviewers { padding: 20px; border: 1px dashed #cfdae8; border-radius: 10px; color: #6d7e99; font-size: 13px; line-height: 1.6; }
+        .no-reviewers { padding: 20px; border: 1px dashed var(--resk-border-mid); border-radius: 10px; color: var(--resk-text-muted); font-size: 13px; line-height: 1.6; }
 
         @@media (max-width: 900px) {
             .assign-grid { grid-template-columns: 1fr; }

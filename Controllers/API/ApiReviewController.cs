@@ -12,6 +12,7 @@ using RESK.WIL.Data;
 using RESK.WIL.Models;
 using RESK.WIL.Services;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using System.ComponentModel.DataAnnotations;
 
 namespace RESK.WIL.Controllers.API
 {
@@ -23,10 +24,10 @@ namespace RESK.WIL.Controllers.API
      * POST /api/review/{id:int}/reject
      * POST /api/review/{id:int}/request-changes
      */
-    [ApiController]
+    /// <summary>Reviewer queue and review decisions.</summary>
     [Route("api/review")]
     [Authorize(Roles = "Reviewer,Admin")]
-    public class ApiReviewController : ControllerBase
+    public class ApiReviewController : ApiControllerBase
     {
         private readonly ApplicationDbContext _db;
         private readonly UserManager<IdentityUser> _userManager;
@@ -42,9 +43,11 @@ namespace RESK.WIL.Controllers.API
             _environment = environment;
         }
 
-        // GET /api/review/queue
+        /// <summary>Lists proposals waiting for review, oldest submission first.</summary>
+        /// <response code="200">Proposals that are In review.</response>
         [HttpGet("queue")]
-        public async Task<ActionResult<List<object>>> GetQueue(CancellationToken ct)
+        [ProducesResponseType(typeof(List<ApiReviewQueueItem>), StatusCodes.Status200OK)]
+        public async Task<ActionResult<List<ApiReviewQueueItem>>> GetQueue(CancellationToken ct)
         {
             var reviews = ProposalReviewStore.LoadAll(_environment.ContentRootPath);
 
@@ -54,25 +57,33 @@ namespace RESK.WIL.Controllers.API
                 .OrderBy(p => p.SubmittedAtUtc)
                 .ToListAsync(ct);
 
-            var result = items.Select(p => new
+            var result = items.Select(p =>
             {
-                p.Id,
-                p.Reference,
-                ProgrammeTitle = p.DisplayTitle,
-                p.Category,
-                p.Status,
-                StatusLabel = ProposalStatuses.Label(p.Status),
-                p.SubmittedAtUtc,
-                p.UpdatedAtUtc,
-                ReviewerName = reviews.TryGetValue(p.Id, out var r) ? r.ReviewerName : null,
-                ReviewDeadline = reviews.TryGetValue(p.Id, out var r2) ? r2.Deadline : null
+                reviews.TryGetValue(p.Id, out var review);
+
+                return new ApiReviewQueueItem(
+                    p.Id,
+                    p.Reference,
+                    p.DisplayTitle,
+                    p.Category,
+                    p.Status,
+                    ProposalStatuses.Label(p.Status),
+                    p.SubmittedAtUtc,
+                    p.UpdatedAtUtc,
+                    review?.ReviewerName,
+                    review?.Deadline);
             }).ToList();
 
             return Ok(result);
         }
 
-        // GET /api/review/{id:int}
+        /// <summary>Gets a submitted proposal with its review details.</summary>
+        /// <param name="id">The proposal id.</param>
+        /// <response code="200">The proposal.</response>
+        /// <response code="404">No submitted proposal has that id.</response>
         [HttpGet("{id:int}")]
+        [ProducesResponseType(typeof(ApiProposalDetails), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<ActionResult<ApiProposalDetails>> GetById(int id)
         {
             var proposal = await _db.ProducerProposals
@@ -80,52 +91,70 @@ namespace RESK.WIL.Controllers.API
                 .FirstOrDefaultAsync(p => p.Id == id && p.Status != ProposalStatuses.Draft);
 
             if (proposal == null)
-                return NotFound();
+                return NotFoundProblem($"Submitted proposal {id} was not found.");
 
             var review = ProposalReviewStore.Load(_environment.ContentRootPath, id);
             return Ok(ApiProposalMapper.ToDetails(proposal, review));
         }
 
+        /// <summary>Optional reviewer comments sent with a decision.</summary>
         public class ApiReviewDecisionRequest
         {
+            /// <summary>Feedback for the producer.</summary>
+            [StringLength(4000)]
             public string? comments { get; set; }
         }
 
-        // POST /api/review/{id:int}/approve
+        /// <summary>Approves a proposal that is In review.</summary>
+        /// <param name="id">The proposal id.</param>
+        /// <param name="request">Optional comments for the producer.</param>
         [HttpPost("{id:int}/approve")]
-        public async Task<ActionResult<object>> Approve(
+        [ProducesResponseType(typeof(ApiReviewDecisionResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+        public async Task<ActionResult<ApiReviewDecisionResponse>> Approve(
             int id,
             [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] ApiReviewDecisionRequest? request)
         {
             return await HandleDecision(id, ProposalReviewStore.Approve, ProposalStatuses.Approved, request);
         }
 
-        // POST /api/review/{id:int}/reject
+        /// <summary>Rejects a proposal that is In review.</summary>
+        /// <param name="id">The proposal id.</param>
+        /// <param name="request">Optional comments for the producer.</param>
         [HttpPost("{id:int}/reject")]
-        public async Task<ActionResult<object>> Reject(
+        [ProducesResponseType(typeof(ApiReviewDecisionResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+        public async Task<ActionResult<ApiReviewDecisionResponse>> Reject(
             int id,
             [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] ApiReviewDecisionRequest? request)
         {
             return await HandleDecision(id, ProposalReviewStore.Reject, ProposalStatuses.Rejected, request);
         }
 
-        // POST /api/review/{id:int}/request-changes
+        /// <summary>Sends a proposal back to the producer for changes.</summary>
+        /// <param name="id">The proposal id.</param>
+        /// <param name="request">Optional comments for the producer.</param>
         [HttpPost("{id:int}/request-changes")]
-        public async Task<ActionResult<object>> RequestChanges(
+        [ProducesResponseType(typeof(ApiReviewDecisionResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+        public async Task<ActionResult<ApiReviewDecisionResponse>> RequestChanges(
             int id,
             [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] ApiReviewDecisionRequest? request)
         {
             return await HandleDecision(id, ProposalReviewStore.RequestChanges, ProposalStatuses.ChangesRequested, request);
         }
 
-        private async Task<ActionResult<object>> HandleDecision(int id, string reviewDecisionConstant, string targetStatus, ApiReviewDecisionRequest? request)
+        private async Task<ActionResult<ApiReviewDecisionResponse>> HandleDecision(int id, string reviewDecisionConstant, string targetStatus, ApiReviewDecisionRequest? request)
         {
             ProducerProposal? proposal = await _db.ProducerProposals.SingleOrDefaultAsync(p => p.Id == id);
             if (proposal == null)
-                return NotFound();
+                return NotFoundProblem($"Proposal {id} was not found.");
 
             if (!ProposalWorkflow.TryMove(proposal, targetStatus, out string moveError))
-                return Conflict(moveError);
+                return ConflictProblem(moveError);
 
             await _db.SaveChangesAsync();
 
@@ -154,15 +183,35 @@ namespace RESK.WIL.Controllers.API
 
             ProposalReviewStore.Save(_environment.ContentRootPath, review);
 
-            return Ok(new
-            {
-                Id = proposal.Id,
-                Reference = proposal.Reference,
-                Status = proposal.Status,
-                StatusLabel = ProposalStatuses.Label(proposal.Status),
-                Decision = review.Decision,
-                UpdatedAtUtc = proposal.UpdatedAtUtc
-            });
+            return Ok(new ApiReviewDecisionResponse(
+                proposal.Id,
+                proposal.Reference,
+                proposal.Status,
+                ProposalStatuses.Label(proposal.Status),
+                review.Decision,
+                proposal.UpdatedAtUtc));
         }
     }
+
+    /// <summary>One proposal in the reviewer queue.</summary>
+    public record ApiReviewQueueItem(
+        int Id,
+        string? Reference,
+        string ProgrammeTitle,
+        string Category,
+        string Status,
+        string StatusLabel,
+        DateTime? SubmittedAtUtc,
+        DateTime UpdatedAtUtc,
+        string? ReviewerName,
+        DateTime? ReviewDeadline);
+
+    /// <summary>Result of an approve / reject / request-changes decision.</summary>
+    public record ApiReviewDecisionResponse(
+        int Id,
+        string? Reference,
+        string Status,
+        string StatusLabel,
+        string? Decision,
+        DateTime UpdatedAtUtc);
 }

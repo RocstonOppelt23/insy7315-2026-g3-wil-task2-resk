@@ -20,10 +20,10 @@ namespace RESK.WIL.Controllers.API
      * GET  /api/proposals/{id:int}
      * POST /api/proposals/{id:int}/submit
      */
-    [ApiController]
+    /// <summary>The signed-in producer's own proposals.</summary>
     [Route("api/proposals")]
     [Authorize(Policy = "ManageProposals")]
-    public class ApiProposalController : ControllerBase
+    public class ApiProposalController : ApiControllerBase
     {
         private readonly ApplicationDbContext _db;
         private readonly UserManager<IdentityUser> _userManager;
@@ -39,13 +39,15 @@ namespace RESK.WIL.Controllers.API
             _environment = environment;
         }
 
-        // GET /api/proposals
+        /// <summary>Lists the signed-in producer's proposals, newest first.</summary>
+        /// <response code="200">The producer's proposals (drafts included).</response>
         [HttpGet]
+        [ProducesResponseType(typeof(List<ApiProposalSummary>), StatusCodes.Status200OK)]
         public async Task<ActionResult<List<ApiProposalSummary>>> GetMine(CancellationToken cancellationToken)
         {
             string? userId = _userManager.GetUserId(User);
             if (userId == null)
-                return Unauthorized();
+                return UnauthorizedProblem();
 
             var proposals = await _db.ProducerProposals
                 .AsNoTracking()
@@ -62,47 +64,61 @@ namespace RESK.WIL.Controllers.API
             return Ok(result);
         }
 
-        // GET /api/proposals/{id:int}
+        /// <summary>Gets one of the signed-in producer's proposals with its review details.</summary>
+        /// <param name="id">The proposal id.</param>
+        /// <response code="200">The proposal.</response>
+        /// <response code="404">No proposal with that id belongs to this producer.</response>
         [HttpGet("{id:int}")]
+        [ProducesResponseType(typeof(ApiProposalDetails), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<ActionResult<ApiProposalDetails>> GetById(int id, CancellationToken cancellationToken)
         {
             string? userId = _userManager.GetUserId(User);
             if (userId == null)
-                return Unauthorized();
+                return UnauthorizedProblem();
 
             var proposal = await _db.ProducerProposals
                 .AsNoTracking()
                 .SingleOrDefaultAsync(p => p.Id == id && p.OwnerUserId == userId, cancellationToken);
 
             if (proposal == null)
-                return NotFound();
+                return NotFoundProblem($"Proposal {id} was not found.");
 
             var review = ProposalReviewStore.Load(_environment.ContentRootPath, id);
             return Ok(ApiProposalMapper.ToDetails(proposal, review));
         }
 
-        // POST /api/proposals/{id:int}/submit
+        /// <summary>Submits a finished draft for review.</summary>
+        /// <param name="id">The proposal id.</param>
+        /// <response code="200">The proposal, now In review, with its CTV reference.</response>
+        /// <response code="400">Steps are missing or the proposal document isn't uploaded.</response>
+        /// <response code="404">No proposal with that id belongs to this producer.</response>
+        /// <response code="409">The proposal can't be submitted from its current status.</response>
         [HttpPost("{id:int}/submit")]
+        [ProducesResponseType(typeof(ApiProposalDetails), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
         public async Task<ActionResult<ApiProposalDetails>> Submit(int id)
         {
             string? userId = _userManager.GetUserId(User);
             if (userId == null)
-                return Unauthorized();
+                return UnauthorizedProblem();
 
             var proposal = await _db.ProducerProposals
                 .SingleOrDefaultAsync(p => p.Id == id && p.OwnerUserId == userId);
 
             if (proposal == null)
-                return NotFound();
+                return NotFoundProblem($"Proposal {id} was not found.");
 
             if (proposal.CompletedSteps < 4 || string.IsNullOrWhiteSpace(proposal.ProposalDocumentStoredName))
             {
-                return BadRequest("Complete all proposal steps and upload the proposal document before submitting.");
+                return BadRequestProblem("Complete all proposal steps and upload the proposal document before submitting.");
             }
 
             if (!ProposalWorkflow.TryMove(proposal, ProposalStatuses.InReview, out string moveError))
             {
-                return Conflict(moveError);
+                return ConflictProblem(moveError);
             }
 
             DateTime now = DateTime.UtcNow;

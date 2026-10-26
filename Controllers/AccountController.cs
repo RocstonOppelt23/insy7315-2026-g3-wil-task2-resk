@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+using RESK.WIL.Security;
 using System.ComponentModel.DataAnnotations;
 
 namespace RESK.WIL.Controllers
@@ -104,6 +106,7 @@ namespace RESK.WIL.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [EnableRateLimiting(ReskRateLimiting.SignIn)]
         public async Task<IActionResult> Login(
             string email,
             string password,
@@ -276,6 +279,7 @@ namespace RESK.WIL.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [EnableRateLimiting(ReskRateLimiting.SignIn)]
         public async Task<IActionResult> Register(
             string email,
             string password,
@@ -506,6 +510,7 @@ namespace RESK.WIL.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [EnableRateLimiting(ReskRateLimiting.SignIn)]
         public async Task<IActionResult> ForgotPassword(
             string email)
         {

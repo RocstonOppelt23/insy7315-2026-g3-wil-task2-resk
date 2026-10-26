@@ -11,19 +11,19 @@
 @section Styles {
     <style>
         .field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px 24px; margin-top: 26px; }
-        .field-error { display: block; margin-top: 6px; color: #c9444d; font-size: 11px; font-weight: 600; }
-        .section-title { margin-top: 38px; color: #14233e; font-size: 18px; font-weight: 800; }
+        .field-error { display: block; margin-top: 6px; color: var(--resk-danger); font-size: 11px; font-weight: 600; }
+        .section-title { margin-top: 38px; color: var(--resk-navy-800); font-size: 18px; font-weight: 800; }
         .toggles { display: flex; flex-direction: column; gap: 14px; margin-top: 22px; }
-        .toggle { display: flex; align-items: center; gap: 18px; padding: 14px 20px; border: 1px solid #dde4ee; border-radius: 10px; background: #f7f9fc; cursor: pointer; }
+        .toggle { display: flex; align-items: center; gap: 18px; padding: 14px 20px; border: 1px solid var(--resk-border); border-radius: 10px; background: var(--resk-surface-alt); cursor: pointer; }
         .toggle input { position: absolute; opacity: 0; pointer-events: none; }
-        .switch { position: relative; width: 38px; height: 21px; flex-shrink: 0; border: 1px solid #cfdae8; border-radius: 999px; background: white; transition: background 0.2s, border-color 0.2s; }
-        .switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 15px; height: 15px; border-radius: 50%; background: #cfdae8; transition: transform 0.2s, background 0.2s; }
-        .toggle:has(input:checked) .switch { border-color: #12b8ce; background: #12b8ce; }
+        .switch { position: relative; width: 38px; height: 21px; flex-shrink: 0; border: 1px solid var(--resk-border-mid); border-radius: 999px; background: white; transition: background 0.2s, border-color 0.2s; }
+        .switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 15px; height: 15px; border-radius: 50%; background: var(--resk-border-mid); transition: transform 0.2s, background 0.2s; }
+        .toggle:has(input:checked) .switch { border-color: var(--resk-cyan); background: var(--resk-cyan); }
         .toggle:has(input:checked) .switch::after { background: white; transform: translateX(17px); }
-        .toggle:has(input:focus-visible) { outline: 2px solid #12b8ce; outline-offset: 2px; }
-        .toggle strong { display: block; color: #14233e; font-size: 13px; }
-        .toggle small { display: block; margin-top: 4px; color: #6d7e99; font-size: 11px; }
-        .hint { margin-top: 18px; color: #6d7e99; font-size: 12px; line-height: 1.6; }
+        .toggle:has(input:focus-visible) { outline: 2px solid var(--resk-cyan); outline-offset: 2px; }
+        .toggle strong { display: block; color: var(--resk-navy-800); font-size: 13px; }
+        .toggle small { display: block; margin-top: 4px; color: var(--resk-text-muted); font-size: 11px; }
+        .hint { margin-top: 18px; color: var(--resk-text-muted); font-size: 12px; line-height: 1.6; }
 
         @@media (max-width: 800px) {
             .field-grid { grid-template-columns: 1fr; }

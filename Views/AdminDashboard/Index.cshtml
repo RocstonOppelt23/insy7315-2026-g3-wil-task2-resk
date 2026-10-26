@@ -34,6 +34,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="stylesheet" href="~/css/theme.css" asp-append-version="true" />
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Admin Dashboard - R.E.S.K</title>
@@ -41,7 +42,7 @@
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         html, body { min-height: 100%; }
-        body { font-family: Inter, "Segoe UI", Arial, sans-serif; background: #f4f7fb; color: #13223c; }
+        body { font-family: Inter, "Segoe UI", Arial, sans-serif; background: var(--resk-surface); color: var(--resk-navy-800); }
         button, a { font-family: inherit; }
 
         /* ===== PAGE FADE ===== */
@@ -52,48 +53,48 @@
         @@media (prefers-reduced-motion: reduce) { .main, body.page-leaving .main { animation: none; } }
 
         /* ===== SIDEBAR ===== */
-        .sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 260px; display: flex; flex-direction: column; background: #0c1a33; color: white; padding: 36px 20px 38px; z-index: 100; overflow-y: auto; }
+        .sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 260px; display: flex; flex-direction: column; background: var(--resk-navy-900); color: white; padding: 36px 20px 38px; z-index: 100; overflow-y: auto; }
         .brand { display: flex; align-items: center; gap: 15px; padding-left: 13px; margin-bottom: 42px; }
-        .brand-icon { width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; border: 2px solid #00b9d0; border-radius: 17px; color: #00bfd7; font-size: 28px; font-weight: 700; }
+        .brand-icon { width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; border: 2px solid var(--resk-cyan); border-radius: 17px; color: var(--resk-cyan); font-size: 28px; font-weight: 700; }
         .brand-name { color: white; font-size: 24px; font-weight: 800; letter-spacing: 1.5px; }
-        .brand-subtitle { margin-top: 5px; color: #d3dae7; font-size: 9px; }
-        .nav-label { margin: 0 12px 8px; color: #72809a; font-size: 10px; font-weight: 800; }
+        .brand-subtitle { margin-top: 5px; color: var(--resk-border-mid); font-size: 9px; }
+        .nav-label { margin: 0 12px 8px; color: var(--resk-text-muted); font-size: 10px; font-weight: 800; }
         .sidebar-nav { display: flex; flex-direction: column; gap: 8px; }
-        .sidebar-link { display: flex; align-items: center; min-height: 43px; padding: 0 32px; border-radius: 10px; color: #b9c2d1; font-size: 14px; font-weight: 500; text-decoration: none; transition: 0.2s; }
+        .sidebar-link { display: flex; align-items: center; min-height: 43px; padding: 0 32px; border-radius: 10px; color: var(--resk-border-strong); font-size: 14px; font-weight: 500; text-decoration: none; transition: 0.2s; }
         .sidebar-link:hover { color: white; background: rgba(255,255,255,0.05); transform: translateX(2px); }
-        .sidebar-link.active { background: #142a4b; color: white; font-weight: 700; }
+        .sidebar-link.active { background: var(--resk-navy-700); color: white; font-weight: 700; }
 
         /* ===== ADMIN ACCOUNT ===== */
         .admin-account { position: relative; margin-top: auto; padding: 0 8px; }
-        .admin-profile { width: 100%; display: flex; align-items: center; gap: 11px; padding: 12px 14px; border: none; border-radius: 11px; background: #142a4b; color: white; cursor: pointer; text-align: left; }
-        .admin-profile:hover { background: #193456; }
+        .admin-profile { width: 100%; display: flex; align-items: center; gap: 11px; padding: 12px 14px; border: none; border-radius: 11px; background: var(--resk-navy-700); color: white; cursor: pointer; text-align: left; }
+        .admin-profile:hover { background: var(--resk-navy-700); }
         .admin-initials { width: 34px; flex-shrink: 0; color: #12c4da; font-size: 13px; font-weight: 800; }
         .admin-text { min-width: 0; flex: 1; }
         .admin-name { overflow: hidden; color: white; font-size: 13px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
-        .admin-role { margin-top: 4px; color: #b5c0d1; font-size: 10px; }
-        .account-menu { position: absolute; left: 8px; right: 8px; bottom: calc(100% + 9px); padding: 7px; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; background: #142a4b; box-shadow: 0 18px 35px rgba(0,0,0,0.25); opacity: 0; visibility: hidden; transform: translateY(8px); transition: 0.2s; }
+        .admin-role { margin-top: 4px; color: var(--resk-border-strong); font-size: 10px; }
+        .account-menu { position: absolute; left: 8px; right: 8px; bottom: calc(100% + 9px); padding: 7px; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; background: var(--resk-navy-700); box-shadow: 0 18px 35px rgba(0,0,0,0.25); opacity: 0; visibility: hidden; transform: translateY(8px); transition: 0.2s; }
         .admin-account.open .account-menu { opacity: 1; visibility: visible; transform: translateY(0); }
-        .logout-button { width: 100%; display: block; padding: 10px 11px; border: none; border-radius: 7px; background: transparent; color: #ff9e9e; font-size: 12px; font-weight: 600; text-align: left; cursor: pointer; }
+        .logout-button { width: 100%; display: block; padding: 10px 11px; border: none; border-radius: 7px; background: transparent; color: var(--resk-danger-light); font-size: 12px; font-weight: 600; text-align: left; cursor: pointer; }
         .logout-button:hover { background: rgba(255,255,255,0.06); }
 
         /* ===== MAIN ===== */
         .main { min-height: 100vh; margin-left: 260px; padding: 28px 52px 38px; }
         .page { width: 100%; max-width: 1070px; margin: 0 auto; }
-        .page-header h1 { color: #14233e; font-size: 31px; line-height: 1.2; font-weight: 800; }
-        .page-header p { margin-top: 8px; color: #697a96; font-size: 14px; }
+        .page-header h1 { color: var(--resk-navy-800); font-size: 31px; line-height: 1.2; font-weight: 800; }
+        .page-header p { margin-top: 8px; color: var(--resk-text-muted); font-size: 14px; }
 
-        .card { padding: 22px 24px; border: 1px solid #d9e1ec; border-radius: 13px; background: white; }
-        .card-title { color: #14233e; font-size: 18px; font-weight: 800; }
-        .card-subtitle { margin-top: 7px; color: #6d7e99; font-size: 12px; }
+        .card { padding: 22px 24px; border: 1px solid var(--resk-border); border-radius: 13px; background: white; }
+        .card-title { color: var(--resk-navy-800); font-size: 18px; font-weight: 800; }
+        .card-subtitle { margin-top: 7px; color: var(--resk-text-muted); font-size: 12px; }
 
         /* ===== STAT CARDS ===== */
         .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-top: 26px; }
-        .stat { padding: 22px 20px; border: 1px solid #d9e1ec; border-radius: 13px; background: white; }
-        .stat-label { color: #5d6d87; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+        .stat { padding: 22px 20px; border: 1px solid var(--resk-border); border-radius: 13px; background: white; }
+        .stat-label { color: var(--resk-text-soft); font-size: 11px; font-weight: 800; text-transform: uppercase; }
         .stat-row { display: flex; align-items: baseline; gap: 10px; margin-top: 12px; }
-        .stat-value { color: #12213b; font-size: 34px; font-weight: 800; line-height: 1; }
+        .stat-value { color: var(--resk-navy-800); font-size: 34px; font-weight: 800; line-height: 1; }
         .stat-note { font-size: 12px; font-weight: 700; }
-        .note-green { color: #1f9a66; }
+        .note-green { color: var(--resk-success); }
         .note-amber { color: #d08a00; }
         .note-grey { color: #7b8aa1; font-weight: 600; }
 
@@ -102,49 +103,49 @@
 
         /* ===== CHART ===== */
         .chart-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
-        .legend { display: flex; gap: 18px; margin-top: 4px; color: #5d6d87; font-size: 11px; }
+        .legend { display: flex; gap: 18px; margin-top: 4px; color: var(--resk-text-soft); font-size: 11px; }
         .legend span { display: inline-flex; align-items: center; gap: 7px; }
         .legend i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
         .chart { width: 100%; height: auto; margin-top: 14px; display: block; }
-        .chart-empty { margin-top: 10px; color: #8493aa; font-size: 12px; }
+        .chart-empty { margin-top: 10px; color: var(--resk-text-faint); font-size: 12px; }
 
         /* ===== PENDING ACTIONS ===== */
         .actions-list { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
-        .action { display: flex; align-items: center; gap: 13px; padding: 12px 14px; border: 1px solid #dde4ee; border-radius: 10px; background: #f7f9fc; }
-        .action.amber { border-color: #f3dca0; background: #fff8e6; }
-        .action.teal { border-color: #bfeaf0; background: #eefafc; }
+        .action { display: flex; align-items: center; gap: 13px; padding: 12px 14px; border: 1px solid var(--resk-border); border-radius: 10px; background: var(--resk-surface-alt); }
+        .action.amber { border-color: var(--resk-warning-border); background: var(--resk-warning-soft); }
+        .action.teal { border-color: var(--resk-cyan-border); background: var(--resk-cyan-soft); }
         .action-icon { width: 28px; height: 28px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: white; font-size: 12px; font-weight: 800; }
         .action.amber .action-icon { background: #e0a100; }
-        .action.teal .action-icon { background: #12b8ce; }
-        .action.grey .action-icon { background: #5b6b85; }
-        .action strong { display: block; color: #14233e; font-size: 13px; }
-        .action small { display: block; margin-top: 3px; color: #5d6d87; font-size: 11px; }
+        .action.teal .action-icon { background: var(--resk-cyan); }
+        .action.grey .action-icon { background: var(--resk-text-soft); }
+        .action strong { display: block; color: var(--resk-navy-800); font-size: 13px; }
+        .action small { display: block; margin-top: 3px; color: var(--resk-text-soft); font-size: 11px; }
 
         /* ===== RECENT PROPOSALS ===== */
         .table-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
-        .view-all { color: #00a9bd; font-size: 12px; font-weight: 800; text-decoration: none; white-space: nowrap; }
+        .view-all { color: var(--resk-cyan-dark); font-size: 12px; font-weight: 800; text-decoration: none; white-space: nowrap; }
         .view-all:hover { text-decoration: underline; }
         table { width: 100%; margin-top: 18px; border-collapse: collapse; }
-        thead th { padding: 12px 14px; background: #f4f7fb; color: #5d6d87; font-size: 11px; font-weight: 800; text-align: left; text-transform: uppercase; }
+        thead th { padding: 12px 14px; background: var(--resk-surface); color: var(--resk-text-soft); font-size: 11px; font-weight: 800; text-align: left; text-transform: uppercase; }
         thead th:first-child { border-radius: 8px 0 0 8px; }
         thead th:last-child { border-radius: 0 8px 8px 0; }
-        tbody td { padding: 15px 14px; border-bottom: 1px solid #edf1f6; color: #52637e; font-size: 12px; }
+        tbody td { padding: 15px 14px; border-bottom: 1px solid var(--resk-surface-2); color: var(--resk-text-soft); font-size: 12px; }
         tbody tr:last-child td { border-bottom: none; }
-        tbody td.title { color: #14233e; font-weight: 800; }
+        tbody td.title { color: var(--resk-navy-800); font-weight: 800; }
         .pill { display: inline-block; padding: 5px 13px; border-radius: 999px; font-size: 11px; font-weight: 800; white-space: nowrap; }
-        .pill-review { background: #fdf1d6; color: #c77c00; }
-        .pill-approved { background: #e3f5ec; color: #1f8a5c; }
-        .pill-changes, .pill-rejected { background: #fde7e8; color: #c9444d; }
-        .pill-draft { background: #eef2f7; color: #5b6b85; }
-        .empty-row { padding: 26px 14px; color: #8493aa; font-size: 12px; text-align: center; }
+        .pill-review { background: var(--resk-warning-soft); color: var(--resk-warning); }
+        .pill-approved { background: var(--resk-success-soft); color: var(--resk-success); }
+        .pill-changes, .pill-rejected { background: var(--resk-danger-soft); color: var(--resk-danger); }
+        .pill-draft { background: var(--resk-surface-2); color: var(--resk-text-soft); }
+        .empty-row { padding: 26px 14px; color: var(--resk-text-faint); font-size: 12px; text-align: center; }
 
         /* ===== QUICK ACTIONS ===== */
         .quick-list { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
-        .quick { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border: 1px solid #dde4ee; border-radius: 9px; background: white; color: #14233e; font-size: 13px; font-weight: 800; text-decoration: none; transition: border-color 0.2s, background 0.2s; }
-        .quick:hover { border-color: #12b8ce; }
-        .quick.highlight { border-color: #bfeaf0; background: #eefafc; }
-        .quick span:last-child { color: #8493aa; font-weight: 600; }
-        .roles-link { display: inline-block; margin-top: 16px; color: #00a9bd; font-size: 12px; font-weight: 800; text-decoration: none; }
+        .quick { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border: 1px solid var(--resk-border); border-radius: 9px; background: white; color: var(--resk-navy-800); font-size: 13px; font-weight: 800; text-decoration: none; transition: border-color 0.2s, background 0.2s; }
+        .quick:hover { border-color: var(--resk-cyan); }
+        .quick.highlight { border-color: var(--resk-cyan-border); background: var(--resk-cyan-soft); }
+        .quick span:last-child { color: var(--resk-text-faint); font-weight: 600; }
+        .roles-link { display: inline-block; margin-top: 16px; color: var(--resk-cyan-dark); font-size: 12px; font-weight: 800; text-decoration: none; }
         .roles-link:hover { text-decoration: underline; }
 
         /* ===== RESPONSIVE ===== */
@@ -169,13 +170,15 @@
         /* ===== SIDEBAR LINKS (works with any class names on the links) ===== */
         .sidebar nav { display: flex !important; flex-direction: column !important; gap: 8px !important; margin: 0 !important; padding: 0 !important; list-style: none !important; }
         .sidebar nav ul, .sidebar nav li { display: block; margin: 0; padding: 0; list-style: none; }
-        .sidebar nav a { display: flex !important; align-items: center !important; min-height: 43px; padding: 0 32px !important; border-radius: 10px; color: #b9c2d1 !important; font-size: 14px !important; font-weight: 500; text-decoration: none !important; background: transparent; transition: 0.2s; }
-        .sidebar nav a:hover { color: #ffffff !important; background: rgba(255,255,255,0.05); transform: translateX(2px); }
-        .sidebar nav a.active, .sidebar nav a[aria-current="page"] { background: #142a4b !important; color: #ffffff !important; font-weight: 700 !important; }</style>
+        .sidebar nav a { display: flex !important; align-items: center !important; min-height: 43px; padding: 0 32px !important; border-radius: 10px; color: var(--resk-border-strong) !important; font-size: 14px !important; font-weight: 500; text-decoration: none !important; background: transparent; transition: 0.2s; }
+        .sidebar nav a:hover { color: var(--resk-white) !important; background: rgba(255,255,255,0.05); transform: translateX(2px); }
+        .sidebar nav a.active, .sidebar nav a[aria-current="page"] { background: var(--resk-navy-700) !important; color: var(--resk-white) !important; font-weight: 700 !important; }</style>
     <link rel="icon" type="image/x-icon" href="/favicon.ico?v=resk2" />
 </head>
 
 <body>
+    <a class="resk-skip-link" href="#main-content">Skip to main content</a>
+
 
     <!-- ===================== SIDEBAR ===================== -->
     <aside class="sidebar">
@@ -249,7 +252,7 @@
     </aside>
 
     <!-- ===================== MAIN ===================== -->
-    <main class="main">
+    <main id="main-content" tabindex="-1" class="main">
         <div class="page">
 
             <header class="page-header">
@@ -305,8 +308,8 @@
                             <p class="card-subtitle">Submissions and decisions over the last six months</p>
                         </div>
                         <div class="legend">
-                            <span><i style="background:#12b8ce;"></i>Submitted</span>
-                            <span><i style="background:#14233e;"></i>Approved</span>
+                            <span><i style="background:var(--resk-cyan);"></i>Submitted</span>
+                            <span><i style="background:var(--resk-navy-800);"></i>Approved</span>
                         </div>
                     </div>
 

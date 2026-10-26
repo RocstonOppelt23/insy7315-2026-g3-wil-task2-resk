@@ -37,6 +37,7 @@
 <html lang="en">
 
 <head>
+    <link rel="stylesheet" href="~/css/theme.css" asp-append-version="true" />
 
     <meta charset="utf-8" />
 
@@ -54,8 +55,8 @@
             body {
                 margin: 0;
                 font-family: "Segoe UI", Arial, sans-serif;
-                background: #f4f7fb;
-                color: #14233e;
+                background: var(--resk-surface);
+                color: var(--resk-navy-800);
             }
 
             .sidebar {
@@ -84,9 +85,9 @@
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                border: 2px solid #17bdd2;
+                border: 2px solid var(--resk-cyan);
                 border-radius: 17px;
-                color: #17bdd2;
+                color: var(--resk-cyan);
                 font-size: 22px;
                 font-weight: 900;
             }
@@ -140,8 +141,8 @@
 
             .complete .circle,
             .active .circle {
-                border-color: #17bdd2;
-                background: #17bdd2;
+                border-color: var(--resk-cyan);
+                background: var(--resk-cyan);
                 color: white;
             }
 
@@ -168,7 +169,7 @@
                 justify-content: center;
                 flex-shrink: 0;
                 border-radius: 50%;
-                background: #17bdd2;
+                background: var(--resk-cyan);
                 font-weight: 900;
             }
 
@@ -201,7 +202,7 @@
 
             h1 {
                 margin: 0;
-                color: #071f42;
+                color: var(--resk-navy-900);
                 font-size: 27px;
             }
 
@@ -231,7 +232,7 @@
             .progress-value {
                 width: 100%;
                 height: 100%;
-                background: #17bdd2;
+                background: var(--resk-cyan);
             }
 
             .error {
@@ -262,7 +263,7 @@
 
             .card-title {
                 margin: 0;
-                color: #071f42;
+                color: var(--resk-navy-900);
                 font-size: 16px;
             }
 
@@ -328,7 +329,7 @@
                     height: 18px;
                     margin-top: 1px;
                     flex-shrink: 0;
-                    accent-color: #17bdd2;
+                    accent-color: var(--resk-cyan);
                 }
 
             .actions {
@@ -350,9 +351,9 @@
             }
 
             .back {
-                border: 1px solid #d3ddea;
+                border: 1px solid var(--resk-border-mid);
                 background: white;
-                color: #526783;
+                color: var(--resk-text-soft);
             }
 
             .submit {
@@ -386,15 +387,17 @@
     </style>
 
     <style id="reskWizardButtons">
-        .resk-cancel { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 22px; border: 1px solid #e1e7ef; border-radius: 8px; background: transparent; color: #61728d; font-size: 13px; font-weight: 800; text-decoration: none; transition: background 0.2s, border-color 0.2s, color 0.2s; }
-        .resk-cancel:hover { border-color: #f0c2c5; background: #fff7f7; color: #b84048; }
-        .resk-save-draft { min-height: 44px; padding: 0 22px; border: 1px solid #d3dce8; border-radius: 8px; background: #ffffff; color: #14233e; font-family: inherit; font-size: 13px; font-weight: 800; cursor: pointer; transition: border-color 0.2s, color 0.2s; }
-        .resk-save-draft:hover { border-color: #12b8ce; color: #0a9fb2; }
+        .resk-cancel { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 22px; border: 1px solid var(--resk-border-soft); border-radius: 8px; background: transparent; color: var(--resk-text-soft); font-size: 13px; font-weight: 800; text-decoration: none; transition: background 0.2s, border-color 0.2s, color 0.2s; }
+        .resk-cancel:hover { border-color: var(--resk-danger-border); background: var(--resk-danger-bg); color: var(--resk-danger-dark); }
+        .resk-save-draft { min-height: 44px; padding: 0 22px; border: 1px solid var(--resk-border-mid); border-radius: 8px; background: var(--resk-white); color: var(--resk-navy-800); font-family: inherit; font-size: 13px; font-weight: 800; cursor: pointer; transition: border-color 0.2s, color 0.2s; }
+        .resk-save-draft:hover { border-color: var(--resk-cyan); color: var(--resk-cyan-dark); }
     </style>    <link rel="icon" type="image/x-icon" href="/favicon.ico?v=resk2" />
 </head>
 
 
 <body>
+    <a class="resk-skip-link" href="#main-content">Skip to main content</a>
+
 
 
     <aside class="sidebar">
@@ -490,17 +493,17 @@
         <style>
             .producer-account:not(.resk-account), .sidebar > .producer-profile { display: none !important; }
             .resk-account { position: relative; margin-top: auto; padding: 0 8px; }
-            .resk-profile { width: 100%; display: flex; align-items: center; gap: 11px; padding: 12px 10px; border: none; border-radius: 11px; background: #142a4b; color: #ffffff; cursor: pointer; text-align: left; font-family: inherit; }
-            .resk-profile:hover { background: #193456; }
-            .resk-avatar { width: 34px; height: 34px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 50%; background: #0bb6ca; color: #ffffff; font-size: 11px; font-weight: 800; }
+            .resk-profile { width: 100%; display: flex; align-items: center; gap: 11px; padding: 12px 10px; border: none; border-radius: 11px; background: var(--resk-navy-700); color: var(--resk-white); cursor: pointer; text-align: left; font-family: inherit; }
+            .resk-profile:hover { background: var(--resk-navy-700); }
+            .resk-avatar { width: 34px; height: 34px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 50%; background: var(--resk-cyan); color: var(--resk-white); font-size: 11px; font-weight: 800; }
             .resk-text { min-width: 0; flex: 1; }
-            .resk-name { overflow: hidden; color: #ffffff; font-size: 13px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
-            .resk-role { margin-top: 4px; color: #b5c0d1; font-size: 10px; }
-            .resk-menu { position: absolute; left: 8px; right: 8px; bottom: calc(100% + 9px); z-index: 10; padding: 7px; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; background: #142a4b; box-shadow: 0 18px 35px rgba(0,0,0,0.25); opacity: 0; visibility: hidden; transform: translateY(8px); transition: 0.2s; }
+            .resk-name { overflow: hidden; color: var(--resk-white); font-size: 13px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+            .resk-role { margin-top: 4px; color: var(--resk-border-strong); font-size: 10px; }
+            .resk-menu { position: absolute; left: 8px; right: 8px; bottom: calc(100% + 9px); z-index: 10; padding: 7px; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; background: var(--resk-navy-700); box-shadow: 0 18px 35px rgba(0,0,0,0.25); opacity: 0; visibility: hidden; transform: translateY(8px); transition: 0.2s; }
             .resk-account.open .resk-menu { opacity: 1; visibility: visible; transform: translateY(0); }
-            .resk-menu-link, .resk-logout { width: 100%; display: block; padding: 10px 11px; border: none; border-radius: 7px; background: transparent; color: #d6deea; font-family: inherit; font-size: 12px; font-weight: 600; text-align: left; text-decoration: none; cursor: pointer; }
-            .resk-menu-link:hover, .resk-logout:hover { background: rgba(255,255,255,0.06); color: #ffffff; }
-            .resk-logout { color: #ff9e9e; }
+            .resk-menu-link, .resk-logout { width: 100%; display: block; padding: 10px 11px; border: none; border-radius: 7px; background: transparent; color: var(--resk-border); font-family: inherit; font-size: 12px; font-weight: 600; text-align: left; text-decoration: none; cursor: pointer; }
+            .resk-menu-link:hover, .resk-logout:hover { background: rgba(255,255,255,0.06); color: var(--resk-white); }
+            .resk-logout { color: var(--resk-danger-light); }
             .resk-divider { height: 1px; margin: 5px 4px; background: rgba(255,255,255,0.08); }
         </style>
 
@@ -583,7 +586,7 @@
 </aside>
 
 
-    <main class="main">
+    <main id="main-content" tabindex="-1" class="main">
 
         <div class="container">
 
@@ -610,7 +613,7 @@
 
             @if (TempData["SubmitError"] != null)
             {
-                <div class="error">
+                <div class="error" role="alert">
                     @TempData["SubmitError"]
                 </div>
             }
@@ -1035,7 +1038,11 @@
 
             <form asp-controller="Producer"
                   asp-action="SubmitProposal"
-                  method="post">
+                  method="post"
+                  data-resk-submit
+                  data-resk-confirm="#ConfirmSubmission"
+                  data-resk-status="#submitStatus"
+                  data-busy-message="Submitting your proposal… please wait, this can take a few seconds while the files are checked.">
 
                 @Html.AntiForgeryToken()
 
@@ -1073,7 +1080,8 @@
                         <a href="/Producer/CancelProposal" class="resk-cancel">Cancel</a>
                         <button type="button" class="resk-save-draft" onclick="var f=this.form;var s=document.createElement('input');s.type='hidden';s.name='step';s.value='5';f.appendChild(s);f.action='/Producer/SaveDraft';HTMLFormElement.prototype.submit.call(f);">Save draft</button>
                         <button type="submit"
-                            class="button submit">
+                            class="button submit"
+                            data-busy-text="Submitting…">
 
                         Submit proposal →
 
@@ -1082,12 +1090,16 @@
 
                 </div>
 
+                <p id="submitStatus" class="resk-submit-status" role="status" aria-live="polite"></p>
+
             </form>
 
 
         </div>
 
     </main>
+
+    <script src="~/js/resk-forms.js" asp-append-version="true"></script>
 
 </body>
 

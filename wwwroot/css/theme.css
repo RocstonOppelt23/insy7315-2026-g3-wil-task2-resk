@@ -1,0 +1,116 @@
+/*
+ * =========================================================
+ * R.E.S.K THEME
+ * =========================================================
+ *
+ * The colour palette is defined ONCE here. Every page links this
+ * file and uses the variables, e.g.  color: var(--resk-navy-800);
+ * To change a colour across the whole app, change it here.
+ */
+
+:root {
+    /* Brand navy */
+    --resk-navy-900: #0d172b;         /* Darkest navy (sidebars, headings on light) */
+    --resk-navy-800: #14233e;         /* Main navy - body text and brand */
+    --resk-navy-700: #142a4b;         /* Lighter navy (hover, secondary panels) */
+
+    /* Brand cyan */
+    --resk-cyan: #12b8ce;             /* Brand cyan - buttons, links, highlights */
+    --resk-cyan-dark: #00a9bd;        /* Cyan hover / pressed */
+    --resk-cyan-darker: #0a8a9c;      /* Cyan text on light backgrounds */
+    --resk-cyan-border: #bfeaf0;      /* Cyan outlines */
+    --resk-cyan-soft: #eefafc;        /* Cyan tinted backgrounds */
+
+    /* Text */
+    --resk-text-soft: #5d6d87;        /* Secondary text */
+    --resk-text-muted: #6d7e99;       /* Muted text, labels */
+    --resk-text-faint: #8493aa;       /* Hints and placeholders */
+
+    /* Borders */
+    --resk-border-strong: #b5c0d1;    /* Input borders */
+    --resk-border-mid: #d3dce8;       /* Card and table borders */
+    --resk-border: #dde4ee;           /* Default borders and dividers */
+    --resk-border-soft: #e1e7ef;      /* Very light dividers */
+
+    /* Surfaces */
+    --resk-surface-2: #edf1f6;        /* Chips, table headers */
+    --resk-surface: #f4f7fb;          /* Page background */
+    --resk-surface-alt: #f7f9fc;      /* Alternate rows and panels */
+
+    --resk-white: #ffffff;            /* Cards */
+
+    /* Status: danger */
+    --resk-danger: #c9444d;           /* Errors and destructive actions */
+    --resk-danger-dark: #b84048;      /* Error text / hover */
+    --resk-danger-light: #ff9e9e;     /* Error accents on dark backgrounds */
+    --resk-danger-border: #f0c2c5;    /* Error outlines */
+    --resk-danger-soft: #fde7e8;      /* Error tinted backgrounds */
+    --resk-danger-bg: #fff7f7;        /* Error message background */
+
+    /* Status: success */
+    --resk-success: #1f8a5c;          /* Success / approved */
+    --resk-success-soft: #e3f5ec;     /* Success tinted backgrounds */
+
+    /* Status: warning */
+    --resk-warning: #c77c00;          /* Warnings / pending */
+    --resk-warning-dark: #8a5d00;     /* Warning text */
+    --resk-warning-border: #f3dca0;   /* Warning outlines */
+    --resk-warning-soft: #fff8e6;     /* Warning tinted backgrounds */
+
+    /* Shared sizes */
+    --resk-radius: 12px;
+    --resk-focus-ring: 0 0 0 3px rgba(18, 184, 206, 0.35);
+}
+
+/* ---------------------------------------------------------
+ * Skip link (accessibility)
+ * Hidden until a keyboard user presses Tab, then jumps
+ * straight past the navigation to the page content.
+ * --------------------------------------------------------- */
+.resk-skip-link {
+    position: absolute;
+    top: -100px;
+    left: 16px;
+    z-index: 10000;
+    padding: 10px 16px;
+    border-radius: 8px;
+    background: var(--resk-navy-800);
+    color: var(--resk-white);
+    font-weight: 700;
+    text-decoration: none;
+    transition: top 0.15s ease;
+}
+
+.resk-skip-link:focus {
+    top: 16px;
+    outline: none;
+    box-shadow: var(--resk-focus-ring);
+}
+
+main:focus {
+    outline: none;
+}
+
+
+/* ---------------------------------------------------------
+ * Form submit feedback (see wwwroot/js/resk-forms.js)
+ * --------------------------------------------------------- */
+.resk-submit-status {
+    margin: 12px 0 0;
+    font-weight: 600;
+    color: var(--resk-text-soft);
+    min-height: 1.4em;
+}
+
+.resk-submit-status.is-error {
+    color: var(--resk-danger-dark);
+}
+
+.resk-submit-status.is-success {
+    color: var(--resk-success);
+}
+
+button.is-busy {
+    opacity: 0.75;
+    cursor: progress;
+}

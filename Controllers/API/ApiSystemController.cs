@@ -2,14 +2,14 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RESK.WIL.Data;
+using RESK.WIL.Controllers.API;
 using RESK.WIL.Models;
 
 namespace RESK.WIL.Controllers
 {
-    //adding new line?
-    [ApiController]
+    /// <summary>Feature switches for the admin modules.</summary>
     [Route("api/system")]
-    public class ApiSystemController : ControllerBase
+    public class ApiSystemController : ApiControllerBase
     {
         private readonly ApplicationDbContext _db;
 
@@ -18,8 +18,12 @@ namespace RESK.WIL.Controllers
             _db = db;
         }
 
-        // GET /api/system
+        /// <summary>Gets which admin modules are switched on.</summary>
+        /// <response code="200">The current feature settings.</response>
+        /// <response code="404">The settings row has not been created yet.</response>
         [HttpGet]
+        [ProducesResponseType(typeof(SystemResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<ActionResult<SystemResponse>> Get(
             CancellationToken cancellationToken)
         {
@@ -28,13 +32,19 @@ namespace RESK.WIL.Controllers
                 .SingleOrDefaultAsync(s => s.Id == 1, cancellationToken);
 
             if (settings is null)
-                return NotFound("System feature settings cannot GET.");
+                return NotFoundProblem("System feature settings have not been set up yet.");
 
             return Ok(ToResponse(settings));
         }
 
-        // PUT /api/system/update
+        /// <summary>Switches admin modules on or off (Admin only).</summary>
+        /// <response code="200">The updated feature settings.</response>
+        /// <response code="400">The request body is invalid.</response>
+        /// <response code="404">The settings row has not been created yet.</response>
         [HttpPut("update")]
+        [ProducesResponseType(typeof(SystemResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         [Authorize(Policy = "ManageSystemSettings")]
         public async Task<ActionResult<SystemResponse>> Update(
             [FromBody] UpdateSystemRequest request,
@@ -44,7 +54,7 @@ namespace RESK.WIL.Controllers
                 .SingleOrDefaultAsync(s => s.Id == 1, cancellationToken);
 
             if (settings is null)
-                return NotFound("System feature settings cannot PUT.");
+                return NotFoundProblem("System feature settings have not been set up yet.");
 
             settings.UsersEnabled = request.UsersEnabled;
             settings.ProposalsEnabled = request.ProposalsEnabled;

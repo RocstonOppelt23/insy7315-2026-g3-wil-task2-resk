@@ -33,6 +33,7 @@
 <html lang="en">
 
 <head>
+    <link rel="stylesheet" href="~/css/theme.css" asp-append-version="true" />
 
     <meta charset="utf-8" />
 
@@ -51,8 +52,8 @@
                 margin: 0;
                 min-height: 100vh;
                 font-family: "Segoe UI", Arial, sans-serif;
-                background: #f4f7fb;
-                color: #14233e;
+                background: var(--resk-surface);
+                color: var(--resk-navy-800);
             }
 
             .sidebar {
@@ -80,9 +81,9 @@
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                border: 2px solid #17bdd2;
+                border: 2px solid var(--resk-cyan);
                 border-radius: 17px;
-                color: #17bdd2;
+                color: var(--resk-cyan);
                 font-size: 22px;
                 font-weight: 900;
             }
@@ -117,7 +118,7 @@
                 justify-content: center;
                 flex-shrink: 0;
                 border-radius: 50%;
-                background: #17bdd2;
+                background: var(--resk-cyan);
                 font-weight: 900;
             }
 
@@ -171,7 +172,7 @@
 
             h1 {
                 margin: 0;
-                color: #071f42;
+                color: var(--resk-navy-900);
                 font-size: 27px;
                 font-weight: 900;
             }
@@ -199,7 +200,7 @@
 
             .reference {
                 margin-top: 7px;
-                color: #071f42;
+                color: var(--resk-navy-900);
                 font-size: 22px;
                 font-weight: 900;
                 letter-spacing: 1px;
@@ -220,7 +221,7 @@
 
                 .next h2 {
                     margin: 0 0 18px;
-                    color: #071f42;
+                    color: var(--resk-navy-900);
                     font-size: 15px;
                 }
 
@@ -267,9 +268,9 @@
             }
 
             .secondary {
-                border: 1px solid #d3ddea;
+                border: 1px solid var(--resk-border-mid);
                 background: white;
-                color: #526783;
+                color: var(--resk-text-soft);
             }
 
             .primary {
@@ -300,6 +301,8 @@
 </head>
 
 <body>
+    <a class="resk-skip-link" href="#main-content">Skip to main content</a>
+
 
 
     <aside class="sidebar">
@@ -348,11 +351,11 @@
     </aside>
 
 
-    <main class="main">
+    <main id="main-content" tabindex="-1" class="main">
 
-        <section class="card">
+        <section class="card" role="status" aria-live="polite">
 
-            <div class="check">
+            <div class="check" aria-hidden="true">
                 ✓
             </div>
 

@@ -34,7 +34,7 @@
         <h3>@roleName</h3>
         <span class="pill @(Model.AssignNow ? "pill-active" : "pill-inactive")" style="margin-top:8px;">@(Model.AssignNow ? "Active" : "Inactive")</span>
         <p>@Model.Description</p>
-        <p style="margin-top:4px;color:#6d7e99;">Signs in to: @RESK.WIL.Services.ReskRoleStore.AreaLabel(Model.Area)</p>
+        <p style="margin-top:4px;color:var(--resk-text-muted);">Signs in to: @RESK.WIL.Services.ReskRoleStore.AreaLabel(Model.Area)</p>
     </div>
     <button type="submit" name="Go" value="step1" class="btn">Edit role details</button>
 </div>

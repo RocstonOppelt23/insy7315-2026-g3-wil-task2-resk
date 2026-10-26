@@ -7,6 +7,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="stylesheet" href="~/css/theme.css" asp-append-version="true" />
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
@@ -24,7 +25,7 @@
         }
 
         body {
-            background: #f4f7fb;
+            background: var(--resk-surface);
             color: #14233c;
 
             opacity: 0;
@@ -86,13 +87,13 @@
             width: 58px;
             height: 58px;
 
-            border: 1.5px solid #18b7ca;
+            border: 1.5px solid var(--resk-cyan);
             border-radius: 15px;
 
             display: grid;
             place-items: center;
 
-            color: #18b7ca;
+            color: var(--resk-cyan);
 
             font-size: 28px;
             font-weight: 800;
@@ -212,8 +213,8 @@
 
         .step.current .step-circle,
         .step.complete .step-circle {
-            background: #18b7ca;
-            border-color: #18b7ca;
+            background: var(--resk-cyan);
+            border-color: var(--resk-cyan);
             color: #062039;
         }
 
@@ -302,7 +303,7 @@
         }
 
         .btn-primary {
-            background: #18b7ca;
+            background: var(--resk-cyan);
             color: white;
         }
 
@@ -326,7 +327,7 @@
         .btn-secondary:hover {
             transform: translateY(-2px);
 
-            background: #f7f9fc;
+            background: var(--resk-surface-alt);
         }
 
         .btn:active {
@@ -351,6 +352,8 @@
 </head>
 
 <body>
+<a class="resk-skip-link" href="#main-content">Skip to main content</a>
+
 
 <div class="app">
 
@@ -450,7 +453,7 @@
 
     </aside>
 
-    <main class="main">
+    <main id="main-content" tabindex="-1" class="main">
 
         @RenderBody()
 
