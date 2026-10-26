@@ -15,18 +15,18 @@
 @section Styles {
     @await Html.PartialAsync("~/Views/AdminCategories/_CategoryStyles.cshtml")
     <style>
-        .usage { margin-top: 14px; padding: 18px 20px; border: 1px solid #dde4ee; border-radius: 10px; background: #f7f9fc; }
-        .usage strong { display: block; color: #14233e; font-size: 13px; }
-        .usage span { display: block; margin-top: 6px; color: #6d7e99; font-size: 11px; }
-        .usage a { color: #00a9bd; font-weight: 800; text-decoration: none; }
+        .usage { margin-top: 14px; padding: 18px 20px; border: 1px solid var(--resk-border); border-radius: 10px; background: var(--resk-surface-alt); }
+        .usage strong { display: block; color: var(--resk-navy-800); font-size: 13px; }
+        .usage span { display: block; margin-top: 6px; color: var(--resk-text-muted); font-size: 11px; }
+        .usage a { color: var(--resk-cyan-dark); font-weight: 800; text-decoration: none; }
         .usage a:hover { text-decoration: underline; }
         .danger-zone { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin-top: 26px; }
         .danger-zone form { margin: 0; }
-        .plain-button { min-height: 42px; padding: 0 24px; border: 1px solid #d3dce8; border-radius: 8px; background: white; color: #14233e; font-size: 13px; font-weight: 800; cursor: pointer; }
-        .plain-button:hover { border-color: #b9c6d8; background: #f8fafc; }
-        .plain-button.red { border-color: #f0c2c5; color: #c9444d; }
-        .plain-button.red:hover { background: #fde9ea; }
-        .updated { margin-left: auto; color: #8493aa; font-size: 11px; }
+        .plain-button { min-height: 42px; padding: 0 24px; border: 1px solid var(--resk-border-mid); border-radius: 8px; background: white; color: var(--resk-navy-800); font-size: 13px; font-weight: 800; cursor: pointer; }
+        .plain-button:hover { border-color: var(--resk-border-strong); background: #f8fafc; }
+        .plain-button.red { border-color: var(--resk-danger-border); color: var(--resk-danger); }
+        .plain-button.red:hover { background: var(--resk-danger-soft); }
+        .updated { margin-left: auto; color: var(--resk-text-faint); font-size: 11px; }
     </style>
 }
 

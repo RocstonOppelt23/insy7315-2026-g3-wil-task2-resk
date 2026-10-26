@@ -9,10 +9,10 @@ using RESK.WIL.Models;
 
 namespace RESK.WIL.Controllers.API
 {
-    [ApiController]
+    /// <summary>User records (Admin only).</summary>
     [Route("api/users")]
     [Authorize(Policy = "ManageUsers")]
-    public class ApiUserController : ControllerBase
+    public class ApiUserController : ApiControllerBase
     {
         private readonly ApplicationDbContext _db;
         private readonly IPasswordHasher<User> _passwordHasher;
@@ -25,8 +25,9 @@ namespace RESK.WIL.Controllers.API
             _passwordHasher = passwordHasher;
         }
 
-        // GET /api/users
+        /// <summary>Lists all users.</summary>
         [HttpGet]
+        [ProducesResponseType(typeof(List<UserResponse>), StatusCodes.Status200OK)]
         public async Task<ActionResult<List<UserResponse>>> GetUsers(
             CancellationToken cancellationToken)
         {
@@ -40,8 +41,12 @@ namespace RESK.WIL.Controllers.API
             return Ok(users);
         }
 
-        // GET /api/users/7
+        /// <summary>Gets one user.</summary>
+        /// <param name="id">The user id.</param>
+        /// <response code="404">No user has that id.</response>
         [HttpGet("{id:int}")]
+        [ProducesResponseType(typeof(UserResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<ActionResult<UserResponse>> GetUserById(
             int id,
             CancellationToken cancellationToken)
@@ -54,11 +59,17 @@ namespace RESK.WIL.Controllers.API
                     u.AccountStatus, u.CreatedAtUtc, u.UpdatedAtUtc))
                 .SingleOrDefaultAsync(cancellationToken);
 
-            return user is null ? NotFound() : Ok(user);
+            return user is null ? NotFoundProblem($"User {id} was not found.") : Ok(user);
         }
 
-        // POST /api/users/create
+        /// <summary>Creates a user (status starts as Pending).</summary>
+        /// <response code="201">The new user.</response>
+        /// <response code="400">A field is missing or invalid.</response>
+        /// <response code="409">An account with this email already exists.</response>
         [HttpPost("create")]
+        [ProducesResponseType(typeof(UserResponse), StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
         public async Task<ActionResult<UserResponse>> CreateUser(
             [FromBody] CreateUserRequest request,
             CancellationToken cancellationToken)
@@ -68,7 +79,7 @@ namespace RESK.WIL.Controllers.API
             if (await _db.Users.AnyAsync(
                     u => u.Email == email, cancellationToken))
             {
-                return Conflict("An account with this email already exists.");
+                return ConflictProblem("An account with this email already exists.");
             }
 
             var now = DateTime.UtcNow;
@@ -97,8 +108,16 @@ namespace RESK.WIL.Controllers.API
                 ToResponse(user));
         }
 
-        // PUT /api/users/7/update
+        /// <summary>Updates a user's details.</summary>
+        /// <param name="id">The user id.</param>
+        /// <response code="400">A field is missing or invalid.</response>
+        /// <response code="404">No user has that id.</response>
+        /// <response code="409">Another account already uses this email.</response>
         [HttpPut("{id:int}/update")]
+        [ProducesResponseType(typeof(UserResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
         public async Task<ActionResult<UserResponse>> UpdateUser(
             int id,
             [FromBody] UpdateUserRequest request,
@@ -108,7 +127,7 @@ namespace RESK.WIL.Controllers.API
                 new object[] { id }, cancellationToken);
 
             if (user is null)
-                return NotFound();
+                return NotFoundProblem($"User {id} was not found.");
 
             string email = request.Email.Trim();
 
@@ -116,7 +135,7 @@ namespace RESK.WIL.Controllers.API
                     u => u.Email == email && u.Id != id,
                     cancellationToken))
             {
-                return Conflict("An account with this email already exists.");
+                return ConflictProblem("An account with this email already exists.");
             }
 
             user.Name = request.Name.Trim();
@@ -130,8 +149,14 @@ namespace RESK.WIL.Controllers.API
             return Ok(ToResponse(user));
         }
 
-        // PATCH /api/users/7/change/status
+        /// <summary>Changes a user's account status.</summary>
+        /// <param name="id">The user id.</param>
+        /// <response code="400">The status is missing or not a valid value.</response>
+        /// <response code="404">No user has that id.</response>
         [HttpPatch("{id:int}/change/status")]
+        [ProducesResponseType(typeof(UserResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<ActionResult<UserResponse>> ChangeStatus(
             int id,
             [FromBody] ChangeUserStatusRequest request,
@@ -140,14 +165,14 @@ namespace RESK.WIL.Controllers.API
             if (!request.AccountStatus.HasValue ||
                 !Enum.IsDefined(request.AccountStatus.Value))
             {
-                return BadRequest("Select a valid account status.");
+                return BadRequestProblem("Select a valid account status.");
             }
 
             var user = await _db.Users.FindAsync(
                 new object[] { id }, cancellationToken);
 
             if (user is null)
-                return NotFound();
+                return NotFoundProblem($"User {id} was not found.");
 
             user.AccountStatus = request.AccountStatus.Value;
             user.UpdatedAtUtc = DateTime.UtcNow;
@@ -193,7 +218,7 @@ namespace RESK.WIL.Controllers.API
         [Required]
         public string PhysicalAddress { get; set; } = string.Empty;
 
-        [Required]
+        [Required, MinLength(8)]
         public string Password { get; set; } = string.Empty;
     }
 

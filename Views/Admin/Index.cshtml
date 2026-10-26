@@ -26,6 +26,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="stylesheet" href="~/css/theme.css" asp-append-version="true" />
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
@@ -43,8 +44,8 @@
             min-height: 100%;
             font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI",
                 Roboto, Arial, sans-serif;
-            background: #f5f7fa;
-            color: #17233b;
+            background: var(--resk-surface);
+            color: var(--resk-navy-800);
         }
 
         body {
@@ -77,8 +78,8 @@
             width: 260px;
             min-height: 100vh;
             padding: 37px 20px 38px;
-            background: #0d172b;
-            color: #ffffff;
+            background: var(--resk-navy-900);
+            color: var(--resk-white);
             display: flex;
             flex-direction: column;
             z-index: 100;
@@ -95,19 +96,19 @@
         .brand-logo {
             width: 56px;
             height: 56px;
-            border: 2px solid #12b9cb;
+            border: 2px solid var(--resk-cyan);
             border-radius: 17px;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #12b9cb;
+            color: var(--resk-cyan);
             font-size: 27px;
             font-weight: 800;
             flex-shrink: 0;
         }
 
         .brand-name {
-            color: #ffffff;
+            color: var(--resk-white);
             font-size: 24px;
             line-height: 1;
             font-weight: 800;
@@ -148,13 +149,13 @@
         }
 
         .nav-link:hover {
-            color: #ffffff;
+            color: var(--resk-white);
             background: rgba(255,255,255,.055);
             transform: translateX(2px);
         }
 
         .nav-link.active {
-            color: #ffffff;
+            color: var(--resk-white);
             background: #142847;
             font-weight: 700;
         }
@@ -194,7 +195,7 @@
             flex: 0 0 34px;
             border-radius: 50%;
             background: rgba(18,185,203,.12);
-            color: #12b9cb;
+            color: var(--resk-cyan);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -208,7 +209,7 @@
         }
 
         .admin-name {
-            color: #ffffff;
+            color: var(--resk-white);
             font-size: 13px;
             font-weight: 700;
         }
@@ -271,7 +272,7 @@
 
         .admin-menu-item:hover {
             background: rgba(255,255,255,.06);
-            color: #ffffff;
+            color: var(--resk-white);
         }
 
         .admin-menu-divider {
@@ -289,7 +290,7 @@
         }
 
         .admin-menu-item.logout:hover {
-            color: #ffffff;
+            color: var(--resk-white);
             background: rgba(216,92,103,.16);
         }
 
@@ -323,7 +324,7 @@
         }
 
         .page-title {
-            color: #17233b;
+            color: var(--resk-navy-800);
             font-size: 32px;
             line-height: 1.1;
             font-weight: 750;
@@ -347,8 +348,8 @@
             padding: 0 20px;
             border: 1px solid #d7dfeb;
             border-radius: 9px;
-            background: #ffffff;
-            color: #17233b;
+            background: var(--resk-white);
+            color: var(--resk-navy-800);
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -364,13 +365,13 @@
         }
 
         .btn-primary {
-            border-color: #12b9cb;
-            background: #12b9cb;
-            color: #ffffff;
+            border-color: var(--resk-cyan);
+            background: var(--resk-cyan);
+            color: var(--resk-white);
         }
 
         .btn-primary:hover {
-            background: #0faabd;
+            background: var(--resk-cyan-dark);
         }
 
         /* =========================================================
@@ -389,7 +390,7 @@
             padding: 21px 22px;
             border: 1px solid #dce3ed;
             border-radius: 14px;
-            background: #ffffff;
+            background: var(--resk-white);
             box-shadow: 0 1px 2px rgba(15,23,42,.015);
         }
 
@@ -412,8 +413,8 @@
             width: 33px;
             height: 33px;
             border-radius: 9px;
-            background: #eaf9fb;
-            color: #12b9cb;
+            background: var(--resk-cyan-soft);
+            color: var(--resk-cyan);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -423,7 +424,7 @@
 
         .stat-value {
             margin-top: 15px;
-            color: #17233b;
+            color: var(--resk-navy-800);
             font-size: 32px;
             line-height: 1;
             font-weight: 750;
@@ -449,14 +450,14 @@
         .card {
             border: 1px solid #dce3ed;
             border-radius: 14px;
-            background: #ffffff;
+            background: var(--resk-white);
             overflow: hidden;
         }
 
         .card-header {
             min-height: 67px;
             padding: 17px 21px;
-            border-bottom: 1px solid #e8edf3;
+            border-bottom: 1px solid var(--resk-border-soft);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -464,7 +465,7 @@
         }
 
         .card-title {
-            color: #17233b;
+            color: var(--resk-navy-800);
             font-size: 16px;
             font-weight: 750;
         }
@@ -507,7 +508,7 @@
         }
 
         .proposal-number {
-            color: #17233b;
+            color: var(--resk-navy-800);
             font-size: 26px;
             font-weight: 750;
         }
@@ -523,7 +524,7 @@
             height: 3px;
             margin-top: 15px;
             border-radius: 10px;
-            background: #12b9cb;
+            background: var(--resk-cyan);
         }
 
         .status-line.pending {
@@ -571,8 +572,8 @@
             height: 34px;
             flex: 0 0 34px;
             border-radius: 9px;
-            background: #eaf9fb;
-            color: #12b9cb;
+            background: var(--resk-cyan-soft);
+            color: var(--resk-cyan);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -581,7 +582,7 @@
         }
 
         .quick-title {
-            color: #17233b;
+            color: var(--resk-navy-800);
             font-size: 11.5px;
             font-weight: 750;
         }
@@ -642,7 +643,7 @@
         }
 
         .proposal-title {
-            color: #17233b;
+            color: var(--resk-navy-800);
             font-size: 11.5px;
             font-weight: 700;
         }
@@ -715,7 +716,7 @@
             flex: 0 0 35px;
             border-radius: 50%;
             background: #28466f;
-            color: #ffffff;
+            color: var(--resk-white);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -729,7 +730,7 @@
         }
 
         .pending-user-name {
-            color: #17233b;
+            color: var(--resk-navy-800);
             font-size: 11px;
             font-weight: 750;
         }
@@ -836,6 +837,8 @@
 </head>
 
 <body>
+<a class="resk-skip-link" href="#main-content">Skip to main content</a>
+
 
 <div class="app">
 
@@ -966,7 +969,7 @@
     <!-- =========================================================
          MAIN CONTENT
          ========================================================= -->
-    <main class="main">
+    <main id="main-content" tabindex="-1" class="main">
 
         <div class="content">
 

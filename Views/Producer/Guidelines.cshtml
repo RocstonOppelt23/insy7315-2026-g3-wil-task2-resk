@@ -16,6 +16,7 @@
 <html lang="en">
 
 <head>
+    <link rel="stylesheet" href="~/css/theme.css" asp-append-version="true" />
 
     <meta charset="utf-8" />
 
@@ -39,8 +40,8 @@
 
         body {
             font-family: Inter, "Segoe UI", Arial, sans-serif;
-            background: #f4f7fb;
-            color: #14233e;
+            background: var(--resk-surface);
+            color: var(--resk-navy-800);
         }
 
         button,
@@ -66,7 +67,7 @@
 
             padding: 37px 20px 38px;
 
-            background: #0c1a33;
+            background: var(--resk-navy-900);
             color: white;
 
             z-index: 100;
@@ -94,10 +95,10 @@
             align-items: center;
             justify-content: center;
 
-            border: 2px solid #00b9d0;
+            border: 2px solid var(--resk-cyan);
             border-radius: 17px;
 
-            color: #00bfd7;
+            color: var(--resk-cyan);
 
             font-size: 28px;
             font-weight: 800;
@@ -115,7 +116,7 @@
         .brand-subtitle {
             margin-top: 5px;
 
-            color: #d3dae7;
+            color: var(--resk-border-mid);
 
             font-size: 9px;
         }
@@ -128,7 +129,7 @@
         .nav-label {
             margin: 0 12px 8px;
 
-            color: #72809a;
+            color: var(--resk-text-muted);
 
             font-size: 10px;
             font-weight: 800;
@@ -150,7 +151,7 @@
 
             border-radius: 10px;
 
-            color: #b9c2d1;
+            color: var(--resk-border-strong);
 
             font-size: 14px;
             font-weight: 500;
@@ -168,7 +169,7 @@
         }
 
         .sidebar-link.active {
-            background: #142a4b;
+            background: var(--resk-navy-700);
             color: white;
 
             font-weight: 700;
@@ -195,7 +196,7 @@
 
             border-radius: 11px;
 
-            background: #142a4b;
+            background: var(--resk-navy-700);
         }
 
         .producer-avatar {
@@ -210,7 +211,7 @@
 
             border-radius: 50%;
 
-            background: #0bb6ca;
+            background: var(--resk-cyan);
             color: white;
 
             font-size: 11px;
@@ -236,7 +237,7 @@
         .producer-role {
             margin-top: 4px;
 
-            color: #b5c0d1;
+            color: var(--resk-border-strong);
 
             font-size: 10px;
         }
@@ -253,7 +254,7 @@
 
             padding: 29px 48px 45px;
 
-            background: #f4f7fb;
+            background: var(--resk-surface);
         }
 
         .page {
@@ -279,7 +280,7 @@
         }
 
         .page-title {
-            color: #14233e;
+            color: var(--resk-navy-800);
 
             font-size: 31px;
             line-height: 1.15;
@@ -289,7 +290,7 @@
         .page-subtitle {
             margin-top: 9px;
 
-            color: #687995;
+            color: var(--resk-text-muted);
 
             font-size: 14px;
         }
@@ -321,7 +322,7 @@
         }
 
         .top-start-button.enabled {
-            background: #15b4c8;
+            background: var(--resk-cyan);
             cursor: pointer;
         }
 
@@ -347,7 +348,7 @@
             border: 1px solid #8edee8;
             border-radius: 13px;
 
-            background: #eefbfc;
+            background: var(--resk-cyan-soft);
         }
 
         .info-circle {
@@ -370,7 +371,7 @@
         }
 
         .before-title {
-            color: #14233e;
+            color: var(--resk-navy-800);
 
             font-size: 17px;
             font-weight: 800;
@@ -430,7 +431,7 @@
         }
 
         .panel-title {
-            color: #14233e;
+            color: var(--resk-navy-800);
 
             font-size: 20px;
             font-weight: 800;
@@ -469,7 +470,7 @@
             border: 1px solid #dce4ee;
             border-radius: 10px;
 
-            background: #f7f9fc;
+            background: var(--resk-surface-alt);
         }
 
         .requirement-number {
@@ -484,7 +485,7 @@
 
             border-radius: 50%;
 
-            background: #15b4c8;
+            background: var(--resk-cyan);
             color: white;
 
             font-size: 12px;
@@ -492,7 +493,7 @@
         }
 
         .requirement-title {
-            color: #14233e;
+            color: var(--resk-navy-800);
 
             font-size: 13px;
             font-weight: 800;
@@ -501,7 +502,7 @@
         .requirement-description {
             margin-top: 6px;
 
-            color: #687995;
+            color: var(--resk-text-muted);
 
             font-size: 11px;
             line-height: 1.4;
@@ -552,7 +553,7 @@
             border: 1px solid #dce4ee;
             border-radius: 9px;
 
-            background: #f7f9fc;
+            background: var(--resk-surface-alt);
 
             color: #253650;
 
@@ -579,8 +580,8 @@
         }
 
         .check-box.checked {
-            border-color: #15b4c8;
-            background: #15b4c8;
+            border-color: var(--resk-cyan);
+            background: var(--resk-cyan);
         }
 
 
@@ -591,7 +592,7 @@
         .tips-title {
             margin-top: 28px;
 
-            color: #14233e;
+            color: var(--resk-navy-800);
 
             font-size: 18px;
             font-weight: 800;
@@ -619,11 +620,11 @@
             border: 1px solid #8edee8;
             border-radius: 9px;
 
-            background: #eefbfc;
+            background: var(--resk-cyan-soft);
         }
 
         .support-title {
-            color: #14233e;
+            color: var(--resk-navy-800);
 
             font-size: 11px;
             font-weight: 800;
@@ -671,7 +672,7 @@
 
             margin-top: 1px;
 
-            accent-color: #15b4c8;
+            accent-color: var(--resk-cyan);
 
             cursor: pointer;
         }
@@ -688,7 +689,7 @@
 
             margin-bottom: 3px;
 
-            color: #14233e;
+            color: var(--resk-navy-800);
 
             font-size: 13px;
         }
@@ -732,7 +733,7 @@
         }
 
         .start-button.enabled {
-            background: #15b4c8;
+            background: var(--resk-cyan);
             cursor: pointer;
         }
 
@@ -784,6 +785,8 @@
 
 
 <body>
+    <a class="resk-skip-link" href="#main-content">Skip to main content</a>
+
 
 
     <!-- =========================================================
@@ -885,17 +888,17 @@
         <style>
             .producer-account:not(.resk-account), .sidebar > .producer-profile { display: none !important; }
             .resk-account { position: relative; margin-top: auto; padding: 0 8px; }
-            .resk-profile { width: 100%; display: flex; align-items: center; gap: 11px; padding: 12px 10px; border: none; border-radius: 11px; background: #142a4b; color: #ffffff; cursor: pointer; text-align: left; font-family: inherit; }
-            .resk-profile:hover { background: #193456; }
-            .resk-avatar { width: 34px; height: 34px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 50%; background: #0bb6ca; color: #ffffff; font-size: 11px; font-weight: 800; }
+            .resk-profile { width: 100%; display: flex; align-items: center; gap: 11px; padding: 12px 10px; border: none; border-radius: 11px; background: var(--resk-navy-700); color: var(--resk-white); cursor: pointer; text-align: left; font-family: inherit; }
+            .resk-profile:hover { background: var(--resk-navy-700); }
+            .resk-avatar { width: 34px; height: 34px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 50%; background: var(--resk-cyan); color: var(--resk-white); font-size: 11px; font-weight: 800; }
             .resk-text { min-width: 0; flex: 1; }
-            .resk-name { overflow: hidden; color: #ffffff; font-size: 13px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
-            .resk-role { margin-top: 4px; color: #b5c0d1; font-size: 10px; }
-            .resk-menu { position: absolute; left: 8px; right: 8px; bottom: calc(100% + 9px); z-index: 10; padding: 7px; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; background: #142a4b; box-shadow: 0 18px 35px rgba(0,0,0,0.25); opacity: 0; visibility: hidden; transform: translateY(8px); transition: 0.2s; }
+            .resk-name { overflow: hidden; color: var(--resk-white); font-size: 13px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+            .resk-role { margin-top: 4px; color: var(--resk-border-strong); font-size: 10px; }
+            .resk-menu { position: absolute; left: 8px; right: 8px; bottom: calc(100% + 9px); z-index: 10; padding: 7px; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; background: var(--resk-navy-700); box-shadow: 0 18px 35px rgba(0,0,0,0.25); opacity: 0; visibility: hidden; transform: translateY(8px); transition: 0.2s; }
             .resk-account.open .resk-menu { opacity: 1; visibility: visible; transform: translateY(0); }
-            .resk-menu-link, .resk-logout { width: 100%; display: block; padding: 10px 11px; border: none; border-radius: 7px; background: transparent; color: #d6deea; font-family: inherit; font-size: 12px; font-weight: 600; text-align: left; text-decoration: none; cursor: pointer; }
-            .resk-menu-link:hover, .resk-logout:hover { background: rgba(255,255,255,0.06); color: #ffffff; }
-            .resk-logout { color: #ff9e9e; }
+            .resk-menu-link, .resk-logout { width: 100%; display: block; padding: 10px 11px; border: none; border-radius: 7px; background: transparent; color: var(--resk-border); font-family: inherit; font-size: 12px; font-weight: 600; text-align: left; text-decoration: none; cursor: pointer; }
+            .resk-menu-link:hover, .resk-logout:hover { background: rgba(255,255,255,0.06); color: var(--resk-white); }
+            .resk-logout { color: var(--resk-danger-light); }
             .resk-divider { height: 1px; margin: 5px 4px; background: rgba(255,255,255,0.08); }
         </style>
 
@@ -952,7 +955,7 @@
          MAIN
     ========================================================= -->
 
-    <main class="main">
+    <main id="main-content" tabindex="-1" class="main">
 
         <div class="page">
 

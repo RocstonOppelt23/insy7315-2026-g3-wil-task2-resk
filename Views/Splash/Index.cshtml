@@ -19,6 +19,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="stylesheet" href="~/css/theme.css" asp-append-version="true" />
     <meta charset="utf-8" />
 
     <meta name="viewport"
@@ -45,13 +46,13 @@
         }
 
         html {
-            background: #0d172b;
+            background: var(--resk-navy-900);
         }
 
         body {
             overflow: hidden;
             font-family: "Segoe UI", Arial, sans-serif;
-            background: #0d172b;
+            background: var(--resk-navy-900);
         }
 
 
@@ -71,7 +72,7 @@
 
             overflow: hidden;
 
-            background: #0d172b;
+            background: var(--resk-navy-900);
 
             opacity: 1;
             transform: scale(1);
@@ -265,12 +266,12 @@
             align-items: center;
             justify-content: center;
 
-            border: 2px solid #12b9cb;
+            border: 2px solid var(--resk-cyan);
             border-radius: 17px;
 
             background: rgba(18, 185, 203, 0.025);
 
-            color: #12b9cb;
+            color: var(--resk-cyan);
 
             font-size: 31px;
             font-weight: 500;
@@ -296,7 +297,7 @@
         }
 
         .logo-name {
-            color: #ffffff;
+            color: var(--resk-white);
             font-size: 28px;
             font-weight: 800;
             letter-spacing: 1.5px;
@@ -336,7 +337,7 @@
             height: 38px;
 
             border: 3px solid rgba(255, 255, 255, 0.10);
-            border-top-color: #12b9cb;
+            border-top-color: var(--resk-cyan);
             border-right-color: rgba(18, 185, 203, 0.55);
 
             border-radius: 50%;
@@ -481,9 +482,11 @@
 </head>
 
 <body>
+    <a class="resk-skip-link" href="#splashScreen">Skip to main content</a>
+
 
     <main id="splashScreen"
-          class="splash-screen">
+          class="splash-screen" tabindex="-1">
 
         <!-- =====================================================
              MOVING BACKGROUND CIRCLES

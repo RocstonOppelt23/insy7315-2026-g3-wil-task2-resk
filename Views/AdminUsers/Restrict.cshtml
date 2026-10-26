@@ -16,35 +16,35 @@
 
 @section Styles {
     <style>
-        .who { display: flex; align-items: center; gap: 18px; margin-top: 22px; padding: 18px 20px; border: 1px solid #e3e9f0; border-radius: 11px; background: #f7f9fc; }
-        .who-avatar { width: 52px; height: 52px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: #ffffff; font-size: 15px; font-weight: 800; line-height: 1; }
-        .who strong { display: block; color: #14233e; font-size: 15px; }
-        .who small { display: block; margin-top: 4px; color: #6d7e99; font-size: 12px; }
+        .who { display: flex; align-items: center; gap: 18px; margin-top: 22px; padding: 18px 20px; border: 1px solid #e3e9f0; border-radius: 11px; background: var(--resk-surface-alt); }
+        .who-avatar { width: 52px; height: 52px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: var(--resk-white); font-size: 15px; font-weight: 800; line-height: 1; }
+        .who strong { display: block; color: var(--resk-navy-800); font-size: 15px; }
+        .who small { display: block; margin-top: 4px; color: var(--resk-text-muted); font-size: 12px; }
 
         .choices { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 26px; }
-        .choice { position: relative; display: block; padding: 18px 20px 18px 52px; border: 1px solid #dde4ee; border-radius: 11px; background: white; cursor: pointer; transition: border-color 0.2s, background 0.2s; }
-        .choice input { position: absolute; left: 20px; top: 21px; width: 17px; height: 17px; accent-color: #12b8ce; }
-        .choice strong { display: block; color: #14233e; font-size: 14px; }
-        .choice small { display: block; margin-top: 6px; color: #6d7e99; font-size: 12px; line-height: 1.5; }
-        .choice:hover { border-color: #b9c6d8; }
-        .choice:has(input:checked) { border-color: #12b8ce; background: #eefafc; }
-        .choice.ban input { accent-color: #c9444d; }
+        .choice { position: relative; display: block; padding: 18px 20px 18px 52px; border: 1px solid var(--resk-border); border-radius: 11px; background: white; cursor: pointer; transition: border-color 0.2s, background 0.2s; }
+        .choice input { position: absolute; left: 20px; top: 21px; width: 17px; height: 17px; accent-color: var(--resk-cyan); }
+        .choice strong { display: block; color: var(--resk-navy-800); font-size: 14px; }
+        .choice small { display: block; margin-top: 6px; color: var(--resk-text-muted); font-size: 12px; line-height: 1.5; }
+        .choice:hover { border-color: var(--resk-border-strong); }
+        .choice:has(input:checked) { border-color: var(--resk-cyan); background: var(--resk-cyan-soft); }
+        .choice.ban input { accent-color: var(--resk-danger); }
         .choice.ban:has(input:checked) { border-color: #e7a3a8; background: #fdf0f1; }
 
         .group { margin-top: 24px; }
         .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
         textarea.input { height: auto; min-height: 110px; padding: 12px 14px; line-height: 1.5; resize: vertical; }
-        .field-error { display: block; margin-top: 6px; color: #c9444d; font-size: 11px; font-weight: 600; }
-        .hint { margin-top: 8px; color: #6d7e99; font-size: 11px; line-height: 1.5; }
+        .field-error { display: block; margin-top: 6px; color: var(--resk-danger); font-size: 11px; font-weight: 600; }
+        .hint { margin-top: 8px; color: var(--resk-text-muted); font-size: 11px; line-height: 1.5; }
 
         .notice { margin-top: 24px; padding: 14px 18px; border-radius: 10px; font-size: 12px; line-height: 1.6; }
-        .notice.amber { border: 1px solid #f3dca0; background: #fff8e6; color: #8a5d00; }
-        .notice.red { border: 1px solid #f0c2c5; background: #fde9ea; color: #a8323b; }
+        .notice.amber { border: 1px solid var(--resk-warning-border); background: var(--resk-warning-soft); color: var(--resk-warning-dark); }
+        .notice.red { border: 1px solid var(--resk-danger-border); background: var(--resk-danger-soft); color: #a8323b; }
         .notice ul { margin: 6px 0 0 18px; }
 
-        .danger-button { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 24px; border: none; border-radius: 8px; background: #c9444d; color: white; font-size: 13px; font-weight: 800; cursor: pointer; }
+        .danger-button { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 24px; border: none; border-radius: 8px; background: var(--resk-danger); color: white; font-size: 13px; font-weight: 800; cursor: pointer; }
         .danger-button:hover { background: #b23a42; }
-        .amber-button { background: #d39a12; }
+        .amber-button { background: var(--resk-warning); }
         .amber-button:hover { background: #bd8a0f; }
 
         [hidden] { display: none !important; }

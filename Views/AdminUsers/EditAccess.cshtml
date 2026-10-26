@@ -12,17 +12,17 @@
 @section Styles {
     <style>
         .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px 24px; margin-top: 24px; }
-        .field-error { display: block; margin-top: 6px; color: #c9444d; font-size: 11px; font-weight: 600; }
-        .hint { margin-top: 7px; color: #8493aa; font-size: 11px; line-height: 1.5; }
-        .warning { margin-top: 30px; padding: 20px 22px; border: 1px solid #f3dca0; border-radius: 11px; background: #fff8e6; }
-        .warning strong { display: block; color: #8a5d00; font-size: 13px; }
-        .warning span { display: block; margin-top: 8px; color: #9a6a00; font-size: 12px; }
-        .block-title { margin-top: 30px; color: #14233e; font-size: 18px; font-weight: 800; }
-        .block-sub { margin-top: 5px; color: #6d7e99; font-size: 12px; }
+        .field-error { display: block; margin-top: 6px; color: var(--resk-danger); font-size: 11px; font-weight: 600; }
+        .hint { margin-top: 7px; color: var(--resk-text-faint); font-size: 11px; line-height: 1.5; }
+        .warning { margin-top: 30px; padding: 20px 22px; border: 1px solid var(--resk-warning-border); border-radius: 11px; background: var(--resk-warning-soft); }
+        .warning strong { display: block; color: var(--resk-warning-dark); font-size: 13px; }
+        .warning span { display: block; margin-top: 8px; color: var(--resk-warning-dark); font-size: 12px; }
+        .block-title { margin-top: 30px; color: var(--resk-navy-800); font-size: 18px; font-weight: 800; }
+        .block-sub { margin-top: 5px; color: var(--resk-text-muted); font-size: 12px; }
         .preview { display: flex; flex-direction: column; gap: 10px; margin-top: 18px; list-style: none; }
-        .preview li { padding: 11px 18px; border-radius: 8px; background: #f7f9fc; color: #14233e; font-size: 12px; }
-        .preview li::before { content: "✓  "; color: #0a9fb2; font-weight: 800; }
-        .preview li.none { color: #8493aa; }
+        .preview li { padding: 11px 18px; border-radius: 8px; background: var(--resk-surface-alt); color: var(--resk-navy-800); font-size: 12px; }
+        .preview li::before { content: "✓  "; color: var(--resk-cyan-dark); font-weight: 800; }
+        .preview li.none { color: var(--resk-text-faint); }
         .preview li.none::before { content: ""; }
 
         @@media (max-width: 800px) {
@@ -116,7 +116,7 @@
                     {
                         <p class="hint">
                             Suspended and Banned sign the user out and block sign-in until you set Active again.
-                            For a suspension with an end date, use <a href="/Admin/Users/@Model.UserId/Restrict?mode=suspend" style="color:#00a9bd;font-weight:700;">Suspend temporarily</a>.
+                            For a suspension with an end date, use <a href="/Admin/Users/@Model.UserId/Restrict?mode=suspend" style="color:var(--resk-cyan-dark);font-weight:700;">Suspend temporarily</a>.
                         </p>
                     }
                 }

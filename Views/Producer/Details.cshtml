@@ -19,6 +19,7 @@
 <html lang="en">
 
 <head>
+    <link rel="stylesheet" href="~/css/theme.css" asp-append-version="true" />
 
     <meta charset="utf-8" />
 
@@ -42,8 +43,8 @@
 
         body {
             font-family: Inter, "Segoe UI", Arial, sans-serif;
-            background: #f4f7fb;
-            color: #13223c;
+            background: var(--resk-surface);
+            color: var(--resk-navy-800);
         }
 
 
@@ -97,7 +98,7 @@
             width: 260px;
             display: flex;
             flex-direction: column;
-            background: #0c1a33;
+            background: var(--resk-navy-900);
             color: white;
             padding: 36px 20px 38px;
             z-index: 100;
@@ -117,9 +118,9 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            border: 2px solid #00b9d0;
+            border: 2px solid var(--resk-cyan);
             border-radius: 17px;
-            color: #00bfd7;
+            color: var(--resk-cyan);
             font-size: 28px;
             font-weight: 700;
         }
@@ -133,13 +134,13 @@
 
         .brand-subtitle {
             margin-top: 5px;
-            color: #d3dae7;
+            color: var(--resk-border-mid);
             font-size: 9px;
         }
 
         .nav-label {
             margin: 0 12px 8px;
-            color: #72809a;
+            color: var(--resk-text-muted);
             font-size: 10px;
             font-weight: 800;
         }
@@ -156,7 +157,7 @@
             min-height: 43px;
             padding: 0 32px;
             border-radius: 10px;
-            color: #b9c2d1;
+            color: var(--resk-border-strong);
             font-size: 14px;
             font-weight: 500;
             text-decoration: none;
@@ -170,7 +171,7 @@
         }
 
         .sidebar-link.active {
-            background: #142a4b;
+            background: var(--resk-navy-700);
             color: white;
             font-weight: 700;
         }
@@ -194,14 +195,14 @@
             padding: 12px 10px;
             border: none;
             border-radius: 11px;
-            background: #142a4b;
+            background: var(--resk-navy-700);
             color: white;
             cursor: pointer;
             text-align: left;
         }
 
         .producer-profile:hover {
-            background: #193456;
+            background: var(--resk-navy-700);
         }
 
         .producer-avatar {
@@ -212,7 +213,7 @@
             align-items: center;
             justify-content: center;
             border-radius: 50%;
-            background: #0bb6ca;
+            background: var(--resk-cyan);
             color: white;
             font-size: 11px;
             font-weight: 800;
@@ -234,7 +235,7 @@
 
         .producer-role {
             margin-top: 4px;
-            color: #b5c0d1;
+            color: var(--resk-border-strong);
             font-size: 10px;
         }
 
@@ -246,7 +247,7 @@
             padding: 7px;
             border: 1px solid rgba(255,255,255,0.08);
             border-radius: 10px;
-            background: #142a4b;
+            background: var(--resk-navy-700);
             box-shadow: 0 18px 35px rgba(0,0,0,0.25);
             opacity: 0;
             visibility: hidden;
@@ -268,7 +269,7 @@
             border: none;
             border-radius: 7px;
             background: transparent;
-            color: #d6deea;
+            color: var(--resk-border);
             font-size: 12px;
             font-weight: 600;
             text-align: left;
@@ -283,7 +284,7 @@
         }
 
         .logout-button {
-            color: #ff9e9e;
+            color: var(--resk-danger-light);
         }
 
         .menu-divider {
@@ -312,7 +313,7 @@
         .back-link {
             display: inline-block;
             margin-bottom: 16px;
-            color: #00a9bd;
+            color: var(--resk-cyan-dark);
             font-size: 12px;
             font-weight: 700;
             text-decoration: none;
@@ -331,7 +332,7 @@
         }
 
         .page-header h1 {
-            color: #14233e;
+            color: var(--resk-navy-800);
             font-size: 31px;
             line-height: 1.2;
             font-weight: 800;
@@ -340,7 +341,7 @@
 
         .page-header p {
             margin-top: 8px;
-            color: #697a96;
+            color: var(--resk-text-muted);
             font-size: 14px;
         }
 
@@ -361,24 +362,24 @@
         }
 
         .status-draft {
-            background: #eef2f7;
-            color: #5b6b85;
+            background: var(--resk-surface-2);
+            color: var(--resk-text-soft);
         }
 
         .status-review {
-            background: #fdf1d6;
-            color: #c77c00;
+            background: var(--resk-warning-soft);
+            color: var(--resk-warning);
         }
 
         .status-approved {
-            background: #e3f5ec;
-            color: #1f8a5c;
+            background: var(--resk-success-soft);
+            color: var(--resk-success);
         }
 
         .status-changes,
         .status-rejected {
-            background: #fde7e8;
-            color: #c9444d;
+            background: var(--resk-danger-soft);
+            color: var(--resk-danger);
         }
 
 
@@ -389,20 +390,20 @@
         .card {
             margin-bottom: 18px;
             padding: 22px 24px;
-            border: 1px solid #d9e1ec;
+            border: 1px solid var(--resk-border);
             border-radius: 13px;
             background: white;
         }
 
         .card-title {
-            color: #14233e;
+            color: var(--resk-navy-800);
             font-size: 16px;
             font-weight: 800;
         }
 
         .card-subtitle {
             margin-top: 5px;
-            color: #6d7e99;
+            color: var(--resk-text-muted);
             font-size: 11px;
         }
 
@@ -418,13 +419,13 @@
 
         .summary-item {
             padding: 18px 20px;
-            border: 1px solid #d9e1ec;
+            border: 1px solid var(--resk-border);
             border-radius: 13px;
             background: white;
         }
 
         .summary-label {
-            color: #61728d;
+            color: var(--resk-text-soft);
             font-size: 11px;
             font-weight: 800;
             text-transform: uppercase;
@@ -432,7 +433,7 @@
 
         .summary-value {
             margin-top: 9px;
-            color: #12213b;
+            color: var(--resk-navy-800);
             font-size: 15px;
             font-weight: 800;
             overflow-wrap: anywhere;
@@ -470,7 +471,7 @@
 
         .step.done + .step::before,
         .step.done + .step.done::before {
-            background: #12b8ce;
+            background: var(--resk-cyan);
         }
 
         .step-dot {
@@ -481,7 +482,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            border: 2px solid #d3ddea;
+            border: 2px solid var(--resk-border-mid);
             border-radius: 50%;
             background: white;
             color: #8190a6;
@@ -490,26 +491,26 @@
         }
 
         .step.done .step-dot {
-            border-color: #12b8ce;
-            background: #12b8ce;
+            border-color: var(--resk-cyan);
+            background: var(--resk-cyan);
             color: white;
         }
 
         .step.current .step-dot {
-            border-color: #12b8ce;
-            color: #0a9fb2;
+            border-color: var(--resk-cyan);
+            color: var(--resk-cyan-dark);
             box-shadow: 0 0 0 5px rgba(18,184,206,0.14);
         }
 
         .step-label {
-            color: #6d7e99;
+            color: var(--resk-text-muted);
             font-size: 11px;
             font-weight: 700;
         }
 
         .step.done .step-label,
         .step.current .step-label {
-            color: #14233e;
+            color: var(--resk-navy-800);
         }
 
 
@@ -531,7 +532,7 @@
             grid-template-columns: 190px minmax(0, 1fr);
             gap: 16px;
             padding: 12px 0;
-            border-top: 1px solid #edf1f6;
+            border-top: 1px solid var(--resk-surface-2);
         }
 
         .field:first-child {
@@ -539,13 +540,13 @@
         }
 
         .field dt {
-            color: #61728d;
+            color: var(--resk-text-soft);
             font-size: 12px;
             font-weight: 700;
         }
 
         .field dd {
-            color: #14233e;
+            color: var(--resk-navy-800);
             font-size: 13px;
             line-height: 1.6;
             white-space: pre-wrap;
@@ -567,9 +568,9 @@
             align-items: center;
             gap: 12px;
             padding: 12px 13px;
-            border: 1px solid #dde4ee;
+            border: 1px solid var(--resk-border);
             border-radius: 10px;
-            background: #f7f9fc;
+            background: var(--resk-surface-alt);
         }
 
         .file-badge {
@@ -580,8 +581,8 @@
             align-items: center;
             justify-content: center;
             border-radius: 8px;
-            background: #eefbfc;
-            color: #0a9fb2;
+            background: var(--resk-cyan-soft);
+            color: var(--resk-cyan-dark);
             font-size: 9px;
             font-weight: 800;
             text-transform: uppercase;
@@ -593,14 +594,14 @@
         }
 
         .file-label {
-            color: #6d7e99;
+            color: var(--resk-text-muted);
             font-size: 10px;
             font-weight: 700;
         }
 
         .file-name {
             margin-top: 3px;
-            color: #14233e;
+            color: var(--resk-navy-800);
             font-size: 12px;
             font-weight: 700;
             overflow: hidden;
@@ -610,7 +611,7 @@
 
         .file-download {
             flex-shrink: 0;
-            color: #00a9bd;
+            color: var(--resk-cyan-dark);
             font-size: 11px;
             font-weight: 800;
             text-decoration: none;
@@ -622,14 +623,14 @@
 
         .muted {
             margin-top: 14px;
-            color: #8493aa;
+            color: var(--resk-text-faint);
             font-size: 12px;
         }
 
         .showreel {
             display: inline-block;
             margin-top: 12px;
-            color: #00a9bd;
+            color: var(--resk-cyan-dark);
             font-size: 12px;
             font-weight: 700;
             overflow-wrap: anywhere;
@@ -704,6 +705,8 @@
 
 
 <body>
+    <a class="resk-skip-link" href="#main-content">Skip to main content</a>
+
 
 
     <!-- =========================================================
@@ -824,7 +827,7 @@
          MAIN
     ========================================================== -->
 
-    <main class="main">
+    <main id="main-content" tabindex="-1" class="main">
 
         <div class="page">
 

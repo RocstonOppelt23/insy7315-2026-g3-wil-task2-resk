@@ -4,7 +4,9 @@ using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Models;
 using RESK.WIL.Data;
+using RESK.WIL.Models;
 using RESK.WIL.Security;
 using RESK.WIL.Services;
 
@@ -116,6 +118,84 @@ builder.Services.ConfigureApplicationCookie(options =>
 
     options.AccessDeniedPath =
         "/Account/AccessDenied";
+
+
+    // API calls get 401 / 403 instead of being redirected to
+    // an HTML page (the body is filled in as problem details).
+
+    options.Events.OnRedirectToLogin = context =>
+    {
+        if (context.Request.Path.StartsWithSegments("/api"))
+        {
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+        }
+        else
+        {
+            context.Response.Redirect(context.RedirectUri);
+        }
+
+        return Task.CompletedTask;
+    };
+
+    options.Events.OnRedirectToAccessDenied = context =>
+    {
+        if (context.Request.Path.StartsWithSegments("/api"))
+        {
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+        }
+        else
+        {
+            context.Response.Redirect(context.RedirectUri);
+        }
+
+        return Task.CompletedTask;
+    };
+});
+
+
+// =====================================================
+// API: ERRORS, RATE LIMITS, SWAGGER DOCS
+// =====================================================
+
+// One error format for the whole API: RFC 7807 problem details
+// (see Controllers/API/ApiControllerBase.cs).
+builder.Services.AddProblemDetails();
+
+// 60 API requests / minute and 10 sign-in attempts / minute per IP.
+builder.Services.AddReskRateLimiting(builder.Configuration);
+
+// The users API hashes passwords for the domain User table.
+builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
+
+// OpenAPI document at /swagger/v1/swagger.json, UI at /swagger.
+builder.Services.AddEndpointsApiExplorer();
+
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "R.E.S.K Proposal Workflow API",
+        Version = "v1",
+        Description =
+            "JSON API for Cape Town TV programme proposals. " +
+            "Sign in through the website first - the API uses the same sign-in cookie. " +
+            "Errors use RFC 7807 problem details. " +
+            "Requests are rate limited per IP address (HTTP 429 with Retry-After)."
+    });
+
+    // Only the /api controllers, not the MVC pages.
+    options.DocInclusionPredicate((_, api) =>
+        api.RelativePath?.StartsWith("api/", StringComparison.OrdinalIgnoreCase) == true);
+
+    // Use the /// comments on the controllers as descriptions.
+    string xmlFile = Path.Combine(
+        AppContext.BaseDirectory,
+        typeof(Program).Assembly.GetName().Name + ".xml");
+
+    if (File.Exists(xmlFile))
+    {
+        options.IncludeXmlComments(xmlFile);
+    }
 });
 
 
@@ -270,10 +350,25 @@ if (app.Environment.IsDevelopment())
 }
 else
 {
-    app.UseExceptionHandler("/Home/Error");
+    // Pages show the friendly error page; the API returns a
+    // problem-details JSON body instead of HTML.
+
+    app.UseWhen(
+        context => context.Request.Path.StartsWithSegments("/api"),
+        api => api.UseExceptionHandler());
+
+    app.UseWhen(
+        context => !context.Request.Path.StartsWithSegments("/api"),
+        web => web.UseExceptionHandler("/Home/Error"));
 
     app.UseHsts();
 }
+
+// Empty API error responses (401, 403, 404 ...) get a
+// problem-details body too.
+app.UseWhen(
+    context => context.Request.Path.StartsWithSegments("/api"),
+    api => api.UseStatusCodePages());
 
 
 // =====================================================
@@ -325,6 +420,24 @@ app.UseHealthChecks("/health", new HealthCheckOptions
 // =====================================================
 
 app.UseRouting();
+
+
+// =====================================================
+// RATE LIMITING + API DOCS
+// =====================================================
+
+app.UseRateLimiter();
+
+if (app.Configuration.GetValue("Swagger:Enabled", true))
+{
+    app.UseSwagger();
+
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "R.E.S.K API v1");
+        options.DocumentTitle = "R.E.S.K API";
+    });
+}
 
 
 // =====================================================
@@ -659,3 +772,8 @@ using (var scope = app.Services.CreateScope())
 // =====================================================
 
 app.Run();
+
+// Lets the integration tests start the app (WebApplicationFactory<Program>).
+public partial class Program
+{
+}

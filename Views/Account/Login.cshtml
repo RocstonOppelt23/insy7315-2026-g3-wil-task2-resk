@@ -6,6 +6,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="stylesheet" href="~/css/theme.css" asp-append-version="true" />
     <meta charset="utf-8" />
     <meta name="viewport"
           content="width=device-width, initial-scale=1.0" />
@@ -31,7 +32,7 @@
         }
 
         html {
-            background: #f5f7fa;
+            background: var(--resk-surface);
         }
 
         body {
@@ -43,7 +44,7 @@
                 Arial,
                 sans-serif;
 
-            background: #f5f7fa;
+            background: var(--resk-surface);
         }
 
 
@@ -58,7 +59,7 @@
             display: grid;
             grid-template-columns: 46% 54%;
 
-            background: #f5f7fa;
+            background: var(--resk-surface);
 
             opacity: 0;
 
@@ -117,7 +118,7 @@
 
             padding: 60px;
 
-            background: #0d172b;
+            background: var(--resk-navy-900);
         }
 
         .brand-panel::before {
@@ -512,14 +513,14 @@
 
             border:
                 2px solid
-                #12b9cb;
+                var(--resk-cyan);
 
             border-radius: 16px;
 
             background:
                 rgba(18,185,203,0.025);
 
-            color: #12b9cb;
+            color: var(--resk-cyan);
 
             font-size: 30px;
             font-weight: 500;
@@ -548,7 +549,7 @@
         }
 
         .logo-name {
-            color: #ffffff;
+            color: var(--resk-white);
 
             font-size: 27px;
             font-weight: 800;
@@ -578,7 +579,7 @@
         .brand-title {
             max-width: 430px;
 
-            color: #ffffff;
+            color: var(--resk-white);
 
             font-size: 37px;
             line-height: 1.2;
@@ -608,7 +609,7 @@
 
             border-radius: 20px;
 
-            background: #12b9cb;
+            background: var(--resk-cyan);
         }
 
 
@@ -627,7 +628,7 @@
                 60px
                 80px;
 
-            background: #f5f7fa;
+            background: var(--resk-surface);
         }
 
         .form-wrapper {
@@ -645,7 +646,7 @@
         }
 
         .form-header h1 {
-            color: #0d172b;
+            color: var(--resk-navy-900);
 
             font-size: 34px;
             font-weight: 750;
@@ -656,7 +657,7 @@
         .form-header p {
             margin-top: 10px;
 
-            color: #7a8494;
+            color: var(--resk-text-muted);
 
             font-size: 14px;
             line-height: 1.6;
@@ -683,7 +684,7 @@
             background:
                 rgba(18,185,203,0.055);
 
-            color: #087f8c;
+            color: var(--resk-cyan-darker);
 
             font-size: 13px;
             line-height: 1.5;
@@ -765,7 +766,7 @@
 
             outline: none;
 
-            background: #ffffff;
+            background: var(--resk-white);
 
             color: #182235;
 
@@ -791,7 +792,7 @@
         }
 
         .form-control:focus {
-            border-color: #12b9cb;
+            border-color: var(--resk-cyan);
 
             box-shadow:
                 0 0 0 3px
@@ -829,7 +830,7 @@
         }
 
         .password-toggle:hover {
-            color: #12aabb;
+            color: var(--resk-cyan-dark);
         }
 
 
@@ -888,11 +889,11 @@
             width: 15px;
             height: 15px;
 
-            accent-color: #12b9cb;
+            accent-color: var(--resk-cyan);
         }
 
         .forgot-link {
-            color: #0ba8b9;
+            color: var(--resk-cyan-dark);
 
             font-size: 12px;
             font-weight: 700;
@@ -901,7 +902,7 @@
         }
 
         .forgot-link:hover {
-            color: #087f8c;
+            color: var(--resk-cyan-darker);
 
             text-decoration: underline;
         }
@@ -919,9 +920,9 @@
 
             border-radius: 10px;
 
-            background: #12b9cb;
+            background: var(--resk-cyan);
 
-            color: #ffffff;
+            color: var(--resk-white);
 
             font-family: inherit;
 
@@ -972,7 +973,7 @@
 
             text-align: center;
 
-            color: #7a8494;
+            color: var(--resk-text-muted);
 
             font-size: 13px;
         }
@@ -980,7 +981,7 @@
         .register-link {
             margin-left: 5px;
 
-            color: #0ba8b9;
+            color: var(--resk-cyan-dark);
 
             font-weight: 700;
 
@@ -988,7 +989,7 @@
         }
 
         .register-link:hover {
-            color: #087f8c;
+            color: var(--resk-cyan-darker);
 
             text-decoration: underline;
         }
@@ -1129,9 +1130,11 @@
 </head>
 
 <body>
+<a class="resk-skip-link" href="#loginPage">Skip to main content</a>
+
 
 <main id="loginPage"
-      class="login-page">
+      class="login-page" tabindex="-1">
 
 
     <!-- =====================================================

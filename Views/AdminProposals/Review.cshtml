@@ -18,26 +18,26 @@
 @section Styles {
     <style>
         .options { display: flex; flex-wrap: wrap; gap: 18px; }
-        .option { position: relative; width: 200px; display: flex; align-items: center; gap: 14px; padding: 15px 16px; border: 1px solid #dde4ee; border-radius: 9px; background: white; cursor: pointer; color: #14233e; font-size: 13px; font-weight: 800; transition: border-color 0.2s; }
+        .option { position: relative; width: 200px; display: flex; align-items: center; gap: 14px; padding: 15px 16px; border: 1px solid var(--resk-border); border-radius: 9px; background: white; cursor: pointer; color: var(--resk-navy-800); font-size: 13px; font-weight: 800; transition: border-color 0.2s; }
         .option input { position: absolute; opacity: 0; pointer-events: none; }
         .option-dot { width: 17px; height: 17px; flex-shrink: 0; border: 2px solid; border-radius: 50%; }
-        .option.approve .option-dot { border-color: #1f9a66; }
-        .option.changes .option-dot { border-color: #d39a12; }
-        .option.reject .option-dot { border-color: #d64d58; }
-        .option.approve:has(input:checked) { border: 2px solid #1f9a66; padding: 14px 15px; }
-        .option.changes:has(input:checked) { border: 2px solid #d39a12; padding: 14px 15px; }
-        .option.reject:has(input:checked) { border: 2px solid #d64d58; padding: 14px 15px; }
-        .option.approve:has(input:checked) .option-dot { background: #1f9a66; }
-        .option.changes:has(input:checked) .option-dot { background: #d39a12; }
-        .option.reject:has(input:checked) .option-dot { background: #d64d58; }
-        .option:has(input:focus-visible) { outline: 2px solid #12b8ce; outline-offset: 2px; }
+        .option.approve .option-dot { border-color: var(--resk-success); }
+        .option.changes .option-dot { border-color: var(--resk-warning); }
+        .option.reject .option-dot { border-color: var(--resk-danger); }
+        .option.approve:has(input:checked) { border: 2px solid var(--resk-success); padding: 14px 15px; }
+        .option.changes:has(input:checked) { border: 2px solid var(--resk-warning); padding: 14px 15px; }
+        .option.reject:has(input:checked) { border: 2px solid var(--resk-danger); padding: 14px 15px; }
+        .option.approve:has(input:checked) .option-dot { background: var(--resk-success); }
+        .option.changes:has(input:checked) .option-dot { background: var(--resk-warning); }
+        .option.reject:has(input:checked) .option-dot { background: var(--resk-danger); }
+        .option:has(input:focus-visible) { outline: 2px solid var(--resk-cyan); outline-offset: 2px; }
 
         .block { margin-top: 30px; }
-        .checklist-title { margin-top: 36px; color: #14233e; font-size: 18px; font-weight: 800; }
+        .checklist-title { margin-top: 36px; color: var(--resk-navy-800); font-size: 18px; font-weight: 800; }
         .checklist { display: flex; flex-direction: column; gap: 10px; margin-top: 22px; }
-        .check { display: flex; align-items: center; gap: 16px; padding: 11px 20px; border-radius: 7px; background: #f4f7fb; color: #14233e; font-size: 13px; cursor: pointer; }
-        .check input { width: 20px; height: 20px; flex-shrink: 0; accent-color: #12b8ce; cursor: pointer; }
-        .saved-note { margin-top: 18px; color: #8493aa; font-size: 11px; }
+        .check { display: flex; align-items: center; gap: 16px; padding: 11px 20px; border-radius: 7px; background: var(--resk-surface); color: var(--resk-navy-800); font-size: 13px; cursor: pointer; }
+        .check input { width: 20px; height: 20px; flex-shrink: 0; accent-color: var(--resk-cyan); cursor: pointer; }
+        .saved-note { margin-top: 18px; color: var(--resk-text-faint); font-size: 11px; }
     </style>
 }
 
