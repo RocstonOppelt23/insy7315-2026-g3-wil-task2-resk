@@ -21,7 +21,7 @@ namespace RESK.WIL.Data
         public DbSet<SystemFeatureSettings> SystemFeatureSettings => Set<SystemFeatureSettings>();
         public DbSet<MfaCode> MfaCodes => Set<MfaCode>();
         public DbSet<ProposalComment> ProposalComments => Set<ProposalComment>();
-        public DbSet<ProposalReview> ProposalReviews => Set<ProposalReview>();
+        public DbSet<Models.ProposalReview> ProposalReviews => Set<Models.ProposalReview>();
 
         // Proposals created through the producer "New proposal"
         // wizard, including drafts.
