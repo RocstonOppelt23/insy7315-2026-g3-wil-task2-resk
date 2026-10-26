@@ -40,7 +40,11 @@ namespace RESK.WIL.Data
             if (db.Database.IsSqlServer() &&
                 app.Configuration.GetValue("Database:MigrateOnStartup", true))
             {
-                await FixRenamedMigrationsAsync(db);
+                // A brand-new database doesn't exist yet - Migrate creates it.
+                if (await db.Database.CanConnectAsync())
+                {
+                    await FixRenamedMigrationsAsync(db);
+                }
 
                 IEnumerable<string> pending = await db.Database.GetPendingMigrationsAsync();
 
