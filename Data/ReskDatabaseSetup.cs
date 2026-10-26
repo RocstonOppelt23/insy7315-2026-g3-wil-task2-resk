@@ -59,7 +59,7 @@ namespace RESK.WIL.Data
         }
 
 
-        private static async Task FixRenamedMigrationsAsync(ApplicationDbContext db)
+        internal static async Task FixRenamedMigrationsAsync(ApplicationDbContext db)
         {
             foreach ((string oldId, string newId) in RenamedMigrations)
             {
