@@ -214,7 +214,7 @@ namespace RESK.WIL.Tests
             const string root = "sql-root";
 
             // Reviews
-            ProposalReviewStore.Save(root, new ProposalReview
+            ProposalReviewStore.Save(root, new RESK.WIL.Services.ProposalReview
             {
                 ProposalId = 5,
                 ReviewerName = "Reviewer",
