@@ -1,9 +1,11 @@
 using System.Linq;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Migrations.Operations;
+using Microsoft.Extensions.DependencyInjection;
 using RESK.WIL.Data;
 using Xunit;
 
@@ -17,11 +19,7 @@ namespace RESK.WIL.Tests
         [Fact]
         public void Migrations_snapshot_matches_the_current_model()
         {
-            var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-                .UseSqlServer("Server=localhost;Database=model-check;Trusted_Connection=True")
-                .Options;
-
-            using var db = new ApplicationDbContext(options);
+            using var db = CreateContext();
 
             IModel? snapshot = db.GetService<IMigrationsAssembly>().ModelSnapshot?.Model;
             Assert.NotNull(snapshot);
@@ -47,11 +45,7 @@ namespace RESK.WIL.Tests
         [Fact]
         public void Renamed_migration_is_registered_under_its_new_name()
         {
-            var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-                .UseSqlServer("Server=localhost;Database=model-check;Trusted_Connection=True")
-                .Options;
-
-            using var db = new ApplicationDbContext(options);
+            using var db = CreateContext();
 
             var ids = db.Database.GetMigrations().ToList();
 
@@ -60,6 +54,21 @@ namespace RESK.WIL.Tests
                 Assert.Contains(newId, ids);
                 Assert.DoesNotContain(oldId, ids);
             }
+        }
+
+
+        // Same model the app builds: AddDefaultIdentity limits Identity key columns to 128 characters.
+        private static ApplicationDbContext CreateContext()
+        {
+            var services = new ServiceCollection();
+            services.Configure<IdentityOptions>(o => o.Stores.MaxLengthForKeys = 128);
+
+            var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+                .UseSqlServer("Server=localhost;Database=model-check;Trusted_Connection=True")
+                .UseApplicationServiceProvider(services.BuildServiceProvider())
+                .Options;
+
+            return new ApplicationDbContext(options);
         }
 
 
