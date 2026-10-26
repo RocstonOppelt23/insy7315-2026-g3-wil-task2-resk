@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using Microsoft.EntityFrameworkCore;
+using RESK.WIL.Data;
 using RESK.WIL.Models;
 
 namespace RESK.WIL.Services
@@ -16,8 +17,9 @@ namespace RESK.WIL.Services
      * anywhere that edits or deletes a single event, so the log can
      * only grow. Events older than the retention period are dropped.
      *
-     * Saved as one JSON object per line (no database change needed):
-     *   App_Data/AuditLog.jsonl
+     * Saved in the database:
+     *   ReskAuditEvents   one row per event
+     *   ReskAuditChanges  the before/after values of each event
      */
     public static class ReskAuditLog
     {
@@ -40,30 +42,35 @@ namespace RESK.WIL.Services
         };
 
         private static readonly object Gate = new object();
-        private static List<ReskAuditEvent>? _events;
-        private static string? _root;
+
+        // Old events are removed once per run of the application.
+        private static bool _retentionApplied;
 
 
         // Adds one event. Never throws: the audit log must not break the page it records.
+        // contentRoot is kept so existing callers don't change; the data now lives in the database.
         public static ReskAuditEvent Add(string contentRoot, ReskAuditEvent item)
         {
             lock (Gate)
             {
-                List<ReskAuditEvent> events = Load(contentRoot);
-
-                item.Id = NextId(events, item.AtUtc);
-                events.Add(item);
-
                 try
                 {
-                    Directory.CreateDirectory(Path.GetDirectoryName(FilePath(contentRoot))!);
-                    File.AppendAllText(FilePath(contentRoot), JsonSerializer.Serialize(item) + Environment.NewLine);
+                    using ApplicationDbContext db = ReskDb.Open();
+
+                    item.Id = NextId(db, item.AtUtc);
+
+                    foreach (ReskAuditChange change in item.Changes)
+                    {
+                        change.Id = 0;
+                        change.EventId = item.Id;
+                    }
+
+                    db.ReskAuditEvents.Add(item);
+                    db.SaveChanges();
                 }
-                catch (IOException)
+                catch (Exception)
                 {
-                }
-                catch (UnauthorizedAccessException)
-                {
+                    // Keep the request working even if the database is unavailable.
                 }
 
                 return item;
@@ -76,9 +83,16 @@ namespace RESK.WIL.Services
         {
             lock (Gate)
             {
-                var copy = new List<ReskAuditEvent>(Load(contentRoot));
-                copy.Reverse();
-                return copy;
+                using ApplicationDbContext db = ReskDb.Open();
+
+                ApplyRetention(db);
+
+                return db.ReskAuditEvents
+                    .AsNoTracking()
+                    .Include(e => e.Changes.OrderBy(c => c.Id))
+                    .OrderByDescending(e => e.AtUtc)
+                    .ThenByDescending(e => e.Id)
+                    .ToList();
             }
         }
 
@@ -90,98 +104,71 @@ namespace RESK.WIL.Services
                 return null;
             }
 
-            lock (Gate)
-            {
-                return Load(contentRoot).FirstOrDefault(e => string.Equals(e.Id, id.Trim(), StringComparison.OrdinalIgnoreCase));
-            }
+            string key = id.Trim().ToUpperInvariant();
+
+            using ApplicationDbContext db = ReskDb.Open();
+
+            return db.ReskAuditEvents
+                .AsNoTracking()
+                .Include(e => e.Changes.OrderBy(c => c.Id))
+                .FirstOrDefault(e => e.Id == key);
         }
 
 
-        // Oldest first. Read from the file once, then kept in memory.
-        private static List<ReskAuditEvent> Load(string contentRoot)
+        // Retention: events older than the retention period are removed.
+        private static void ApplyRetention(ApplicationDbContext db)
         {
-            if (_events != null && _root == contentRoot)
+            if (_retentionApplied)
             {
-                return _events;
+                return;
             }
 
-            var events = new List<ReskAuditEvent>();
-            string path = FilePath(contentRoot);
-            int unreadable = 0;
-
-            try
-            {
-                if (File.Exists(path))
-                {
-                    foreach (string line in File.ReadAllLines(path))
-                    {
-                        if (string.IsNullOrWhiteSpace(line))
-                        {
-                            continue;
-                        }
-
-                        try
-                        {
-                            ReskAuditEvent? item = JsonSerializer.Deserialize<ReskAuditEvent>(line);
-
-                            if (item != null && item.Id.Length > 0)
-                            {
-                                events.Add(item);
-                            }
-                        }
-                        catch (JsonException)
-                        {
-                            unreadable++;
-                        }
-                    }
-                }
-            }
-            catch (IOException)
-            {
-            }
-
-            // Retention: events older than 7 years are removed.
             DateTime cutoff = DateTime.UtcNow.AddYears(-RetentionYears);
 
-            if (unreadable == 0 && events.RemoveAll(e => e.AtUtc < cutoff) > 0)
+            List<ReskAuditEvent> old = db.ReskAuditEvents
+                .Include(e => e.Changes)
+                .Where(e => e.AtUtc < cutoff)
+                .ToList();
+
+            if (old.Count > 0)
             {
-                try
-                {
-                    File.WriteAllLines(path, events.Select(e => JsonSerializer.Serialize(e)));
-                }
-                catch (IOException)
-                {
-                }
+                db.ReskAuditEvents.RemoveRange(old);
+                db.SaveChanges();
             }
 
-            _events = events;
-            _root = contentRoot;
-            return events;
+            _retentionApplied = true;
         }
 
 
         // AUD-{year}-{number}: the number restarts at 00001 each year.
-        private static string NextId(List<ReskAuditEvent> events, DateTime atUtc)
+        private static string NextId(ApplicationDbContext db, DateTime atUtc)
         {
             string prefix = "AUD-" + SouthAfricaTime.ToLocal(atUtc).Year + "-";
+
+            string? lastId = db.ReskAuditEvents
+                .Where(e => e.Id.StartsWith(prefix))
+                .OrderByDescending(e => e.Id)
+                .Select(e => e.Id)
+                .FirstOrDefault();
+
             int last = 0;
 
-            for (int i = events.Count - 1; i >= 0; i--)
+            if (lastId != null)
             {
-                if (events[i].Id.StartsWith(prefix, StringComparison.Ordinal))
-                {
-                    int.TryParse(events[i].Id.Substring(prefix.Length), out last);
-                    break;
-                }
+                int.TryParse(lastId.Substring(prefix.Length), out last);
             }
 
             return prefix + (last + 1).ToString("00000");
         }
 
 
-        private static string FilePath(string contentRoot)
+        // Lets tests start from a clean state.
+        internal static void ResetCache()
         {
-            return Path.Combine(contentRoot, "App_Data", "AuditLog.jsonl");
+            lock (Gate)
+            {
+                _retentionApplied = false;
+            }
         }
     }
 }

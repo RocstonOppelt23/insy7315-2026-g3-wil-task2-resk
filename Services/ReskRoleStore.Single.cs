@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+﻿using RESK.WIL.Data;
 
 namespace RESK.WIL.Services
 {
@@ -12,7 +12,7 @@ namespace RESK.WIL.Services
      * (Proposal Manager unless a different one is assigned).
      *
      * The account is chosen once (ReskSettingsMiddleware) and saved in
-     *   App_Data/Administrator.json
+     * the ReskSystemValues table under the key "AdministratorUserId".
      */
     public static partial class ReskRoleStore
     {
@@ -31,27 +31,10 @@ namespace RESK.WIL.Services
                     return _ownerId;
                 }
 
-                _ownerId = null;
-
-                try
+                using (ApplicationDbContext db = ReskDb.Open())
                 {
-                    string path = OwnerPath(contentRoot);
-
-                    if (File.Exists(path))
-                    {
-                        Dictionary<string, string>? saved = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(path));
-
-                        if (saved != null && saved.TryGetValue("UserId", out string? id) && !string.IsNullOrWhiteSpace(id))
-                        {
-                            _ownerId = id;
-                        }
-                    }
-                }
-                catch (IOException)
-                {
-                }
-                catch (JsonException)
-                {
+                    string? id = db.ReskSystemValues.Find(AdministratorKey)?.Value;
+                    _ownerId = string.IsNullOrWhiteSpace(id) ? null : id;
                 }
 
                 _ownerLoaded = true;
@@ -65,7 +48,12 @@ namespace RESK.WIL.Services
         {
             lock (FileLock)
             {
-                Write(OwnerPath(contentRoot), new Dictionary<string, string> { ["UserId"] = userId, ["Email"] = email });
+                using (ApplicationDbContext db = ReskDb.Open())
+                {
+                    SetValue(db, AdministratorKey, userId);
+                    SetValue(db, AdministratorEmailKey, email);
+                    db.SaveChanges();
+                }
 
                 _ownerId = userId;
                 _ownerLoaded = true;
@@ -99,6 +87,44 @@ namespace RESK.WIL.Services
         }
 
 
-        private static string OwnerPath(string contentRoot) => Path.Combine(contentRoot, "App_Data", "Administrator.json");
+        public const string AdministratorKey = "AdministratorUserId";
+
+        public const string AdministratorEmailKey = "AdministratorEmail";
+
+
+        private static void SetValue(ApplicationDbContext db, string key, string value)
+        {
+            ReskSystemValue? row = db.ReskSystemValues.Find(key);
+
+            if (row == null)
+            {
+                db.ReskSystemValues.Add(new ReskSystemValue { Key = key, Value = value });
+            }
+            else
+            {
+                row.Value = value;
+            }
+        }
+
+
+        // Lets tests start from a clean state.
+        internal static void ResetCache()
+        {
+            lock (FileLock)
+            {
+                _ownerLoaded = false;
+                _ownerRoot = null;
+                _ownerId = null;
+            }
+        }
+    }
+
+
+    // Small key/value settings kept in the database (e.g. which account is the Administrator).
+    public class ReskSystemValue
+    {
+        public string Key { get; set; } = string.Empty;
+
+        public string? Value { get; set; }
     }
 }

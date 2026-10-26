@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace RESK.WIL.Data.Migrations
 {
     /// <inheritdoc />
-    public partial class AddEthanTables : Migration
+    public partial class AddMfaCommentsReviewsAndFeatureSettings : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
