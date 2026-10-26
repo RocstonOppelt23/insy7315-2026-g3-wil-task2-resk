@@ -32,6 +32,9 @@
 
         public string? UpdatedBy { get; set; }
 
+        // Position in the roles list (kept so the list order survives saving).
+        public int SortOrder { get; set; }
+
         public bool IsAdministrator => Id == ReskRoleStore.AdministratorId;
 
         public bool IsActive => Status == ReskRoleStore.Active;

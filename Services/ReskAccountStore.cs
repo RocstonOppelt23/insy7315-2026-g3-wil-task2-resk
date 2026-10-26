@@ -1,5 +1,6 @@
-﻿using System.Text.Json;
-using System.Text.RegularExpressions;
+﻿using System.Text.Json.Serialization;
+using Microsoft.EntityFrameworkCore;
+using RESK.WIL.Data;
 
 namespace RESK.WIL.Services
 {
@@ -9,12 +10,21 @@ namespace RESK.WIL.Services
      * =========================================================
      *
      * Extra account information the admin Users screens need,
-     * saved as JSON in App_Data (no database change needed):
+     * saved in the database:
      *
-     *   App_Data/Accounts/{userId}.json
+     *   ReskAccounts           one row per user (status, restriction, notes)
+     *   ReskAccountActivities  the user's activity history
      */
     public class ReskActivity
     {
+        // Database key (not shown anywhere).
+        [JsonIgnore]
+        public int Id { get; set; }
+
+        // ReskAccounts.UserId this entry belongs to.
+        [JsonIgnore]
+        public string AccountUserId { get; set; } = string.Empty;
+
         public DateTime AtUtc { get; set; }
 
         public string Title { get; set; } = string.Empty;
@@ -56,6 +66,7 @@ namespace RESK.WIL.Services
 
         public DateTime? StatusChangedAtUtc { get; set; }
 
+        // Newest first.
         public List<ReskActivity> Activity { get; set; } = new();
     }
 
@@ -68,68 +79,87 @@ namespace RESK.WIL.Services
         public const string Rejected = "Rejected";
         public const string Banned = "Banned";
 
-        private static readonly JsonSerializerOptions JsonOptions =
-            new JsonSerializerOptions { WriteIndented = true };
+        // Every value the Status column accepts (also used by the check constraint).
+        public static readonly string[] Statuses = { "", Pending, Active, Suspended, Rejected, Banned };
 
-        private static readonly object FileLock = new object();
+        public const int MaxActivity = 200;
 
 
+        // contentRoot is kept so existing callers don't change; the data now lives in the database.
         public static ReskAccount Load(string contentRoot, string userId)
         {
-            string path = FilePath(contentRoot, userId);
+            ReskAccount? account;
 
-            try
+            using (ApplicationDbContext db = ReskDb.Open())
             {
-                if (File.Exists(path))
-                {
-                    ReskAccount? account =
-                        JsonSerializer.Deserialize<ReskAccount>(File.ReadAllText(path));
-
-                    if (account != null)
-                    {
-                        account.UserId = userId;
-                        ExpireSuspension(contentRoot, account);
-                        return account;
-                    }
-                }
-            }
-            catch (IOException)
-            {
-            }
-            catch (JsonException)
-            {
+                account = db.ReskAccounts
+                    .AsNoTracking()
+                    .Include(a => a.Activity
+                        .OrderByDescending(x => x.AtUtc)
+                        .ThenByDescending(x => x.Id))
+                    .FirstOrDefault(a => a.UserId == userId);
             }
 
-            return new ReskAccount { UserId = userId };
+            if (account == null)
+            {
+                return new ReskAccount { UserId = userId };
+            }
+
+            ExpireSuspension(contentRoot, account);
+            return account;
         }
 
 
+        // Insert or update the account row. New activity entries are added and
+        // entries that were trimmed from the list are removed.
         public static void Save(string contentRoot, ReskAccount account)
         {
-            Directory.CreateDirectory(Folder(contentRoot));
+            using ApplicationDbContext db = ReskDb.Open();
 
-            lock (FileLock)
+            ReskAccount? existing = db.ReskAccounts
+                .Include(a => a.Activity)
+                .FirstOrDefault(a => a.UserId == account.UserId);
+
+            foreach (ReskActivity item in account.Activity)
             {
-                File.WriteAllText(
-                    FilePath(contentRoot, account.UserId),
-                    JsonSerializer.Serialize(account, JsonOptions));
+                item.AccountUserId = account.UserId;
             }
+
+            if (existing == null)
+            {
+                foreach (ReskActivity item in account.Activity)
+                {
+                    item.Id = 0;
+                }
+
+                db.ReskAccounts.Add(account);
+                db.SaveChanges();
+                return;
+            }
+
+            db.Entry(existing).CurrentValues.SetValues(account);
+
+            var kept = new HashSet<int>(account.Activity.Where(x => x.Id != 0).Select(x => x.Id));
+
+            db.ReskAccountActivities.RemoveRange(existing.Activity.Where(x => !kept.Contains(x.Id)));
+            db.ReskAccountActivities.AddRange(account.Activity.Where(x => x.Id == 0));
+
+            db.SaveChanges();
         }
 
 
         public static void Delete(string contentRoot, string userId)
         {
-            try
-            {
-                string path = FilePath(contentRoot, userId);
+            using ApplicationDbContext db = ReskDb.Open();
 
-                if (File.Exists(path))
-                {
-                    File.Delete(path);
-                }
-            }
-            catch (IOException)
+            ReskAccount? existing = db.ReskAccounts
+                .Include(a => a.Activity)
+                .FirstOrDefault(a => a.UserId == userId);
+
+            if (existing != null)
             {
+                db.ReskAccounts.Remove(existing);
+                db.SaveChanges();
             }
         }
 
@@ -165,13 +195,7 @@ namespace RESK.WIL.Services
             ClearRestriction(account);
             Log(account, "Suspension ended", "The temporary suspension period finished", "success");
 
-            try
-            {
-                Save(contentRoot, account);
-            }
-            catch (IOException)
-            {
-            }
+            Save(contentRoot, account);
         }
 
 
@@ -180,30 +204,17 @@ namespace RESK.WIL.Services
         {
             account.Activity.Insert(0, new ReskActivity
             {
+                AccountUserId = account.UserId,
                 AtUtc = DateTime.UtcNow,
                 Title = title,
                 Detail = detail,
                 Kind = kind
             });
 
-            if (account.Activity.Count > 200)
+            if (account.Activity.Count > MaxActivity)
             {
-                account.Activity.RemoveRange(200, account.Activity.Count - 200);
+                account.Activity.RemoveRange(MaxActivity, account.Activity.Count - MaxActivity);
             }
-        }
-
-
-        private static string Folder(string contentRoot)
-        {
-            return Path.Combine(contentRoot, "App_Data", "Accounts");
-        }
-
-
-        private static string FilePath(string contentRoot, string userId)
-        {
-            string safe = Regex.Replace(userId ?? string.Empty, "[^A-Za-z0-9-]", string.Empty);
-
-            return Path.Combine(Folder(contentRoot), (safe.Length == 0 ? "unknown" : safe) + ".json");
         }
     }
 }

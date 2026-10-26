@@ -5,6 +5,14 @@ namespace RESK.WIL.Services
     // One changed field on the "Audit event details" page.
     public class ReskAuditChange
     {
+        // Database key (not shown anywhere).
+        [JsonIgnore]
+        public int Id { get; set; }
+
+        // ReskAuditEvents.Id this change belongs to.
+        [JsonIgnore]
+        public string EventId { get; set; } = string.Empty;
+
         public string Field { get; set; } = string.Empty;
 
         public string Before { get; set; } = string.Empty;

@@ -1,5 +1,6 @@
-﻿using System.Text.Json;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
+using Microsoft.EntityFrameworkCore;
+using RESK.WIL.Data;
 
 namespace RESK.WIL.Services
 {
@@ -9,9 +10,7 @@ namespace RESK.WIL.Services
      * =========================================================
      *
      * Reviewer assignment and review details for each proposal,
-     * saved as JSON in App_Data (no database change needed):
-     *
-     *   App_Data/Reviews/{proposalId}.json
+     * saved in the ReskProposalReviews table (one row per proposal).
      *
      * The proposal's status itself (In review, Approved, Changes
      * needed, Not approved) stays on the ProducerProposals row, so
@@ -67,77 +66,50 @@ namespace RESK.WIL.Services
 
     public static class ProposalReviewStore
     {
-        private static readonly JsonSerializerOptions JsonOptions =
-            new JsonSerializerOptions { WriteIndented = true };
-
-        private static readonly object FileLock = new object();
-
         public const string Approve = "Approve";
         public const string RequestChanges = "RequestChanges";
         public const string Reject = "Reject";
 
 
+        // contentRoot is kept so existing callers don't change; the data now lives in the database.
         public static ProposalReview Load(string contentRoot, int proposalId)
         {
-            string path = FilePath(contentRoot, proposalId);
+            using ApplicationDbContext db = ReskDb.Open();
 
-            try
-            {
-                if (File.Exists(path))
-                {
-                    ProposalReview? review =
-                        JsonSerializer.Deserialize<ProposalReview>(File.ReadAllText(path));
-
-                    if (review != null)
-                    {
-                        review.ProposalId = proposalId;
-                        return review;
-                    }
-                }
-            }
-            catch (IOException)
-            {
-            }
-            catch (JsonException)
-            {
-            }
-
-            return new ProposalReview { ProposalId = proposalId };
+            return db.ReskProposalReviews
+                       .AsNoTracking()
+                       .FirstOrDefault(r => r.ProposalId == proposalId)
+                   ?? new ProposalReview { ProposalId = proposalId };
         }
 
 
         public static Dictionary<int, ProposalReview> LoadAll(string contentRoot)
         {
-            var result = new Dictionary<int, ProposalReview>();
-            string folder = Folder(contentRoot);
+            using ApplicationDbContext db = ReskDb.Open();
 
-            if (!Directory.Exists(folder))
-            {
-                return result;
-            }
-
-            foreach (string file in Directory.GetFiles(folder, "*.json"))
-            {
-                if (int.TryParse(Path.GetFileNameWithoutExtension(file), out int id))
-                {
-                    result[id] = Load(contentRoot, id);
-                }
-            }
-
-            return result;
+            return db.ReskProposalReviews
+                .AsNoTracking()
+                .ToDictionary(r => r.ProposalId);
         }
 
 
+        // Insert or update the review row for this proposal.
         public static void Save(string contentRoot, ProposalReview review)
         {
-            Directory.CreateDirectory(Folder(contentRoot));
+            using ApplicationDbContext db = ReskDb.Open();
 
-            lock (FileLock)
+            ProposalReview? existing = db.ReskProposalReviews.Find(review.ProposalId);
+
+            if (existing == null)
             {
-                File.WriteAllText(
-                    FilePath(contentRoot, review.ProposalId),
-                    JsonSerializer.Serialize(review, JsonOptions));
+                db.ReskProposalReviews.Add(review);
             }
+            else
+            {
+                db.Entry(existing).CurrentValues.SetValues(review);
+            }
+
+            db.SaveChanges();
         }
 
 
@@ -151,18 +123,6 @@ namespace RESK.WIL.Services
                 Reject => "Reject",
                 _ => "—"
             };
-        }
-
-
-        private static string Folder(string contentRoot)
-        {
-            return Path.Combine(contentRoot, "App_Data", "Reviews");
-        }
-
-
-        private static string FilePath(string contentRoot, int proposalId)
-        {
-            return Path.Combine(Folder(contentRoot), proposalId + ".json");
         }
     }
 }

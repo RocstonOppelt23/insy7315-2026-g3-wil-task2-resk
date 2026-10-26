@@ -359,7 +359,14 @@ namespace RESK.WIL.Data.Migrations
 
                     b.HasIndex("OwnerUserId", "Status");
 
-                    b.ToTable("ProducerProposals", (string)null);
+                    b.ToTable("ProducerProposals", t =>
+                        {
+                            t.HasCheckConstraint("CK_ProducerProposals_CompletedSteps", "[CompletedSteps] BETWEEN 0 AND 5");
+
+                            t.HasCheckConstraint("CK_ProducerProposals_Status", "[Status] IN ('Draft', 'InReview', 'Approved', 'ChangesRequested', 'Rejected')");
+
+                            t.HasCheckConstraint("CK_ProducerProposals_SubmittedReference", "[Status] = 'Draft' OR [SubmittedAtUtc] IS NOT NULL OR [Reference] IS NULL");
+                        });
                 });
 
             modelBuilder.Entity("RESK.WIL.Models.Proposal", b =>
@@ -850,6 +857,386 @@ namespace RESK.WIL.Data.Migrations
                     b.ToTable("UserRoles");
                 });
 
+            modelBuilder.Entity("RESK.WIL.Services.ProposalReview", b =>
+                {
+                    b.Property<int>("ProposalId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("AssignedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("AssignedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("AssignmentNote")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("AudienceIsSuitable")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("BudgetIsComplete")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Comments")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("Deadline")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DecidedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DecidedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("Decision")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<bool>("PlanIsRealistic")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("PurposeIsClear")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Recommendation")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<DateTime?>("ReviewSavedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("ReviewSubmitted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("ReviewerName")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("ReviewerUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("ProposalId");
+
+                    b.HasIndex("ReviewerUserId");
+
+                    b.ToTable("ReskProposalReviews", t =>
+                        {
+                            t.HasCheckConstraint("CK_ReskProposalReviews_Recommendation", "[Recommendation] IS NULL OR [Recommendation] IN ('Approve', 'RequestChanges', 'Reject')");
+                        });
+                });
+
+            modelBuilder.Entity("RESK.WIL.Services.ReskAccount", b =>
+                {
+                    b.Property<string>("UserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("AdminNote")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("JoinedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("PasswordChangedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("RegistrationReason")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RequestedRole")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("RequirePasswordChange")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("RestrictedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("RestrictionReason")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime?>("StatusChangedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("SuspendedUntilUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("UserId");
+
+                    b.ToTable("ReskAccounts", t =>
+                        {
+                            t.HasCheckConstraint("CK_ReskAccounts_Status", "[Status] IN ('', 'Pending', 'Active', 'Suspended', 'Rejected', 'Banned')");
+                        });
+                });
+
+            modelBuilder.Entity("RESK.WIL.Services.ReskActivity", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AccountUserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("AtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Detail")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountUserId", "AtUtc");
+
+                    b.ToTable("ReskAccountActivities", t =>
+                        {
+                            t.HasCheckConstraint("CK_ReskAccountActivities_Kind", "[Kind] IN ('info', 'success', 'warning', 'danger')");
+                        });
+                });
+
+            modelBuilder.Entity("RESK.WIL.Services.ReskAuditChange", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("After")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Before")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("EventId")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("Field")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EventId");
+
+                    b.ToTable("ReskAuditChanges", (string)null);
+                });
+
+            modelBuilder.Entity("RESK.WIL.Services.ReskAuditEvent", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<DateTime>("AtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Device")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Ip")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("Module")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Record")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RecordId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Request")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Result")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("SessionId")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Summary")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("UserEmail")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("UserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("UserName")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("UserRole")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AtUtc");
+
+                    b.HasIndex("Module");
+
+                    b.ToTable("ReskAuditEvents", t =>
+                        {
+                            t.HasCheckConstraint("CK_ReskAuditEvents_Result", "[Result] IN ('Successful', 'Failed')");
+                        });
+                });
+
+            modelBuilder.Entity("RESK.WIL.Services.ReskRole", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Area")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<bool>("IsSystem")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Permissions")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Template")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ReskRoles", t =>
+                        {
+                            t.HasCheckConstraint("CK_ReskRoles_Area", "[Area] IN ('Admin', 'Reviewer', 'Producer')");
+
+                            t.HasCheckConstraint("CK_ReskRoles_Status", "[Status] IN ('Active', 'Inactive', 'Draft')");
+                        });
+                });
+
+            modelBuilder.Entity("RESK.WIL.Services.ReskRoleAssignment", b =>
+                {
+                    b.Property<string>("UserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("RoleId")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("UserId");
+
+                    b.HasIndex("RoleId");
+
+                    b.ToTable("ReskRoleAssignments", (string)null);
+                });
+
+            modelBuilder.Entity("RESK.WIL.Services.ReskSystemValue", b =>
+                {
+                    b.Property<string>("Key")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Value")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Key");
+
+                    b.ToTable("ReskSystemValues", (string)null);
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -961,6 +1348,24 @@ namespace RESK.WIL.Data.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("RESK.WIL.Services.ReskActivity", b =>
+                {
+                    b.HasOne("RESK.WIL.Services.ReskAccount", null)
+                        .WithMany("Activity")
+                        .HasForeignKey("AccountUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("RESK.WIL.Services.ReskAuditChange", b =>
+                {
+                    b.HasOne("RESK.WIL.Services.ReskAuditEvent", null)
+                        .WithMany("Changes")
+                        .HasForeignKey("EventId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("RESK.WIL.Models.Role", b =>
                 {
                     b.Navigation("ScopeTargets");
@@ -973,6 +1378,16 @@ namespace RESK.WIL.Data.Migrations
                     b.Navigation("Proposals");
 
                     b.Navigation("UserRoles");
+                });
+
+            modelBuilder.Entity("RESK.WIL.Services.ReskAccount", b =>
+                {
+                    b.Navigation("Activity");
+                });
+
+            modelBuilder.Entity("RESK.WIL.Services.ReskAuditEvent", b =>
+                {
+                    b.Navigation("Changes");
                 });
 #pragma warning restore 612, 618
         }

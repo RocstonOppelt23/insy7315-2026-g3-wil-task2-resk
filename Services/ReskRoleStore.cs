@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using Microsoft.EntityFrameworkCore;
+using RESK.WIL.Data;
 
 namespace RESK.WIL.Services
 {
@@ -20,9 +21,9 @@ namespace RESK.WIL.Services
      * "Administrator" role always has full access and can't be
      * changed, so the system can never lock everyone out.
      *
-     * Saved as JSON (no database change needed):
-     *   App_Data/Roles.json            the roles
-     *   App_Data/RoleAssignments.json  userId -> roleId
+     * Saved in the database:
+     *   ReskRoles            the roles and their permissions
+     *   ReskRoleAssignments  userId -> roleId
      */
     public static partial class ReskRoleStore
     {
@@ -61,7 +62,6 @@ namespace RESK.WIL.Services
             ("Producer", "Producer workspace", "Signs in to the producer screens to create and submit proposals.")
         };
 
-        private static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions { WriteIndented = true };
         private static readonly object FileLock = new object();
 
 
@@ -69,32 +69,22 @@ namespace RESK.WIL.Services
         // ROLES
         // =========================================================
 
+        // contentRoot is kept so existing callers don't change; the data now lives in the database.
         public static List<ReskRole> All(string contentRoot)
         {
             lock (FileLock)
             {
-                string path = RolesPath(contentRoot);
-                List<ReskRole>? roles = null;
+                using ApplicationDbContext db = ReskDb.Open();
 
-                try
-                {
-                    if (File.Exists(path))
-                    {
-                        roles = JsonSerializer.Deserialize<List<ReskRole>>(File.ReadAllText(path));
-                    }
-                }
-                catch (IOException)
-                {
-                }
-                catch (JsonException)
-                {
-                    File.Copy(path, path + ".broken-" + DateTime.UtcNow.Ticks, true);
-                }
+                List<ReskRole> roles = db.ReskRoles
+                    .AsNoTracking()
+                    .OrderBy(r => r.SortOrder)
+                    .ToList();
 
-                if (roles == null || roles.Count == 0)
+                if (roles.Count == 0)
                 {
                     roles = Seed();
-                    Write(path, roles);
+                    Write(db, roles);
                 }
 
                 // The Administrator role always exists, active, with full access.
@@ -103,7 +93,7 @@ namespace RESK.WIL.Services
                 if (admin == null)
                 {
                     roles.Insert(0, Seed()[0]);
-                    Write(path, roles);
+                    Write(db, roles);
                 }
                 else
                 {
@@ -123,11 +113,14 @@ namespace RESK.WIL.Services
         }
 
 
+        // Saves the full list: new roles are added, changed roles updated,
+        // and roles missing from the list are deleted.
         public static void SaveAll(string contentRoot, List<ReskRole> roles)
         {
             lock (FileLock)
             {
-                Write(RolesPath(contentRoot), roles);
+                using ApplicationDbContext db = ReskDb.Open();
+                Write(db, roles);
             }
         }
 
@@ -138,46 +131,39 @@ namespace RESK.WIL.Services
 
         public static Dictionary<string, string> Assignments(string contentRoot)
         {
-            lock (FileLock)
-            {
-                try
-                {
-                    string path = AssignmentsPath(contentRoot);
+            using ApplicationDbContext db = ReskDb.Open();
 
-                    if (File.Exists(path))
-                    {
-                        return JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(path))
-                               ?? new Dictionary<string, string>();
-                    }
-                }
-                catch (IOException)
-                {
-                }
-                catch (JsonException)
-                {
-                }
-
-                return new Dictionary<string, string>();
-            }
+            return db.ReskRoleAssignments
+                .AsNoTracking()
+                .ToDictionary(a => a.UserId, a => a.RoleId);
         }
 
 
         public static void Assign(string contentRoot, string userId, string? roleId)
         {
-            Dictionary<string, string> map = Assignments(contentRoot);
-
-            if (string.IsNullOrEmpty(roleId))
-            {
-                map.Remove(userId);
-            }
-            else
-            {
-                map[userId] = roleId;
-            }
-
             lock (FileLock)
             {
-                Write(AssignmentsPath(contentRoot), map);
+                using ApplicationDbContext db = ReskDb.Open();
+
+                ReskRoleAssignment? existing = db.ReskRoleAssignments.Find(userId);
+
+                if (string.IsNullOrEmpty(roleId))
+                {
+                    if (existing != null)
+                    {
+                        db.ReskRoleAssignments.Remove(existing);
+                    }
+                }
+                else if (existing == null)
+                {
+                    db.ReskRoleAssignments.Add(new ReskRoleAssignment { UserId = userId, RoleId = roleId });
+                }
+                else
+                {
+                    existing.RoleId = roleId;
+                }
+
+                db.SaveChanges();
             }
         }
 
@@ -225,15 +211,40 @@ namespace RESK.WIL.Services
         }
 
 
-        private static void Write<T>(string path, T value)
+        // Makes the ReskRoles table match the list (order is kept in SortOrder).
+        private static void Write(ApplicationDbContext db, List<ReskRole> roles)
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-            File.WriteAllText(path, JsonSerializer.Serialize(value, JsonOptions));
+            Dictionary<string, ReskRole> existing = db.ReskRoles.ToDictionary(r => r.Id);
+            var ids = new HashSet<string>(roles.Select(r => r.Id));
+
+            db.ReskRoles.RemoveRange(existing.Values.Where(r => !ids.Contains(r.Id)));
+
+            for (int i = 0; i < roles.Count; i++)
+            {
+                ReskRole role = roles[i];
+                role.SortOrder = i;
+
+                if (existing.TryGetValue(role.Id, out ReskRole? row))
+                {
+                    db.Entry(row).CurrentValues.SetValues(role);
+                    row.Permissions = new List<string>(role.Permissions);
+                }
+                else
+                {
+                    db.ReskRoles.Add(role);
+                }
+            }
+
+            db.SaveChanges();
         }
+    }
 
 
-        private static string RolesPath(string contentRoot) => Path.Combine(contentRoot, "App_Data", "Roles.json");
+    // One row per user who has a custom role (userId -> roleId).
+    public class ReskRoleAssignment
+    {
+        public string UserId { get; set; } = string.Empty;
 
-        private static string AssignmentsPath(string contentRoot) => Path.Combine(contentRoot, "App_Data", "RoleAssignments.json");
+        public string RoleId { get; set; } = string.Empty;
     }
 }

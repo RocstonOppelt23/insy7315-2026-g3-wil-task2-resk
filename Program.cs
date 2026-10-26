@@ -1,4 +1,7 @@
-﻿using Microsoft.AspNetCore.Http.Features;
+﻿using System.Text.Json;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using RESK.WIL.Data;
@@ -17,7 +20,10 @@ var connectionString =
     ?? throw new InvalidOperationException(
         "Connection string 'DefaultConnection' not found.");
 
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
+// The factory also registers ApplicationDbContext as a scoped
+// service (used by Identity and the controllers). The static RESK
+// stores use the factory directly - see Data/ReskDb.cs.
+builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
@@ -110,6 +116,31 @@ builder.Services.ConfigureApplicationCookie(options =>
 
     options.AccessDeniedPath =
         "/Account/AccessDenied";
+});
+
+
+// =====================================================
+// HEALTH CHECKS + REQUEST LOGGING
+// =====================================================
+
+// GET /health reports whether the app can reach the database.
+// The CI/CD pipeline calls it after every deployment.
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<ApplicationDbContext>(
+        name: "database",
+        tags: new[] { "ready" });
+
+// One log line per request (method, path, status code, time taken).
+// On Azure these appear in App Service "Log stream".
+builder.Services.AddHttpLogging(options =>
+{
+    options.LoggingFields =
+        HttpLoggingFields.RequestMethod |
+        HttpLoggingFields.RequestPath |
+        HttpLoggingFields.ResponseStatusCode |
+        HttpLoggingFields.Duration;
+
+    options.CombineLogs = true;
 });
 
 
@@ -218,6 +249,18 @@ var app = builder.Build();
 
 
 // =====================================================
+// DATABASE SETUP
+// =====================================================
+
+// Let the static RESK stores open database connections.
+ReskDb.Configure(
+    app.Services.GetRequiredService<IDbContextFactory<ApplicationDbContext>>());
+
+// Apply migrations and import any old App_Data JSON files.
+await ReskDatabaseSetup.RunAsync(app);
+
+
+// =====================================================
 // ERROR HANDLING
 // =====================================================
 
@@ -245,6 +288,36 @@ app.UseHttpsRedirection();
 // =====================================================
 
 app.UseStaticFiles();
+
+
+// =====================================================
+// LOGGING + HEALTH ENDPOINT
+// =====================================================
+
+app.UseHttpLogging();
+
+// Registered before session/auth so the health check is never
+// redirected to a sign-in page. Returns 200 when healthy and
+// 503 when the database can't be reached.
+app.UseHealthChecks("/health", new HealthCheckOptions
+{
+    ResponseWriter = async (context, report) =>
+    {
+        context.Response.ContentType = "application/json";
+
+        await context.Response.WriteAsync(JsonSerializer.Serialize(new
+        {
+            status = report.Status.ToString(),
+            totalMs = Math.Round(report.TotalDuration.TotalMilliseconds),
+            checks = report.Entries.Select(entry => new
+            {
+                name = entry.Key,
+                status = entry.Value.Status.ToString(),
+                ms = Math.Round(entry.Value.Duration.TotalMilliseconds)
+            })
+        }));
+    }
+});
 
 
 // =====================================================

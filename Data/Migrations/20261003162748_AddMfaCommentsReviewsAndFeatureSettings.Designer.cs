@@ -12,8 +12,8 @@ using RESK.WIL.Data;
 namespace RESK.WIL.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20261003162748_AddEthanTables")]
-    partial class AddEthanTables
+    [Migration("20261003162748_AddMfaCommentsReviewsAndFeatureSettings")]
+    partial class AddMfaCommentsReviewsAndFeatureSettings
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
